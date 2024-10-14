@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace Answers.Tests
 {
-    public class TestClassForTryAsync:ILaunchable
+    public  partial class TestClassForTryAsync:IAnswerable
     {
-        private readonly IAnswerService _answerService;
+     
 
      
     }

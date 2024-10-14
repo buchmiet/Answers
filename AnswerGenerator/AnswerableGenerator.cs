@@ -14,7 +14,7 @@ using System.Diagnostics;
 namespace AnswerGenerator
 {
     [Generator]
-    public class LaunchableGenerator : IIncrementalGenerator
+    public class AnswerableGenerator : IIncrementalGenerator
     {
 
         void IIncrementalGenerator.Initialize(IncrementalGeneratorInitializationContext context)
@@ -45,7 +45,7 @@ namespace AnswerGenerator
             }
 #endif 
 
-            var iLaunchableSymbol = compilation.GetTypeByMetadataName("Answers.ILaunchable");
+            var iLaunchableSymbol = compilation.GetTypeByMetadataName("Answers.IAnswerable");
             PrepareHelperMethods();
 
             //// Iteracja przez wszystkie kandydackie klasy
@@ -269,7 +269,7 @@ namespace {namespaceName}
         private void PrepareHelperMethods()
         {
             var assembly = Assembly.GetExecutingAssembly();
-            var resourceName = "AnswerGenerator.LaunchableHelper.cs";
+            var resourceName = "AnswerGenerator.TryAsyncClass.cs";
             using var stream = assembly.GetManifestResourceStream(resourceName);
             if (stream == null)
             {
@@ -287,7 +287,7 @@ namespace {namespaceName}
             // Find the class declaration for LaunchableHelper
             var launchableHelperClass = root.DescendantNodes()
                 .OfType<ClassDeclarationSyntax>()
-                .FirstOrDefault(c => c.Identifier.Text == "LaunchableHelper");
+                .FirstOrDefault(c => c.Identifier.Text == "TryAsyncClass");
 
             if (launchableHelperClass == null)
             {

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Answers
 {
-    public interface ILaunchable
+    public interface IAnswerable
     {
     }
 }

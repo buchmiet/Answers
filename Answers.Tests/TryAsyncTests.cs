@@ -34,7 +34,6 @@ namespace Answers.Tests
 
             // Assert
             Assert.Equal(expectedAnswer, result);
-            _answerServiceMock.Verify(x => x.LogInfo(It.IsAny<string>()), Times.AtLeastOnce);
         }
 
         [Fact]

@@ -10,11 +10,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="LaunchableHelper.cs" />
+    <Compile Remove="TryAsyncClass.cs" />
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="LaunchableHelper.cs" />
+    <EmbeddedResource Include="TryAsyncClass.cs" />
   </ItemGroup>
 
   <ItemGroup>
