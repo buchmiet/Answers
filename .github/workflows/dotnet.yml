@@ -35,4 +35,13 @@ jobs:
       with:
         name: coverage-report
         path: Answers.Tests/TestResults/**/*.xml
+        
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+       token: ${{ secrets.CODECOV_TOKEN }}
+       files: Answers.Tests/TestResults/**/*.xml
+       flags: unittests
+       name: code-coverage-report
+       fail_ci_if_error: true
 
