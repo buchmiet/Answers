@@ -30,9 +30,9 @@ jobs:
     - name: Run tests
       run: dotnet test --no-build --collect:"XPlat Code Coverage" --settings coverlet.runsettings
 
-- name: Upload test results
-  uses: actions/upload-artifact@v3
-  with:
-    name: coverage-report
-    path: Answers.Tests/TestResults/**/*.xml
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: Answers.Tests/TestResults/**/*.xml
 
