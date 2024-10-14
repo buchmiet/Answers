@@ -265,48 +265,57 @@ namespace {namespaceName}
             context.AddSource($"{className}_ConstructorOverload_{constructorSignatureHash}.g.cs", SourceText.From(source, Encoding.UTF8));
         }
 
+        private static readonly List<string> resourceNames= ["AnswerGenerator.TryAsyncClass.cs", "AnswerGenerator.TryClass.cs"];
+        private List<string> classesInResources = resourceNames
+            .Select(name => name.Split('.')[1]) // Rozdziela ciąg po kropce i wybiera część po pierwszej kropce
+            .ToList();
 
         private void PrepareHelperMethods()
         {
             var assembly = Assembly.GetExecutingAssembly();
-            var resourceName = "AnswerGenerator.TryAsyncClass.cs";
-            using var stream = assembly.GetManifestResourceStream(resourceName);
-            if (stream == null)
+            foreach (var resourceName in resourceNames)
             {
-                // Handle the error: resource not found
-                return;
+
+                using var stream = assembly.GetManifestResourceStream(resourceName);
+                if (stream == null)
+                {
+                    // Handle the error: resource not found
+                    return;
+                }
+
+                using var reader = new StreamReader(stream);
+                var sourceCode = reader.ReadToEnd();
+
+                // Parse the source code
+                var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode);
+                var root = syntaxTree.GetRoot();
+
+                // Find the class declaration for LaunchableHelper
+                var launchableHelperClass = root.DescendantNodes()
+                    .OfType<ClassDeclarationSyntax>()
+                    .FirstOrDefault(c => classesInResources.Contains(c.Identifier.Text));
+
+                if (launchableHelperClass == null)
+                {
+                    // Handle the error: class not found
+                    return;
+                }
+
+                // Collect all method declarations
+                var methodSyntaxes = launchableHelperClass.Members
+                    .OfType<MethodDeclarationSyntax>();
+
+
+                foreach (var methodSyntax in methodSyntaxes)
+                {
+                    var methodBody = methodSyntax.ToFullString();
+                    // Modify the method body if needed
+
+                    _helperMethods.Add(methodBody);
+                }
             }
 
-            using var reader = new StreamReader(stream);
-            var sourceCode = reader.ReadToEnd();
-
-            // Parse the source code
-            var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode);
-            var root = syntaxTree.GetRoot();
-
-            // Find the class declaration for LaunchableHelper
-            var launchableHelperClass = root.DescendantNodes()
-                .OfType<ClassDeclarationSyntax>()
-                .FirstOrDefault(c => c.Identifier.Text == "TryAsyncClass");
-
-            if (launchableHelperClass == null)
-            {
-                // Handle the error: class not found
-                return;
-            }
-
-            // Collect all method declarations
-            var methodSyntaxes = launchableHelperClass.Members
-                .OfType<MethodDeclarationSyntax>();
-
-
-            foreach (var methodSyntax in methodSyntaxes)
-            {
-                var methodBody = methodSyntax.ToFullString();
-                // Modify the method body if needed
-             
-                _helperMethods.Add(methodBody);
-            }
+          
 
         }
 

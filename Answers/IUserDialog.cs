@@ -9,6 +9,10 @@ namespace Answers
     {
         Task<bool> YesNoAsync(string errorMessage, CancellationToken ct);
         Task<bool> ContinueTimedOutYesNoAsync(string errorMessage, CancellationToken ct);
+            // Synchroniczne metody
+            bool YesNo(string errorMessage);
+            bool ContinueTimedOutYesNo(string errorMessage);
+        
 
     }
 }

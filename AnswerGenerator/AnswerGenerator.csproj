@@ -11,10 +11,12 @@
 
   <ItemGroup>
     <Compile Remove="TryAsyncClass.cs" />
+    <Compile Remove="TryClass.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="TryAsyncClass.cs" />
+    <EmbeddedResource Include="TryClass.cs" />
   </ItemGroup>
 
   <ItemGroup>
