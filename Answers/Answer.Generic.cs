@@ -13,12 +13,13 @@ namespace Answers
         public Answer<T> WithValue(T value)
         {
             _value = value;
+            State.HasValueSet = true;
             return this;
         }
 
         public T GetValue()
         {
-            if (_value != null)
+            if (State.HasValueSet)
             {
                 return _value;
             }

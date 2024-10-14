@@ -10,10 +10,17 @@ namespace Answers
     {
         protected AnswerState State = new AnswerState();
         protected readonly MessageAggregator Messages = new MessageAggregator();
+       
 
         public bool IsSuccess => State.IsSuccess;
         public bool IsTimedOut => State.IsTimedOut;
-        public bool DialogConcluded => State.DialogConcluded;
+
+        public bool DialogConcluded
+        {
+            get => State.DialogConcluded;
+            set => State.DialogConcluded = value;
+        }
+
         public string Message => Messages.Message;
 
         public void ConcludeDialog() => State.ConcludeDialog();
