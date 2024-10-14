@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -52,7 +53,7 @@ namespace Answers
         public Task<bool> AskYesNoAsync(string message, CancellationToken ct)
         {
             var dialog = _dialog;
-            if (dialog is null)
+            if (dialog is not null)
             {
                 return dialog.YesNoAsync(message, ct);
             }
@@ -62,7 +63,13 @@ namespace Answers
 
         public Task<bool> AskYesNoToWaitAsync(string message, CancellationToken ct)
         {
-            throw new NotImplementedException();
+            var dialog = _dialog;
+            if (dialog is not null)
+            {
+                return dialog.ContinueTimedOutYesNoAsync(message, ct);
+            }
+
+            throw new InvalidOperationException("Dialog is not set.");
         }
 
         public AnswerService(IUserDialog dialog, ILogger logger)
@@ -83,15 +90,5 @@ namespace Answers
             }
         }
 
-        public async Task<bool> AskAsync(string message, CancellationToken ct)
-        {
-            var dialog = _dialog;
-            if (dialog != null)
-            {
-                Console.WriteLine($"[AnswerService] Displaying dialog:");
-                return await dialog.YesNoAsync(message, ct);
-            }
-            return false;
-        }
     }
 }

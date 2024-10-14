@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿
+using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Answers
@@ -9,6 +8,7 @@ namespace Answers
     public interface IUserDialog
     {
         Task<bool> YesNoAsync(string errorMessage, CancellationToken ct);
+        Task<bool> ContinueTimedOutYesNoAsync(string errorMessage, CancellationToken ct);
 
     }
 }
