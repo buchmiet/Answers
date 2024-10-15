@@ -22,14 +22,6 @@ namespace Answers.Tests
             Assert.Equal(action, answer.Message);
         }
 
-        [Fact]
-        public void TimedOut_ShouldSetTimedOutState()
-        {
-            var answer = Answer.Prepare("TestError").TimeOut();
-
-            Assert.True(answer.IsTimedOut);
-            Assert.False(answer.IsSuccess);
-        }
 
         [Fact]
         public void Attach_ShouldCombineMessagesAndStates()
@@ -125,13 +117,7 @@ namespace Answers.Tests
             Assert.True(answer.IsSuccess);
         }
 
-        [Fact]
-        public void IsTimedOut_ShouldBeFalseByDefault()
-        {
-            var answer = new Answer();
-
-            Assert.False(answer.IsTimedOut);
-        }
+     
 
         [Fact]
         public void DialogConcluded_ShouldBeFalseByDefault()
@@ -191,16 +177,7 @@ namespace Answers.Tests
             Assert.Throws<InvalidOperationException>(() => answer.Error("Trying to set error after value is set"));
         }
 
-        [Fact]
-        public void TimedOut_CanHappenOnlyOnce_AndPreventsFurtherChanges()
-        {
-            var answer = Answer.Prepare("Initial action").TimeOut();
-
-
-            Assert.Throws<InvalidOperationException>(() => answer.AddValue(42));
-            Assert.Throws<InvalidOperationException>(() => answer.Error("Trying to set error after timeout"));
-      //      Assert.Throws<InvalidOperationException>(() => answer.ConcludeDialog());
-        }
+      
 
 
     }

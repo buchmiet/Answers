@@ -54,7 +54,8 @@
                     if (!_answerService.HasTimeOutDialog || !_answerService.AskYesNoToWait("The operation timed out. Do you want to retry?"))
                     {
                         // Nie można zapytać użytkownika lub użytkownik wybrał nie ponawiać
-                        return Answers.Answer.TimedOut();
+                        answer = Answers.Answer.Prepare("Time out timer");
+                        return answer.Error($"{timeout.Value.TotalSeconds} seconds elapsed");
                     }
 
                     // Użytkownik wybrał ponowienie; kontynuuj pętlę

@@ -35,7 +35,7 @@ namespace Answers
         private IUserDialog _dialog;
         private IUserDialog _timeOutDialog;
         private readonly ILogger _logger;
-        private readonly object _syncRoot = new object();
+        private readonly object _syncRoot = new();
         public TimeSpan Timeout { get; private set; }
 
         public bool HasDialog => _dialog != null;

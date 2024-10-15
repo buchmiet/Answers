@@ -56,7 +56,8 @@ namespace AnswerGenerator
                             "The operation timed out. Do you want to retry?", ct))
                     {
                         // Cannot prompt the user or user chose not to retry; return timed-out answer
-                        return Answers.Answer.TimedOut();
+                        answer = Answers.Answer.Prepare("Time out timer");
+                        return answer.Error($"{timeout.Value.TotalSeconds} seconds elapsed");
                     }
 
                     // User chose to retry; loop again
@@ -80,4 +81,6 @@ namespace AnswerGenerator
                 return answer;
             }
         }
+
+    }
 

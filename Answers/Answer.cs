@@ -38,7 +38,7 @@ namespace Answers
 
 
         public bool IsSuccess => State.IsSuccess;
-        public bool IsTimedOut => State.IsTimedOut;
+       
 
         public bool DialogConcluded
         {
@@ -59,6 +59,8 @@ namespace Answers
             return answer;
         }
 
+
+
         public Answer Attach(Answer answer)
         {
             Messages.AddActions(answer.Messages.Actions);
@@ -66,19 +68,6 @@ namespace Answers
             return this;
         }
 
-        public Answer TimeOut()
-        {
-            if (State.IsTimedOut)
-            {
-                throw new InvalidOperationException("Answer already timed out.");
-            }
-            if (!IsSuccess)
-            {
-                throw new InvalidOperationException("Answer is in error state, it can not be timed out.");
-            }
-            State.TimeItOut();
-            return this;
-        }
 
         public Answer Error(string message)
         {

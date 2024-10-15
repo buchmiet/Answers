@@ -96,57 +96,6 @@ namespace Answers.Tests
             _answerServiceMock.Verify(x => x.AskYesNoAsync(It.IsAny<string>(), _cancellationToken), Times.Once);
         }
 
-        [Fact]
-        public async Task TryAsync_MethodTimesOut_UserChoosesToRetry_RetriesMethod()
-        {
-            // Arrange
-            var callCount = 0;
-            Func<Task<Answer>> method = async () =>
-            {
-                callCount++;
-                await Task.Delay(_defaultTimeout + TimeSpan.FromSeconds(1));
-                var answer = new Answer();
-                return answer;
-            };
-
-            _answerServiceMock.Setup(x => x.HasTimeOutDialog).Returns(true);
-            _answerServiceMock.SetupSequence(x => x.AskYesNoToWaitAsync(It.IsAny<string>(), _cancellationToken))
-                .ReturnsAsync(true)
-                .ReturnsAsync(false);
-
-            // Act
-            var result = await _testClass.TryAsync(method, _cancellationToken, _defaultTimeout);
-
-            // Assert
-            Assert.Equal(2, callCount);
-            Assert.False(result.IsSuccess);
-            Assert.True(result.IsTimedOut);
-            _answerServiceMock.Verify(x => x.AskYesNoToWaitAsync(It.IsAny<string>(), _cancellationToken), Times.Exactly(2));
-        }
-
-        [Fact]
-        public async Task TryAsync_MethodTimesOut_UserDeclinesToRetry_ReturnsTimedOutAnswer()
-        {
-            // Arrange
-            Func<Task<Answer>> method = async () =>
-            {
-                await Task.Delay(_defaultTimeout + TimeSpan.FromSeconds(1));
-                var answer = new Answer();
-                return answer;
-            };
-
-            _answerServiceMock.Setup(x => x.HasTimeOutDialog).Returns(true);
-            _answerServiceMock.Setup(x => x.AskYesNoToWaitAsync(It.IsAny<string>(), _cancellationToken))
-                .ReturnsAsync(false);
-
-            // Act
-            var result = await _testClass.TryAsync(method, _cancellationToken, _defaultTimeout);
-
-            // Assert
-            Assert.False(result.IsSuccess);
-            Assert.True(result.IsTimedOut);
-            _answerServiceMock.Verify(x => x.AskYesNoToWaitAsync(It.IsAny<string>(), _cancellationToken), Times.Once);
-        }
 
         [Fact]
         public async Task TryAsync_MethodThrowsException_ThrowsException()

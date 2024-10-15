@@ -57,10 +57,11 @@ public class PresentationLayer
 
 
 
+ 
         public async Task<Answers.Answer> TryAsync(
-      Func<Task<Answers.Answer>> method,
-      CancellationToken ct,
-      TimeSpan? timeout = null)
+            Func<Task<Answers.Answer>> method,
+            CancellationToken ct,
+            TimeSpan? timeout = null)
         {
             while (true)
             {
@@ -104,7 +105,8 @@ public class PresentationLayer
                             "The operation timed out. Do you want to retry?", ct))
                     {
                         // Cannot prompt the user or user chose not to retry; return timed-out answer
-                        return Answers.Answer.TimedOut();
+                        answer = Answers.Answer.Prepare("Time out timer");
+                        return answer.Error($"{timeout.Value.TotalSeconds} seconds elapsed");
                     }
 
                     // User chose to retry; loop again
@@ -124,6 +126,7 @@ public class PresentationLayer
                 {
                     continue;
                 }
+
                 answer.ConcludeDialog();
                 return answer;
             }
