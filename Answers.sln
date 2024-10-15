@@ -9,6 +9,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Answers.Tests", "Answers.Te
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AnswerGenerator", "AnswerGenerator\AnswerGenerator.csproj", "{5A03D1A6-8D72-4346-9AEA-668FD7E49C09}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnswerConsole", "AnswerConsole\AnswerConsole.csproj", "{8549D173-D76D-470F-8565-4857FD63C3C4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{5A03D1A6-8D72-4346-9AEA-668FD7E49C09}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5A03D1A6-8D72-4346-9AEA-668FD7E49C09}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5A03D1A6-8D72-4346-9AEA-668FD7E49C09}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8549D173-D76D-470F-8565-4857FD63C3C4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8549D173-D76D-470F-8565-4857FD63C3C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8549D173-D76D-470F-8565-4857FD63C3C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8549D173-D76D-470F-8565-4857FD63C3C4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
