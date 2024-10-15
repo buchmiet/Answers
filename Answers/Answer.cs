@@ -1,16 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Answers
 {
     public class Answer : IAnswer
     {
-        protected AnswerState State = new AnswerState();
-        protected readonly MessageAggregator Messages = new MessageAggregator();
-       
+
+        protected AnswerState State = new();
+        protected readonly MessageAggregator Messages = new();
+
 
         public bool IsSuccess => State.IsSuccess;
         public bool IsTimedOut => State.IsTimedOut;
@@ -22,6 +19,8 @@ namespace Answers
         }
 
         public string Message => Messages.Message;
+
+        public bool HasValue => throw new NotImplementedException();
 
         public void ConcludeDialog() => State.ConcludeDialog();
 
@@ -39,7 +38,7 @@ namespace Answers
             return this;
         }
 
-        public static Answer TimedOut() => new Answer { State = AnswerState.TimedOut() };
+        public static Answer TimedOut() => new() { State = AnswerState.TimedOut() };
 
         public Answer Error(string message)
         {
@@ -49,5 +48,32 @@ namespace Answers
         }
 
         public override string ToString() => Message;
+        private object _value;
+
+        public Answer WithValue(object value)
+        {
+            _value = value;
+            State.HasValueSet = true;
+            return this;
+        }
+
+        public T GetValue<T>()
+        {
+            if (State.HasValueSet)
+            {
+                if (_value is T value)
+                {
+                    return value;
+                }
+                throw new InvalidOperationException($"Expected a value of type {typeof(T)}.");
+            }
+            throw new InvalidOperationException($"Expected a value of type {typeof(T)}.");
+        }
+
+        public bool Out<T>(out T value)
+        {
+            value =(T) _value  ;
+            return IsSuccess;
+        }
     }
 }

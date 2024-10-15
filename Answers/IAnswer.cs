@@ -8,10 +8,12 @@ namespace Answers
 {
     public interface IAnswer
     {
+        bool HasValue { get; }
         bool IsSuccess { get; }
         bool IsTimedOut { get; }
         bool DialogConcluded { get; }
         string Message { get; }
         void ConcludeDialog();
+        T GetValue<T>();
     }
 }
