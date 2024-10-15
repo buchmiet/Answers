@@ -20,7 +20,7 @@ namespace Answers
 
         public string Message => Messages.Message;
 
-        public bool HasValue => throw new NotImplementedException();
+        public bool HasValue => _value!=null;
 
         public void ConcludeDialog() => State.ConcludeDialog();
 
@@ -72,8 +72,12 @@ namespace Answers
 
         public bool Out<T>(out T value)
         {
-            value =(T) _value  ;
-            return IsSuccess;
+            if (State.HasValueSet)
+            {
+                value = (T)_value;
+                return IsSuccess;
+            }
+            throw new InvalidOperationException($"Value not set.");
         }
     }
 }

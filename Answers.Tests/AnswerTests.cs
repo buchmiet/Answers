@@ -8,20 +8,16 @@ using Answers;
 
 namespace Answers.Tests
 {
-  
+
 
     public class AnswerTests
     {
         [Fact]
         public void Prepare_ShouldCreateSuccessAnswerWithMessage()
         {
-            // Arrange
             string action = "Test Action";
-
-            // Act
             var answer = Answer.Prepare(action);
 
-            // Assert
             Assert.True(answer.IsSuccess);
             Assert.Equal(action, answer.Message);
         }
@@ -29,27 +25,140 @@ namespace Answers.Tests
         [Fact]
         public void TimedOut_ShouldSetTimedOutState()
         {
-            // Act
             var answer = Answer.TimedOut();
 
-            // Assert
             Assert.True(answer.IsTimedOut);
+            Assert.False(answer.IsSuccess);
         }
 
         [Fact]
         public void Attach_ShouldCombineMessagesAndStates()
         {
-            // Arrange
             var answer1 = Answer.Prepare("Action 1");
             var answer2 = Answer.Prepare("Action 2");
 
-            // Act
             var combinedAnswer = answer1.Attach(answer2);
 
-            // Assert
             Assert.True(combinedAnswer.IsSuccess);
             Assert.Contains("Action 1", combinedAnswer.Message);
             Assert.Contains("Action 2", combinedAnswer.Message);
+        }
+
+        [Fact]
+        public void Error_ShouldSetErrorStateAndMessage()
+        {
+            var answer = Answer.Prepare("Initial Action");
+            answer.Error("Error Message");
+
+            Assert.False(answer.IsSuccess);
+            Assert.Contains("Error Message", answer.Message);
+        }
+
+        [Fact]
+        public void ConcludeDialog_ShouldSetDialogConcludedToTrue()
+        {
+            var answer = Answer.Prepare("Action");
+            answer.ConcludeDialog();
+
+            Assert.True(answer.DialogConcluded);
+        }
+
+        [Fact]
+        public void WithValue_ShouldSetValueAndHasValueState()
+        {
+            var answer = Answer.Prepare("Action").WithValue(42);
+
+            Assert.True(answer.HasValue);
+            Assert.Equal(42, answer.GetValue<int>());
+        }
+
+        [Fact]
+        public void GetValue_ShouldThrowWhenNoValueSet()
+        {
+            var answer = Answer.Prepare("Action");
+
+            Assert.Throws<InvalidOperationException>(() => answer.GetValue<int>());
+        }
+
+        [Fact]
+        public void GetValue_ShouldThrowWhenWrongTypeRequested()
+        {
+            var answer = Answer.Prepare("Action").WithValue(42);
+
+            Assert.Throws<InvalidOperationException>(() => answer.GetValue<string>());
+        }
+
+        [Fact]
+        public void Out_ShouldReturnTrueAndSetValueWhenSuccessful()
+        {
+            var answer = Answer.Prepare("Action").WithValue(42);
+
+            bool result = answer.Out(out int value);
+
+            Assert.True(result);
+            Assert.Equal(42, value);
+        }
+
+        [Fact]
+        public void Out_ShouldThroweWhenNotSuccessful()
+        {
+            var answer = Answer.Prepare("Action").Error("Some error");
+
+            Assert.Throws<InvalidOperationException>(() => answer.Out(out int value));
+
+     
+        }
+
+        [Fact]
+        public void ToString_ShouldReturnMessage()
+        {
+            var answer = Answer.Prepare("Test Action");
+
+            Assert.Equal(answer.Message, answer.ToString());
+        }
+
+        [Fact]
+        public void IsSuccess_ShouldBeTrueByDefault()
+        {
+            var answer = new Answer();
+
+            Assert.True(answer.IsSuccess);
+        }
+
+        [Fact]
+        public void IsTimedOut_ShouldBeFalseByDefault()
+        {
+            var answer = new Answer();
+
+            Assert.False(answer.IsTimedOut);
+        }
+
+        [Fact]
+        public void DialogConcluded_ShouldBeFalseByDefault()
+        {
+            var answer = new Answer();
+
+            Assert.False(answer.DialogConcluded);
+        }
+
+        [Fact]
+        public void DialogConcluded_ShouldBeSettable()
+        {
+            var answer = new Answer();
+            answer.DialogConcluded = true;
+
+            Assert.True(answer.DialogConcluded);
+        }
+
+        [Fact]
+        public void Attach_ShouldReturnFalseIsSuccessWhenOneAnswerFails()
+        {
+            var answer1 = Answer.Prepare("Action 1");
+            var answer2 = Answer.Prepare("Action 2").Error("Error");
+
+            var combinedAnswer = answer1.Attach(answer2);
+
+            Assert.False(combinedAnswer.IsSuccess);
         }
     }
 
