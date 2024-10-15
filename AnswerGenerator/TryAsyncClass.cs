@@ -9,16 +9,16 @@ namespace AnswerGenerator
 {
     public class TryAsyncClass
     {
-        public async Task<Answers.IAnswer> TryAsync(
-      Func<Task<Answers.IAnswer>> method,
+        public async Task<Answers.Answer> TryAsync(
+      Func<Task<Answers.Answer>> method,
       CancellationToken ct,
       TimeSpan? timeout = null)
         {
             while (true)
             {
-                Task<Answers.IAnswer> methodTask = method();
+                Task<Answers.Answer> methodTask = method();
                 Task timeoutTask = null;
-                Answers.IAnswer answer;
+                Answers.Answer answer;
 
                 if (timeout.HasValue)
                 {

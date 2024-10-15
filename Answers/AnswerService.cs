@@ -112,6 +112,12 @@ namespace Answers
         {
         }
 
+        public AnswerService(ILogger logger)
+        {
+            _logger = logger;
+
+        }
+
         public void SetTimeout(TimeSpan timeout)
         {
             lock (_syncRoot)

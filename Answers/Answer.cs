@@ -2,7 +2,7 @@
 
 namespace Answers
 {
-    public class Answer : IAnswer
+    public class Answer 
     {
 
         protected AnswerState State = new();

@@ -13,12 +13,15 @@ namespace Answers.Tests
         private readonly Mock<IUserDialog> _mockUserDialog;
         private readonly Mock<ILogger> _mockLogger;
         private readonly AnswerService _answerService;
+        private readonly AnswerService _answerServiceWithoutDialog;
+
 
         public AnswerServiceTests()
         {
             _mockUserDialog = new Mock<IUserDialog>();
             _mockLogger = new Mock<ILogger>();
             _answerService = new AnswerService(_mockUserDialog.Object, _mockLogger.Object);
+            _answerServiceWithoutDialog = new AnswerService( _mockLogger.Object);
         }
 
         #region Property Tests
@@ -43,7 +46,7 @@ namespace Answers.Tests
             // Dialog is not set
 
             // Act
-            var result = _answerService.HasDialog;
+            var result = _answerServiceWithoutDialog.HasDialog;
 
             // Assert
             Assert.False(result);
@@ -180,12 +183,13 @@ namespace Answers.Tests
         [Fact]
         public async Task AskYesNoAsync_ShouldThrowInvalidOperationException_WhenDialogIsNotSet()
         {
-            // Arrange
             var message = "Proceed?";
             var ct = CancellationToken.None;
 
             // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() => _answerService.AskYesNoAsync(message, ct));
+            await Assert.ThrowsAsync<InvalidOperationException>(
+                () => _answerServiceWithoutDialog.AskYesNoAsync(message, ct)
+            );
         }
 
         [Fact]
@@ -215,7 +219,7 @@ namespace Answers.Tests
             var ct = CancellationToken.None;
 
             // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() => _answerService.AskYesNoToWaitAsync(message, ct));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _answerServiceWithoutDialog.AskYesNoToWaitAsync(message, ct));
         }
 
         [Fact]
@@ -228,7 +232,16 @@ namespace Answers.Tests
             _answerService.LogInfo(message);
 
             // Assert
-            _mockLogger.Verify(l => l.LogInformation(message), Times.Once);
+            _mockLogger.Verify(
+                x => x.Log(
+                    LogLevel.Information,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains(message)),
+                    It.IsAny<Exception>(),
+                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)
+                ),
+                Times.Once
+            );
         }
 
         [Fact]
@@ -241,7 +254,16 @@ namespace Answers.Tests
             _answerService.LogError(message);
 
             // Assert
-            _mockLogger.Verify(l => l.LogError(message), Times.Once);
+            _mockLogger.Verify(
+                x => x.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains(message)),
+                    It.IsAny<Exception>(),
+                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)
+                ),
+                Times.Once
+            );
         }
 
         [Fact]
@@ -254,7 +276,16 @@ namespace Answers.Tests
             _answerService.LogWarning(message);
 
             // Assert
-            _mockLogger.Verify(l => l.LogWarning(message), Times.Once);
+            _mockLogger.Verify(
+                x => x.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains(message)),
+                    It.IsAny<Exception>(),
+                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)
+                ),
+                Times.Once
+            );
         }
 
         #endregion

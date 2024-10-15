@@ -44,7 +44,7 @@ public class PresentationLayer
         }
     }
 
-    public void DisplayError(IAnswer answer)
+    public void DisplayError(Answer answer)
     {
         Console.ForegroundColor = ConsoleColor.Red;
         Console.Write("Error:");
@@ -56,101 +56,80 @@ public class PresentationLayer
 
 
 
-    private async Task<IAnswer> TryAsync(
-    Func<Task<IAnswer>> method,
-    CancellationToken ct,
-    TimeSpan? timeout = null)
-    {
-        _answerService.LogInfo($"TryAsync started, method: {method.Method.Name}, timeout: {(timeout.HasValue ? timeout.ToString() : "none")}");
-        while (true)
+
+        public async Task<Answers.Answer> TryAsync(
+      Func<Task<Answers.Answer>> method,
+      CancellationToken ct,
+      TimeSpan? timeout = null)
         {
-            Task<IAnswer> methodTask = method();
-            Task timeoutTask = null;
-            IAnswer answer;
-
-            if (timeout.HasValue)
+            while (true)
             {
-                _answerService.LogInfo($"Timeout set to {timeout.Value}");
-                timeoutTask = Task.Delay(timeout.Value, ct);
-            }
+                Task<Answers.Answer> methodTask = method();
+                Task timeoutTask = null;
+                Answers.Answer answer;
 
-            if (timeoutTask is not null)
-            {
-                Task completedTask = await Task.WhenAny(methodTask, timeoutTask);
-
-                if (completedTask == methodTask)
+                if (timeout.HasValue)
                 {
-                    _answerService.LogInfo($"{method.Method.Name} finished before timeout");
-                    try
-                    {
-                        answer = await methodTask;
-                    }
-                    catch (Exception ex)
-                    {
-                        _answerService.LogError($"Exception in method {method.Method.Name}: {ex.Message}");
-                        throw;
-                    }
+                    // Create a delay task that completes after the specified timeout
+                    timeoutTask = Task.Delay(timeout.Value, ct);
+                }
 
-                    if (answer.IsSuccess || answer.DialogConcluded || !_answerService.HasDialog)
+                if (timeoutTask != null)
+                {
+                    // Wait for either the method to complete or the timeout to occur
+                    Task completedTask = await Task.WhenAny(methodTask, timeoutTask);
+
+                    if (completedTask == methodTask)
                     {
-                        _answerService.LogInfo($"Method {method.Method.Name} succeeded or dialog concluded");
+                        // The method completed before the timeout
+
+                        answer = await methodTask;
+                        if (answer.IsSuccess || answer.DialogConcluded || !_answerService.HasDialog)
+                        {
+                            return answer;
+                        }
+
+                        // Method failed; prompt the user to retry
+                        if (await _answerService.AskYesNoAsync(answer.Message, ct))
+                        {
+                            continue;
+                        }
+
+                        answer.ConcludeDialog();
                         return answer;
                     }
 
-                    _answerService.LogWarning($"Method {method.Method.Name} failed: {answer.Message}");
-                    if (await _answerService.AskYesNoAsync(answer.Message, ct))
+                    // The timeout occurred before the method completed
+                    if (!_answerService.HasTimeOutDialog || !await _answerService.AskYesNoToWaitAsync(
+                            "The operation timed out. Do you want to retry?", ct))
                     {
-                        _answerService.LogInfo("User chose to retry");
-                        continue;
+                        // Cannot prompt the user or user chose not to retry; return timed-out answer
+                        return Answers.Answer.TimedOut();
                     }
 
-                    _answerService.LogInfo("User declined to retry, concluding dialog");
-                    answer.ConcludeDialog();
+                    // User chose to retry; loop again
+                    continue;
+                }
+
+                // No timeout specified; await the method normally
+                answer = await methodTask; // Let exceptions propagate if any
+
+                if (answer.IsSuccess || answer.DialogConcluded || !_answerService.HasDialog)
+                {
                     return answer;
                 }
 
-                _answerService.LogWarning($"Timeout occurred during {method.Method.Name}");
-                if (!_answerService.HasTimeOutDialog || !await _answerService.AskYesNoToWaitAsync(
-                        "The operation timed out. Do you want to retry?", ct))
+                // Method failed; prompt the user to retry
+                if (await _answerService.AskYesNoAsync(answer.Message, ct))
                 {
-                    _answerService.LogWarning($"User declined to wait, returning timed-out answer");
-                    return Answer.TimedOut();
+                    continue;
                 }
-
-                _answerService.LogInfo("User chose to wait and retry after timeout");
-                continue;
-            }
-
-            try
-            {
-                answer = await methodTask;
-            }
-            catch (Exception ex)
-            {
-                _answerService.LogError($"Exception in method {method.Method.Name}: {ex.Message}");
-                throw;
-            }
-
-            if (answer.IsSuccess || answer.DialogConcluded || !_answerService.HasDialog)
-            {
-                _answerService.LogInfo($"Method {method.Method.Name} succeeded or dialog concluded");
+                answer.ConcludeDialog();
                 return answer;
             }
-
-            _answerService.LogWarning($"Method {method.Method.Name} failed: {answer.Message}");
-            if (await _answerService.AskYesNoAsync(answer.Message, ct))
-            {
-                _answerService.LogInfo("User chose to retry");
-                continue;
-            }
-
-            _answerService.LogInfo("User declined to retry, concluding dialog");
-            answer.ConcludeDialog();
-            return answer;
         }
-    }
 
-}
+    }
 
 
 public partial class ServiceTierClass : IAnswerable
@@ -195,7 +174,7 @@ public partial class UtilityLayerClass : IAnswerable
         this._serviceTier = serviceTier;
     }
 
-    public async Task<IAnswer> GetOrderAndProductsData(int orderId, CancellationToken ct)
+    public async Task<Answer> GetOrderAndProductsData(int orderId, CancellationToken ct)
     {
 
         var response = Answer.Prepare($"GetOrderAndProductsData({orderId}, {ct.ToString()})");

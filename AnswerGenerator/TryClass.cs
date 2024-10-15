@@ -4,18 +4,18 @@
 
     public class TryClass
     {
-        private readonly Answers.IAnswerService _answerService;
+        private readonly Answers.AnswerService _answerService;
 
-        public TryClass(Answers.IAnswerService answerService)
+        public TryClass(Answers.AnswerService answerService)
         {
             _answerService = answerService;
         }
 
-        public Answers.IAnswer Try(Func<Answers.IAnswer> method, TimeSpan? timeout = null)
+        public Answers.Answer Try(Func<Answers.Answer> method, TimeSpan? timeout = null)
         {
             while (true)
             {
-                Answers.IAnswer answer = null;
+                Answers.Answer answer = null;
 
                 if (timeout.HasValue)
                 {

@@ -27,7 +27,7 @@ namespace Answers.Tests
         {
             // Arrange
             var expectedAnswer = new Answer();
-            Func<Task<IAnswer>> method = () => Task.FromResult<IAnswer>(expectedAnswer);
+            Func<Task<Answer>> method = () => Task.FromResult<Answer>(expectedAnswer);
 
             // Act
             var result = await _testClass.TryAsync(method, _cancellationToken, _defaultTimeout);
@@ -41,19 +41,19 @@ namespace Answers.Tests
         {
             // Arrange
             var callCount = 0;
-            Func<Task<IAnswer>> method = () =>
+            Func<Task<Answer>> method = () =>
             {
                 callCount++;
                 if (callCount < 2)
                 {
                     var answer = new Answer().Error("");
                     answer.Error("Error occurred.");
-                    return Task.FromResult<IAnswer>(answer);
+                    return Task.FromResult<Answer>(answer);
                 }
                 else
                 {
                     var answer = new Answer();
-                    return Task.FromResult<IAnswer>(answer);
+                    return Task.FromResult<Answer>(answer);
                 }
             };
 
@@ -75,12 +75,12 @@ namespace Answers.Tests
         {
             // Arrange
             var callCount = 0;
-            Func<Task<IAnswer>> method = () =>
+            Func<Task<Answer>> method = () =>
             {
                 callCount++;
                 var answer = new Answer().Error("");
                 answer.Error("Error occurred.");
-                return Task.FromResult<IAnswer>(answer);
+                return Task.FromResult<Answer>(answer);
             };
 
             _answerServiceMock.Setup(x => x.HasDialog).Returns(true);
@@ -101,7 +101,7 @@ namespace Answers.Tests
         {
             // Arrange
             var callCount = 0;
-            Func<Task<IAnswer>> method = async () =>
+            Func<Task<Answer>> method = async () =>
             {
                 callCount++;
                 await Task.Delay(_defaultTimeout + TimeSpan.FromSeconds(1));
@@ -128,7 +128,7 @@ namespace Answers.Tests
         public async Task TryAsync_MethodTimesOut_UserDeclinesToRetry_ReturnsTimedOutAnswer()
         {
             // Arrange
-            Func<Task<IAnswer>> method = async () =>
+            Func<Task<Answer>> method = async () =>
             {
                 await Task.Delay(_defaultTimeout + TimeSpan.FromSeconds(1));
                 var answer = new Answer();
@@ -152,7 +152,7 @@ namespace Answers.Tests
         public async Task TryAsync_MethodThrowsException_ThrowsException()
         {
             // Arrange
-            Func<Task<IAnswer>> method = () => throw new InvalidOperationException("Test exception");
+            Func<Task<Answer>> method = () => throw new InvalidOperationException("Test exception");
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(() => _testClass.TryAsync(method, _cancellationToken, _defaultTimeout));
@@ -165,7 +165,7 @@ namespace Answers.Tests
             var answer = new Answer().Error(""); 
             answer.DialogConcluded= true;
             
-            Func<Task<IAnswer>> method = () => Task.FromResult<IAnswer>(answer);
+            Func<Task<Answer>> method = () => Task.FromResult<Answer>(answer);
 
             _answerServiceMock.Setup(x => x.HasDialog).Returns(true);
 
@@ -183,7 +183,7 @@ namespace Answers.Tests
             // Arrange
             var answer = new Answer();
             answer=answer.Error("error");
-            Func<Task<IAnswer>> method = () => Task.FromResult<IAnswer>(answer);
+            Func<Task<Answer>> method = () => Task.FromResult<Answer>(answer);
 
             _answerServiceMock.Setup(x => x.HasDialog).Returns(false);
 
