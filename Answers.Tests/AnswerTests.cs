@@ -25,7 +25,7 @@ namespace Answers.Tests
         [Fact]
         public void TimedOut_ShouldSetTimedOutState()
         {
-            var answer = Answer.TimedOut();
+            var answer = Answer.Prepare("TestError").TimeOut();
 
             Assert.True(answer.IsTimedOut);
             Assert.False(answer.IsSuccess);
@@ -160,6 +160,49 @@ namespace Answers.Tests
 
             Assert.False(combinedAnswer.IsSuccess);
         }
+
+        [Fact]
+        public void Error_CanBeSetOnlyOnce()
+        {
+            var answer = Answer.Prepare("Initial action");
+
+            answer.Error("First error");
+            var ex = Assert.Throws<InvalidOperationException>(() => answer.Error("Second error"));
+
+            Assert.Equal("Error can only be set once.", ex.Message);
+        }
+
+        [Fact]
+        public void CannotAddValueWhenIsSuccessIsFalse()
+        {
+            var answer = Answer.Prepare("Initial action");
+
+            answer.Error("Some error");
+
+            Assert.Throws<InvalidOperationException>(() => answer.AddValue(42));
+        }
+
+        [Fact]
+        public void CannotSetIsSuccessToFalseIfValueExists()
+        {
+            var answer = Answer.Prepare("Initial action");
+            answer.AddValue(42);
+
+            Assert.Throws<InvalidOperationException>(() => answer.Error("Trying to set error after value is set"));
+        }
+
+        [Fact]
+        public void TimedOut_CanHappenOnlyOnce_AndPreventsFurtherChanges()
+        {
+            var answer = Answer.Prepare("Initial action").TimeOut();
+
+
+            Assert.Throws<InvalidOperationException>(() => answer.AddValue(42));
+            Assert.Throws<InvalidOperationException>(() => answer.Error("Trying to set error after timeout"));
+      //      Assert.Throws<InvalidOperationException>(() => answer.ConcludeDialog());
+        }
+
+
     }
 
 }

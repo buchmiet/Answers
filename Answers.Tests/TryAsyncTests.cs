@@ -46,7 +46,7 @@ namespace Answers.Tests
                 callCount++;
                 if (callCount < 2)
                 {
-                    var answer = new Answer().Error("");
+                    var answer = new Answer().Error("Test Error");
                     answer.Error("Error occurred.");
                     return Task.FromResult<Answer>(answer);
                 }
@@ -78,7 +78,7 @@ namespace Answers.Tests
             Func<Task<Answer>> method = () =>
             {
                 callCount++;
-                var answer = new Answer().Error("");
+                var answer = new Answer().Error("Test Error");
                 answer.Error("Error occurred.");
                 return Task.FromResult<Answer>(answer);
             };
@@ -162,7 +162,7 @@ namespace Answers.Tests
         public async Task TryAsync_MethodReturnsAnswerWithDialogConcluded_ReturnsAnswer()
         {
             // Arrange
-            var answer = new Answer().Error(""); 
+            var answer = new Answer().Error("Test error"); 
             answer.DialogConcluded= true;
             
             Func<Task<Answer>> method = () => Task.FromResult<Answer>(answer);

@@ -2,8 +2,36 @@
 
 namespace Answers
 {
+
+    public interface IValueRecord
+    {
+        object GetValue();
+    }
+
     public class Answer 
     {
+
+        private IValueRecord _valueRecord;
+
+        public void AddValue<T>(T value)
+        {
+            if (!IsSuccess)
+            {
+                throw new InvalidOperationException("Answer is in Error state, no values can be added");
+            }
+            _valueRecord = new ValueRecord<T>(value);
+        }
+
+
+        public T GetValue<T>()
+        {
+            if (!State.HasValueSet) throw new InvalidOperationException("Value was not set.");
+            if (_valueRecord is ValueRecord<T> record)
+            {
+                return record.GetValue();
+            }
+            throw new InvalidOperationException("Value is not of the correct type.");
+        }
 
         protected AnswerState State = new();
         protected readonly MessageAggregator Messages = new();
@@ -20,7 +48,7 @@ namespace Answers
 
         public string Message => Messages.Message;
 
-        public bool HasValue => _value!=null;
+        public bool HasValue => _valueRecord != null;
 
         public void ConcludeDialog() => State.ConcludeDialog();
 
@@ -38,46 +66,58 @@ namespace Answers
             return this;
         }
 
-        public static Answer TimedOut() => new() { State = AnswerState.TimedOut() };
+        public Answer TimeOut()
+        {
+            if (State.IsTimedOut)
+            {
+                throw new InvalidOperationException("Answer already timed out.");
+            }
+            if (!IsSuccess)
+            {
+                throw new InvalidOperationException("Answer is in error state, it can not be timed out.");
+            }
+            State.TimeItOut();
+            return this;
+        }
 
         public Answer Error(string message)
         {
+            if (HasValue)
+            {
+                throw new InvalidOperationException("Answer already has value, therefore it can not be in error state ");
+            }
+            if (!IsSuccess)
+            {
+                throw new InvalidOperationException("Error can only be set once.");
+            }
             State.IsSuccess = false;
             Messages.AddAction(message);
             return this;
         }
 
         public override string ToString() => Message;
-        private object _value;
+   
 
-        public Answer WithValue(object value)
+        public Answer WithValue<T>(T value)
         {
-            _value = value;
+            _valueRecord = new ValueRecord<T>(value);
             State.HasValueSet = true;
             return this;
         }
 
-        public T GetValue<T>()
-        {
-            if (State.HasValueSet)
-            {
-                if (_value is T value)
-                {
-                    return value;
-                }
-                throw new InvalidOperationException($"Expected a value of type {typeof(T)}.");
-            }
-            throw new InvalidOperationException($"Expected a value of type {typeof(T)}.");
-        }
+    
 
         public bool Out<T>(out T value)
         {
             if (State.HasValueSet)
             {
-                value = (T)_value;
-                return IsSuccess;
+                if (_valueRecord is ValueRecord<T> record)
+                {
+                    value = record.GetValue();
+                    return true;
+                }
             }
-            throw new InvalidOperationException($"Value not set.");
+            throw new InvalidOperationException("Value not set.");
         }
     }
 }

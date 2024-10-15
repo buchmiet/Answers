@@ -14,6 +14,11 @@ namespace Answers
         public bool HasValueSet { get; set; } = false;
         public void ConcludeDialog() => DialogConcluded = true;
 
+        public void TimeItOut()
+        {
+            IsTimedOut = true;
+            IsSuccess = false;
+        } 
         public static AnswerState TimedOut() => new AnswerState { IsTimedOut = true, IsSuccess = false };
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,14 +9,27 @@ namespace Answers
 {
     public class MessageAggregator
     {
-        private static string _connector = " > ";
-        public List<string> Actions { get; } = new List<string>();
+        private string _connector = " > ";
+        public List<string> Actions { get; } = new();
 
         public string Message => string.Join(_connector, Actions);
 
-        public static void SetConnector(string connector) => _connector = connector;
+        public void SetConnector(string connector) => _connector = connector;
 
-        public void AddAction(string action) => Actions.Add(action);
+        public void AddAction(string action)
+        {
+            switch (action)
+            {
+                case null:
+                    throw new ArgumentNullException(nameof(action));
+                case "":
+                    throw new ArgumentException("Action cannot be empty", nameof(action));
+                default:
+                    Actions.Add(action);
+                    break;
+            }
+        } 
+
         public void AddActions(IEnumerable<string> actions) => Actions.AddRange(actions);
     }
 }
