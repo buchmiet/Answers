@@ -65,6 +65,7 @@ namespace Answers
         {
             Messages.AddActions(answer.Messages.Actions);
             State.IsSuccess &= answer.IsSuccess;
+            State.DialogConcluded |= answer.DialogConcluded;
             return this;
         }
 

@@ -24,6 +24,42 @@ namespace Answers.Tests
             _answerServiceWithoutDialog = new AnswerService( _mockLogger.Object);
         }
 
+
+      
+
+
+        [Fact]
+        public async Task OperationFailure_PropagatesCorrectly_WithoutAdditionalPrompts()
+        {
+            // Arrange
+            var mockDialog = new Mock<IUserDialog>();
+            // Simulate user choosing not to retry
+            mockDialog.Setup(d => d.YesNoAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var mockLogger = new Mock<ILogger>();
+
+            var answerService = new AnswerService(mockDialog.Object, mockLogger.Object);
+
+            // Create tier instances
+            var tier4 = new Tier4(answerService);
+            var tier3 = new Tier3(tier4, answerService);
+            var tier2 = new Tier2(tier3, answerService);
+            var tier1 = new Tier1(tier2, answerService);
+
+            // Act
+            var finalAnswer = await tier1.DoOperationAsync();
+
+            // Assert
+            Assert.False(finalAnswer.IsSuccess, "Final Answer should indicate failure.");
+            Assert.True(finalAnswer.DialogConcluded, "DialogConcluded should be true to prevent further prompts.");
+            Assert.Contains("Tier4 operation failed", finalAnswer.Message);
+
+
+            // Verify that YesNoAsync was called only once
+            mockDialog.Verify(d => d.YesNoAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
         #region Property Tests
 
         [Fact]

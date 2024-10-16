@@ -46,7 +46,7 @@ namespace Answers.Tests
                 callCount++;
                 if (callCount < 2)
                 {
-                    var answer = new Answer().Error("Test Error");
+                    var answer = Answer.Prepare("Test Error");
                     answer.Error("Error occurred.");
                     return Task.FromResult<Answer>(answer);
                 }
@@ -78,7 +78,7 @@ namespace Answers.Tests
             Func<Task<Answer>> method = () =>
             {
                 callCount++;
-                var answer = new Answer().Error("Test Error");
+                var answer = Answer.Prepare("Test Error");
                 answer.Error("Error occurred.");
                 return Task.FromResult<Answer>(answer);
             };
