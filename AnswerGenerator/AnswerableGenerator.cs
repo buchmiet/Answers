@@ -57,10 +57,7 @@ namespace AnswerGenerator
                 if (classSymbol == null)
                     continue;
 
-                // Logowanie szczegółów klasy
-                Debug.WriteLine($"Processing class declaration in file: {classDeclaration.SyntaxTree.FilePath}");
-                Debug.WriteLine($"Class declaration: {classDeclaration.ToFullString()}");
-
+                
                 if (!classSymbol.AllInterfaces.Contains(iLaunchableSymbol))
                     continue;
 
@@ -68,20 +65,19 @@ namespace AnswerGenerator
                 var classFullName = classSymbol.ToDisplayString();
                 if (_processedClasses.Contains(classFullName))
                 {
-                    Debug.WriteLine($"Class {classFullName} has already been processed. Skipping.");
+                
                     continue;
                 }
 
                 // Dodanie klasy do przetworzonych
                 _processedClasses.Add(classFullName);
 
-                Debug.WriteLine($"Class {classSymbol.Name} implements ILaunchable. Proceeding with processing.");
 
                 // Przetwarzanie klasy
             
                 ProcessClass(context, classSymbol);
 
-                Debug.WriteLine($"Finished processing class {classSymbol.Name}.");
+              
             }
         }
 
@@ -96,33 +92,9 @@ namespace AnswerGenerator
 
             var membersDetails = new StringBuilder();
 
-            // Iterate over all members of the class symbol
-            foreach (var member in classSymbol.GetMembers())
-            {
-                membersDetails.AppendLine($"Member Name: {member.Name}");
-                membersDetails.AppendLine($"Member Kind: {member.Kind}");
-                membersDetails.AppendLine($"Is Static: {member.IsStatic}");
+          
 
-                // Handle properties and fields differently
-                if (member is IFieldSymbol field)
-                {
-                    membersDetails.AppendLine($"Field Type: {field.Type.ToDisplayString()}");
-                }
-                else if (member is IPropertySymbol prop)
-                {
-                    membersDetails.AppendLine($"Property Type: {prop.Type.ToDisplayString()}");
-                }
-
-                // Display any additional attributes or modifiers
-                if (member is ISymbol symbol)
-                {
-                    membersDetails.AppendLine($"Declared Accessibility: {symbol.DeclaredAccessibility}");
-                }
-
-                membersDetails.AppendLine(); // Add a blank line between members
-            }
-
-            var debugOutput = membersDetails.ToString();
+        
             // Find IAnswerService field or property in the class
             // Find IAnswerService property in the class, ignoring backing fields
             var answerServiceMembers = classSymbol.GetMembers()
@@ -182,7 +154,7 @@ namespace AnswerGenerator
                 ? $$"""
                     public partial class {{className}}
                     {
-                        public Answers.IAnswerService {{propertyName}} { get; private set; }
+                         private readonly Answers.IAnswerService {{propertyName}};
                     }
                     """
                 : $$"""
@@ -190,7 +162,7 @@ namespace AnswerGenerator
                     {
                         public partial class {{className}}
                         {
-                            public Answers.IAnswerService {{propertyName}} { get; private set; }
+                            private readonly Answers.IAnswerService {{propertyName}};
                         }
                     }
                     """;

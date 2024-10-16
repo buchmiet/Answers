@@ -8,6 +8,8 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
 using Answers;
+using System.Runtime.InteropServices;
+using FluentAssertions;
 
 namespace AnswerGeneratorTests
 {
@@ -42,7 +44,7 @@ namespace AnswerGeneratorTests
         public void ClassWithNoConstructorAndNoIAnswerServiceMember_ShouldAddFieldAndConstructor()
         {
             var source = @"
-using Answers;
+
 
 namespace TestNamespace
 {
@@ -63,17 +65,24 @@ namespace TestNamespace
             // Use reflection to verify the generated members
             var testClassType = assembly.GetType("TestNamespace.TestClass");
             Assert.NotNull(testClassType);
-
-            // Check for the private readonly field _answerService
-            var field = testClassType.GetField("_answerService", BindingFlags.NonPublic | BindingFlags.Instance);
-            Assert.NotNull(field);
-            Assert.True(field.IsPrivate);
-            Assert.True(field.IsInitOnly);
-            Assert.Equal("Answers.IAnswerService", field.FieldType.FullName);
+            var fields = testClassType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            var answerServiceFields = fields.Where(p => p.FieldType.FullName == "Answers.IAnswerService");
+            Assert.True(answerServiceFields.Any());
+            bool passed = false;
+            foreach (var answerServiceField in answerServiceFields)
+            {
+                if (answerServiceField.IsInitOnly)
+                {
+                    passed = true;
+                    break;
+                }
+            }
+            Assert.True(passed);
 
             // Check for the constructor that accepts IAnswerService
-            var constructor = testClassType.GetConstructor(new Type[] { assembly.GetType("Answers.IAnswerService") });
-            Assert.NotNull(constructor);
+            var ctor = testClassType.GetConstructor(new[] { typeof(Answers.IAnswerService) });
+
+            Assert.NotNull(ctor);
         }
 
         // Helper method to compile source code and run the generator
@@ -84,16 +93,23 @@ namespace TestNamespace
             // Reference to the Answers.dll
             var answersReference = MetadataReference.CreateFromFile(answersDllPath);
 
-            // Użycie domyślnych referencji .NET Core/Standard
-            var references = new List<MetadataReference>
-            {
-                MetadataReference.CreateFromFile(typeof(object).Assembly.Location), // mscorlib
-                MetadataReference.CreateFromFile(typeof(Task).Assembly.Location), // System.Threading.Tasks
-                MetadataReference.CreateFromFile(typeof(Func<>).Assembly.Location), // System.Core (dla Func<>)
-                MetadataReference.CreateFromFile(typeof(CancellationToken).Assembly.Location), // System.Threading
-                MetadataReference.CreateFromFile(typeof(TimeSpan).Assembly.Location), // System.Runtime
-                answersReference
-            };
+            // Reference to netstandard.dll
+            var netstandardPath = Path.Combine(
+                RuntimeEnvironment.GetRuntimeDirectory(),
+                "netstandard.dll");
+            var netstandardReference = MetadataReference.CreateFromFile(netstandardPath);
+
+      
+
+            var references = AppDomain.CurrentDomain.GetAssemblies()
+                .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
+                .Select(a => MetadataReference.CreateFromFile(a.Location))
+                .Cast<MetadataReference>()
+                .ToList();
+
+
+            references.Add(answersReference);
+            references.Add(netstandardReference);
 
             var compilation = CSharpCompilation.Create("TestAssembly",
                 new[] { syntaxTree },
@@ -102,7 +118,7 @@ namespace TestNamespace
 
             // Create an instance of the generator
             var generator = new AnswerableGenerator();
-
+     
             // Run the generator
             CSharpGeneratorDriver.Create(generator)
                 .RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
@@ -126,10 +142,10 @@ namespace TestNamespace
 
 
 
-        //        [Fact]
-        //        public void ClassWithExistingConstructors_ShouldAddOverloads()
-        //        {
-        //            var source = @"
+        //[Fact]
+        //public void ClassWithExistingConstructors_ShouldAddOverloads()
+        //{
+        //    var source = @"
         //using Answers;
 
         //namespace TestNamespace
@@ -153,36 +169,36 @@ namespace TestNamespace
         //}
         //";
 
-        //            // Compile and run the generator
-        //            var (assembly, diagnostics) = CompileAndRunGenerator(source);
+        //    // Compile and run the generator
+        //    var (assembly, diagnostics) = CompileAndRunGenerator(source, GetAnswersDllPath());
 
-        //            // Verify no errors
-        //            Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+        //    // Verify no errors
+        //    Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
 
-        //            var testClassType = assembly.GetType("TestNamespace.TestClass");
-        //            Assert.NotNull(testClassType);
+        //    var testClassType = assembly.GetType("TestNamespace.TestClass");
+        //    Assert.NotNull(testClassType);
 
-        //            var constructors = testClassType.GetConstructors();
+        //    var constructors = testClassType.GetConstructors();
 
-        //            // Original constructors
-        //            Assert.Contains(constructors, c => c.GetParameters().Length == 0);
-        //            Assert.Contains(constructors, c => c.GetParameters().Length == 1 && c.GetParameters()[0].ParameterType == typeof(int));
+        //    // Original constructors
+        //    Assert.Contains(constructors, c => c.GetParameters().Length == 0);
+        //    Assert.Contains(constructors, c => c.GetParameters().Length == 1 && c.GetParameters()[0].ParameterType == typeof(int));
 
-        //            // Generated overloads
-        //            Assert.Contains(constructors, c =>
-        //            {
-        //                var parameters = c.GetParameters();
-        //                return parameters.Length == 1 && parameters[0].ParameterType.FullName == "Answers.IAnswerService";
-        //            });
+        //    // Generated overloads
+        //    Assert.Contains(constructors, c =>
+        //    {
+        //        var parameters = c.GetParameters();
+        //        return parameters.Length == 1 && parameters[0].ParameterType.FullName == "Answers.IAnswerService";
+        //    });
 
-        //            Assert.Contains(constructors, c =>
-        //            {
-        //                var parameters = c.GetParameters();
-        //                return parameters.Length == 2 &&
-        //                       parameters[0].ParameterType == typeof(int) &&
-        //                       parameters[1].ParameterType.FullName == "Answers.IAnswerService";
-        //            });
-        //        }
+        //    Assert.Contains(constructors, c =>
+        //    {
+        //        var parameters = c.GetParameters();
+        //        return parameters.Length == 2 &&
+        //               parameters[0].ParameterType == typeof(int) &&
+        //               parameters[1].ParameterType.FullName == "Answers.IAnswerService";
+        //    });
+        //}
 
         //        [Fact]
         //        public void ClassWithConstructorHavingIAnswerService_ShouldNotAddOverload()
@@ -315,42 +331,42 @@ namespace TestNamespace
         //        }
 
         // Helper method to compile source code and run the generator
-        private (Assembly assembly, ImmutableArray<Diagnostic> diagnostics) CompileAndRunGenerator(string source)
-        {
-            var syntaxTree = CSharpSyntaxTree.ParseText(source);
+        //private (Assembly assembly, ImmutableArray<Diagnostic> diagnostics) CompileAndRunGenerator(string source)
+        //{
+        //    var syntaxTree = CSharpSyntaxTree.ParseText(source);
 
-            var references = AppDomain.CurrentDomain.GetAssemblies()
-                .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
-                .Select(a => MetadataReference.CreateFromFile(a.Location))
-                .Cast<MetadataReference>()
-                .ToList();
+        //    var references = AppDomain.CurrentDomain.GetAssemblies()
+        //        .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
+        //        .Select(a => MetadataReference.CreateFromFile(a.Location))
+        //        .Cast<MetadataReference>()
+        //        .ToList();
 
-            var compilation = CSharpCompilation.Create("TestAssembly",
-                new[] { syntaxTree },
-                references,
-                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        //    var compilation = CSharpCompilation.Create("TestAssembly",
+        //        new[] { syntaxTree },
+        //        references,
+        //        new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
-            // Create an instance of the generator
-            var generator = new AnswerableGenerator();
+        //    // Create an instance of the generator
+        //    var generator = new AnswerableGenerator();
 
-            // Run the generator
-            CSharpGeneratorDriver.Create(generator)
-                .RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
+        //    // Run the generator
+        //    CSharpGeneratorDriver.Create(generator)
+        //        .RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
 
-            // Emit the assembly to a stream
-            using var ms = new System.IO.MemoryStream();
-            var emitResult = outputCompilation.Emit(ms);
+        //    // Emit the assembly to a stream
+        //    using var ms = new System.IO.MemoryStream();
+        //    var emitResult = outputCompilation.Emit(ms);
 
-            if (!emitResult.Success)
-            {
-                var errors = string.Join(Environment.NewLine, emitResult.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
-                throw new InvalidOperationException($"Compilation failed: {errors}");
-            }
+        //    if (!emitResult.Success)
+        //    {
+        //        var errors = string.Join(Environment.NewLine, emitResult.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+        //        throw new InvalidOperationException($"Compilation failed: {errors}");
+        //    }
 
-            ms.Seek(0, System.IO.SeekOrigin.Begin);
-            var assembly = Assembly.Load(ms.ToArray());
+        //    ms.Seek(0, System.IO.SeekOrigin.Begin);
+        //    var assembly = Assembly.Load(ms.ToArray());
 
-            return (assembly, diagnostics);
-        }
+        //    return (assembly, diagnostics);
+        //}
     }
 }

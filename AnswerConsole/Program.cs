@@ -68,7 +68,7 @@ public class PresentationLayer
                 Task<Answers.Answer> methodTask = method();
                 Task timeoutTask = null;
                 Answers.Answer answer;
-
+           
                 if (timeout.HasValue)
                 {
                     // Create a delay task that completes after the specified timeout

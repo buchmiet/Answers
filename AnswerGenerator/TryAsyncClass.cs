@@ -9,27 +9,29 @@ namespace AnswerGenerator
 {
     public class TryAsyncClass
     {
-        private async Task<Answers.Answer> TryAsync(
-      Func<Task<Answers.Answer>> method,
-      CancellationToken ct,
-      TimeSpan? timeout = null)
+        private async System.Threading.Tasks.Task<Answers.Answer> TryAsync(
+      System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
+      System.Threading.CancellationToken ct,
+      System.TimeSpan? timeout = null)
         {
             while (true)
             {
-                Task<Answers.Answer> methodTask = method();
-                Task timeoutTask = null;
+                System.Threading.Tasks.Task<Answers.Answer> methodTask = method();
+                System.Threading.Tasks.Task timeoutTask = null;
                 Answers.Answer answer;
 
                 if (timeout.HasValue)
                 {
                     // Create a delay task that completes after the specified timeout
-                    timeoutTask = Task.Delay(timeout.Value, ct);
+                    timeoutTask = System.Threading.Tasks.Task.Delay(timeout.Value, ct);
                 }
 
                 if (timeoutTask != null)
                 {
                     // Wait for either the method to complete or the timeout to occur
-                    Task completedTask = await Task.WhenAny(methodTask, timeoutTask);
+           
+                    System.Threading.Tasks.Task completedTask = await System.Threading.Tasks.Task.WhenAny(methodTask, timeoutTask);
+
 
                     if (completedTask == methodTask)
                     {
