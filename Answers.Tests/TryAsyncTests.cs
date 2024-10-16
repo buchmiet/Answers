@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -21,6 +22,41 @@ namespace Answers.Tests
             _defaultTimeout = TimeSpan.FromSeconds(1);
             _testClass = new TestClassForTryAsync(_answerServiceMock.Object);
         }
+
+        [Fact]
+        public async Task TryAsync_ShouldBeThreadSafe_UnderHeavyLoad()
+        {
+            // Given
+           
+            int taskCount = 100;
+            var tasks = new Task[taskCount];
+            var results = new ConcurrentBag<Answers.Answer>();
+            var cancellationTokenSource = new CancellationTokenSource();
+
+            // When
+            for (int i = 0; i < taskCount; i++)
+            {
+                tasks[i] = Task.Run(async () =>
+                {
+                    var result = await _testClass.TryAsync(SomeMethodAsync, cancellationTokenSource.Token, TimeSpan.FromSeconds(2));
+                    results.Add(result);
+                });
+            }
+
+            await Task.WhenAll(tasks);
+
+            // Then
+            // Verify that all tasks completed successfully and no task failed due to thread safety issues
+            Assert.Equal(taskCount, results.Count);
+            Assert.All(results, answer => Assert.True(answer.IsSuccess));
+        }
+
+        private async Task<Answers.Answer> SomeMethodAsync()
+        {
+            await Task.Delay(100, _cancellationToken); // Simulate some work
+            return Answers.Answer.Prepare("Success");
+        }
+
 
         [Fact]
         public async Task TryAsync_MethodCompletesSuccessfully_ReturnsAnswer()
