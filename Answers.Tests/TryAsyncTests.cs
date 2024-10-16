@@ -38,7 +38,7 @@ namespace Answers.Tests
             {
                 tasks[i] = Task.Run(async () =>
                 {
-                    var result = await _testClass.TryAsync(SomeMethodAsync, cancellationTokenSource.Token, TimeSpan.FromSeconds(2));
+                    var result = await _testClass.MethodReturningAnswer(SomeMethodAsync, cancellationTokenSource.Token, TimeSpan.FromSeconds(2));
                     results.Add(result);
                 });
             }
@@ -66,7 +66,7 @@ namespace Answers.Tests
             Func<Task<Answer>> method = () => Task.FromResult<Answer>(expectedAnswer);
 
             // Act
-            var result = await _testClass.TryAsync(method, _cancellationToken, _defaultTimeout);
+            var result = await _testClass.MethodReturningAnswer(method, _cancellationToken, _defaultTimeout);
 
             // Assert
             Assert.Equal(expectedAnswer, result);
@@ -98,7 +98,7 @@ namespace Answers.Tests
                 .ReturnsAsync(true);
 
             // Act
-            var result = await _testClass.TryAsync(method, _cancellationToken, _defaultTimeout);
+            var result = await _testClass.MethodReturningAnswer(method, _cancellationToken, _defaultTimeout);
 
             // Assert
             Assert.Equal(2, callCount);
@@ -124,7 +124,7 @@ namespace Answers.Tests
                 .ReturnsAsync(false);
 
             // Act
-            var result = await _testClass.TryAsync(method, _cancellationToken, _defaultTimeout);
+            var result = await _testClass.MethodReturningAnswer(method, _cancellationToken, _defaultTimeout);
 
             // Assert
             Assert.Equal(1, callCount);
@@ -140,7 +140,7 @@ namespace Answers.Tests
             Func<Task<Answer>> method = () => throw new InvalidOperationException("Test exception");
 
             // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() => _testClass.TryAsync(method, _cancellationToken, _defaultTimeout));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _testClass.MethodReturningAnswer(method, _cancellationToken, _defaultTimeout));
         }
 
         [Fact]
@@ -155,7 +155,7 @@ namespace Answers.Tests
             _answerServiceMock.Setup(x => x.HasDialog).Returns(true);
 
             // Act
-            var result = await _testClass.TryAsync(method, _cancellationToken, _defaultTimeout);
+            var result = await _testClass.MethodReturningAnswer(method, _cancellationToken, _defaultTimeout);
 
             // Assert
             Assert.Equal(answer, result);
@@ -173,7 +173,7 @@ namespace Answers.Tests
             _answerServiceMock.Setup(x => x.HasDialog).Returns(false);
 
             // Act
-            var result = await _testClass.TryAsync(method, _cancellationToken, _defaultTimeout);
+            var result = await _testClass.MethodReturningAnswer(method, _cancellationToken, _defaultTimeout);
 
             // Assert
             Assert.Equal(answer, result);

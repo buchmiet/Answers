@@ -9,7 +9,7 @@ namespace AnswerGenerator
 {
     public class TryAsyncClass
     {
-        public async Task<Answers.Answer> TryAsync(
+        private async Task<Answers.Answer> TryAsync(
       Func<Task<Answers.Answer>> method,
       CancellationToken ct,
       TimeSpan? timeout = null)

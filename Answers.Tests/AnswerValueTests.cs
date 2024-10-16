@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 namespace Answers.Tests
 {
 
-    public class ValueRecordTests
+    public class AnswerAnswerValueTests
     {
         [Fact]
         public void ValueRecord_ShouldStoreIntValue()
         {
             // Arrange
-            var valueRecord = new ValueRecord<int>(42);
+            var valueRecord = new AnswerAnswerValue<int>(42);
 
             // Act
             var value = valueRecord.GetValue();
@@ -26,7 +26,7 @@ namespace Answers.Tests
         public void ValueRecord_ShouldStoreStringValue()
         {
             // Arrange
-            var valueRecord = new ValueRecord<string>("TestValue");
+            var valueRecord = new AnswerAnswerValue<string>("TestValue");
 
             // Act
             var value = valueRecord.GetValue();
@@ -40,7 +40,7 @@ namespace Answers.Tests
         {
             // Arrange
             var customObject = new CustomType { Id = 1, Name = "TestName" };
-            var valueRecord = new ValueRecord<CustomType>(customObject);
+            var valueRecord = new AnswerAnswerValue<CustomType>(customObject);
 
             // Act
             var value = valueRecord.GetValue();
@@ -53,10 +53,10 @@ namespace Answers.Tests
         public void ValueRecord_GetValueFromInterface_ShouldReturnSameValue()
         {
             // Arrange
-            var valueRecord = new ValueRecord<int>(100);
+            var valueRecord = new AnswerAnswerValue<int>(100);
 
             // Act
-            var interfaceValueRecord = (IValueRecord)valueRecord;
+            var interfaceValueRecord = (IAnswerValue)valueRecord;
             var value = interfaceValueRecord.GetValue();
 
             // Assert
@@ -67,10 +67,10 @@ namespace Answers.Tests
         public void ValueRecord_GetValueFromInterface_ShouldReturnSameStringValue()
         {
             // Arrange
-            var valueRecord = new ValueRecord<string>("InterfaceValue");
+            var valueRecord = new AnswerAnswerValue<string>("InterfaceValue");
 
             // Act
-            var interfaceValueRecord = (IValueRecord)valueRecord;
+            var interfaceValueRecord = (IAnswerValue)valueRecord;
             var value = interfaceValueRecord.GetValue();
 
             // Assert
@@ -82,10 +82,10 @@ namespace Answers.Tests
         {
             // Arrange
             var customObject = new CustomType { Id = 2, Name = "CustomObject" };
-            var valueRecord = new ValueRecord<CustomType>(customObject);
+            var valueRecord = new AnswerAnswerValue<CustomType>(customObject);
 
             // Act
-            var interfaceValueRecord = (IValueRecord)valueRecord;
+            var interfaceValueRecord = (IAnswerValue)valueRecord;
             var value = interfaceValueRecord.GetValue();
 
             // Assert

@@ -3,7 +3,7 @@
 namespace Answers
 {
 
-    public interface IValueRecord
+    public interface IAnswerValue
     {
         object GetValue();
     }
@@ -11,7 +11,7 @@ namespace Answers
     public class Answer 
     {
 
-        private IValueRecord _valueRecord;
+        private IAnswerValue _answerValue;
 
         public void AddValue<T>(T value)
         {
@@ -19,14 +19,14 @@ namespace Answers
             {
                 throw new InvalidOperationException("Answer is in Error state, no values can be added");
             }
-            _valueRecord = new ValueRecord<T>(value);
+            _answerValue = new AnswerAnswerValue<T>(value);
         }
 
 
         public T GetValue<T>()
         {
             if (!State.HasValueSet) throw new InvalidOperationException("Value was not set.");
-            if (_valueRecord is ValueRecord<T> record)
+            if (_answerValue is AnswerAnswerValue<T> record)
             {
                 return record.GetValue();
             }
@@ -48,7 +48,7 @@ namespace Answers
 
         public string Message => Messages.Message;
 
-        public bool HasValue => _valueRecord != null;
+        public bool HasValue => _answerValue != null;
 
         public void ConcludeDialog() => State.ConcludeDialog();
 
@@ -90,7 +90,7 @@ namespace Answers
 
         public Answer WithValue<T>(T value)
         {
-            _valueRecord = new ValueRecord<T>(value);
+            _answerValue = new AnswerAnswerValue<T>(value);
             State.HasValueSet = true;
             return this;
         }
@@ -101,7 +101,7 @@ namespace Answers
         {
             if (State.HasValueSet)
             {
-                if (_valueRecord is ValueRecord<T> record)
+                if (_answerValue is AnswerAnswerValue<T> record)
                 {
                     value = record.GetValue();
                     return true;
