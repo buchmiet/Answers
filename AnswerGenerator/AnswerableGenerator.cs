@@ -10,6 +10,8 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Diagnostics;
+using AnswerGenerator;
+using System.Reflection.Metadata;
 
 namespace AnswerGenerator
 {
@@ -17,16 +19,18 @@ namespace AnswerGenerator
     {
         string ServiceName { get; }
         string InterfaceName { get; }
+        string ConstructorServiceField { get; }
+    }
     }
 
     [Generator]
     public class AnswerableGenerator : IIncrementalGenerator, ITestableGenerator
-    {
+{
 
-        //public string ServiceName => "Answers.IAnswerable";
         public string ServiceName => "Answers.IAnswerService";
         public string InterfaceName => "Answers.IAnswerable";
-        void IIncrementalGenerator.Initialize(IncrementalGeneratorInitializationContext context)
+    public string ConstructorServiceField => "answerService";
+    void IIncrementalGenerator.Initialize(IncrementalGeneratorInitializationContext context)
         {
             var provider = context.SyntaxProvider.CreateSyntaxProvider(
                 predicate: (c, _) => c is ClassDeclarationSyntax,
@@ -61,26 +65,21 @@ namespace AnswerGenerator
             foreach (var classDeclaration in typeList)
             {
                 var model = compilation.GetSemanticModel(classDeclaration.SyntaxTree);
-                var classSymbol = ModelExtensions.GetDeclaredSymbol(model, classDeclaration) as INamedTypeSymbol;
 
-                if (classSymbol == null)
-                    continue;
+            if (ModelExtensions.GetDeclaredSymbol(model, classDeclaration) is not INamedTypeSymbol classSymbol)
+                continue;
 
-                
-                if (!classSymbol.AllInterfaces.Contains(iLaunchableSymbol))
+
+            if (!classSymbol.AllInterfaces.Contains(iLaunchableSymbol))
                     continue;
 
                 // Sprawdzanie, czy klasa została już przetworzona
                 var classFullName = classSymbol.ToDisplayString();
-                if (_processedClasses.Contains(classFullName))
+                if (!_processedClasses.Add(classFullName))
                 {
                 
                     continue;
                 }
-
-                // Dodanie klasy do przetworzonych
-                _processedClasses.Add(classFullName);
-
 
                 // Przetwarzanie klasy
             
@@ -98,13 +97,7 @@ namespace AnswerGenerator
                             c.DeclaredAccessibility is Accessibility.Public or Accessibility.Protected or Accessibility.Internal)
                 .ToList();
 
-
-            var membersDetails = new StringBuilder();
-
-          
-
-        
-            // Find IAnswerService field or property in the class
+            
             // Find IAnswerService property in the class, ignoring backing fields
             var answerServiceMembers = classSymbol.GetMembers()
                 .Where(m =>
@@ -138,13 +131,9 @@ namespace AnswerGenerator
             }
             else
             {
-                foreach (var constructor in constructors)
+                foreach (var constructor in constructors.Where(p=>!p.Parameters.Any(q => q.Type.ToDisplayString().EndsWith("IAnswerService"))))
                 {
-                    bool constructorHasAnswerService = constructor.Parameters.Any(p => p.Type.ToDisplayString().EndsWith("IAnswerService"));
-                    if (!constructorHasAnswerService)
-                    {
-                        GenerateConstructorOverload(context, classSymbol, constructor, answerServiceMemberName);
-                    }
+                    GenerateConstructorOverload(context, classSymbol, constructor, answerServiceMemberName);
                 }
             }
 
@@ -178,12 +167,6 @@ namespace AnswerGenerator
 
             context.AddSource($"{className}_AnswerServiceProperty.g.cs", SourceText.From(source, Encoding.UTF8));
 
-            //var testSource = @"
-            //namespace TestNamespace { public class TestClass { public void TestMethod() { } }  "; 
-            //context.AddSource("TestFile.g.cs", SourceText.From(testSource, Encoding.UTF8));
-
-            //return;
-
         }
 
         private void GenerateConstructorOverload(SourceProductionContext context, INamedTypeSymbol classSymbol, IMethodSymbol? constructor, string answerServiceMemberName)
@@ -201,9 +184,9 @@ namespace AnswerGenerator
                 classBody = $@"
 public partial class {className}
 {{
-    public {className}({ServiceName}  answerService)
+    public {className}({ServiceName}  {ConstructorServiceField})
     {{
-        {answerServiceMemberName} = answerService;
+        {answerServiceMemberName} = {ConstructorServiceField};
     }}
 }}";
             }
@@ -215,7 +198,7 @@ public partial class {className}
                 var parameterList = string.Join(", ", parameters.Select(p => $"{p.Type.ToDisplayString()} {p.Name}"));
                 if (parameters.Length > 0)
                     parameterList += ", ";
-                parameterList += $"{ServiceName} answerService";
+                parameterList += $"{ServiceName} {ConstructorServiceField}";
 
                 // Build argument list (only original parameters)
                 var argumentList = string.Join(", ", parameters.Select(p => p.Name));
@@ -227,7 +210,7 @@ public partial class {className}
     public {className}({parameterList})
         : this({argumentList})
     {{
-        {answerServiceMemberName} = answerService;
+        {answerServiceMemberName} = {ConstructorServiceField};
     }}
 }}";
             }
@@ -246,15 +229,15 @@ namespace {namespaceName}
             context.AddSource($"{className}_ConstructorOverload_{constructorSignatureHash}.g.cs", SourceText.From(source, Encoding.UTF8));
         }
 
-        private static readonly List<string> resourceNames= ["AnswerGenerator.TryAsyncClass.cs", "AnswerGenerator.TryClass.cs"];
-        private List<string> classesInResources = resourceNames
+        private static readonly List<string> ResourceNames= ["AnswerGenerator.TryAsyncClass.cs", "AnswerGenerator.TryClass.cs"];
+        private readonly List<string> _classesInResources = ResourceNames
             .Select(name => name.Split('.')[1]) // Rozdziela ciąg po kropce i wybiera część po pierwszej kropce
             .ToList();
 
         private void PrepareHelperMethods()
         {
             var assembly = Assembly.GetExecutingAssembly();
-            foreach (var resourceName in resourceNames)
+            foreach (var resourceName in ResourceNames)
             {
 
                 using var stream = assembly.GetManifestResourceStream(resourceName);
@@ -274,9 +257,9 @@ namespace {namespaceName}
                 // Find the class declaration for LaunchableHelper
                 var launchableHelperClass = root.DescendantNodes()
                     .OfType<ClassDeclarationSyntax>()
-                    .FirstOrDefault(c => classesInResources.Contains(c.Identifier.Text));
+                    .FirstOrDefault(c => _classesInResources.Contains(c.Identifier.Text));
 
-                if (launchableHelperClass == null)
+                if (launchableHelperClass is null)
                 {
                     // Handle the error: class not found
                     return;
@@ -289,10 +272,7 @@ namespace {namespaceName}
 
                 foreach (var methodSyntax in methodSyntaxes)
                 {
-                    var methodBody = methodSyntax.ToFullString();
-                    // Modify the method body if needed
-
-                    _helperMethods.Add(methodBody);
+                    _helperMethods.Add(methodSyntax.ToFullString());
                 }
             }
 
@@ -332,4 +312,3 @@ namespace {namespaceName}
 
 
     }
-}
