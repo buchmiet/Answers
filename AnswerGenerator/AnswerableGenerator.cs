@@ -13,10 +13,19 @@ using System.Diagnostics;
 
 namespace AnswerGenerator
 {
+    public interface ITestableGenerator
+    {
+        string ServiceName { get; }
+        string InterfaceName { get; }
+    }
+
     [Generator]
-    public class AnswerableGenerator : IIncrementalGenerator
+    public class AnswerableGenerator : IIncrementalGenerator, ITestableGenerator
     {
 
+        //public string ServiceName => "Answers.IAnswerable";
+        public string ServiceName => "Answers.IAnswerService";
+        public string InterfaceName => "Answers.IAnswerable";
         void IIncrementalGenerator.Initialize(IncrementalGeneratorInitializationContext context)
         {
             var provider = context.SyntaxProvider.CreateSyntaxProvider(
@@ -45,7 +54,7 @@ namespace AnswerGenerator
             }
 #endif 
 
-            var iLaunchableSymbol = compilation.GetTypeByMetadataName("Answers.IAnswerable");
+            var iLaunchableSymbol = compilation.GetTypeByMetadataName(InterfaceName);
             PrepareHelperMethods();
 
             //// Iteracja przez wszystkie kandydackie klasy
@@ -101,7 +110,7 @@ namespace AnswerGenerator
                 .Where(m =>
                     !m.IsStatic &&
                     m is IPropertySymbol prop &&
-                    prop.Type.ToDisplayString() == "Answers.IAnswerService" &&
+                    prop.Type.ToDisplayString() == ServiceName &&
                     !prop.Name.Contains("k__BackingField"))
                 .ToList();
 
@@ -154,7 +163,7 @@ namespace AnswerGenerator
                 ? $$"""
                     public partial class {{className}}
                     {
-                         private readonly Answers.IAnswerService {{propertyName}};
+                         private readonly {{ServiceName}} {{propertyName}};
                     }
                     """
                 : $$"""
@@ -162,7 +171,7 @@ namespace AnswerGenerator
                     {
                         public partial class {{className}}
                         {
-                            private readonly Answers.IAnswerService {{propertyName}};
+                            private readonly {{ServiceName}} {{propertyName}};
                         }
                     }
                     """;
@@ -192,7 +201,7 @@ namespace AnswerGenerator
                 classBody = $@"
 public partial class {className}
 {{
-    public {className}(Answers.IAnswerService  answerService)
+    public {className}({ServiceName}  answerService)
     {{
         {answerServiceMemberName} = answerService;
     }}
@@ -206,7 +215,7 @@ public partial class {className}
                 var parameterList = string.Join(", ", parameters.Select(p => $"{p.Type.ToDisplayString()} {p.Name}"));
                 if (parameters.Length > 0)
                     parameterList += ", ";
-                parameterList += "Answers.IAnswerService answerService";
+                parameterList += $"{ServiceName} answerService";
 
                 // Build argument list (only original parameters)
                 var argumentList = string.Join(", ", parameters.Select(p => p.Name));

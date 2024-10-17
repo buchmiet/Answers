@@ -17,34 +17,40 @@ namespace AnswerGeneratorTests
     {
         // Automatically detect the path to Answers.dll
        
+        private const string TestNamespace = "TestNamespace";
+        private const string TestClassName = "TestClass";
+        private readonly string _answersDllPath;
+        public AnswerGeneratorUnitTests()
+        {
+            _answersDllPath = GetAnswersDllPath();
+        }
 
         [Fact]
         public void ClassWithNoConstructorAndNoIAnswerServiceMember_ShouldAddFieldAndConstructor()
         {
-            var source = @"
+            var generator = new AnswerableGenerator();
+            var source = $@"
 
-
-namespace TestNamespace
-{
-    public partial class TestClass : Answers.IAnswerable
-    {
-        // Empty class
-    }
-}
-
-";
+                         namespace {TestNamespace}
+                         {{
+                             public partial class {TestClassName} : {generator.InterfaceName}
+                             {{
+                                 // Empty class
+                             }}
+                         }}
+                         ";
 
             // Compile and run the generator
-            var (assembly, diagnostics) = CompileAndRunGenerator(source, GetAnswersDllPath());
+            var (assembly, diagnostics) = CompileAndRunGenerator(source, generator);
 
             // Verify no errors
             Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
 
             // Use reflection to verify the generated members
-            var testClassType = assembly.GetType("TestNamespace.TestClass");
+            var testClassType = assembly.GetType($"{TestNamespace}.{TestClassName}");
             Assert.NotNull(testClassType);
             var fields = testClassType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            var answerServiceFields = fields.Where(p => p.FieldType.FullName == "Answers.IAnswerService");
+            var answerServiceFields = fields.Where(p => p.FieldType.FullName == generator.ServiceName);
             Assert.True(answerServiceFields.Any());
             bool passed = false;
             foreach (var answerServiceField in answerServiceFields)
@@ -58,45 +64,42 @@ namespace TestNamespace
             Assert.True(passed);
 
             // Check for the constructor that accepts IAnswerService
-            var ctor = testClassType.GetConstructor(new[] { typeof(Answers.IAnswerService) });
+            var ctor = testClassType.GetConstructor([typeof(Answers.IAnswerService)]);
 
             Assert.NotNull(ctor);
         }
 
      
 
-
-
-
         [Fact]
         public void ClassWithExistingConstructors_ShouldAddOverloads()
         {
-            var source = @"
+            var generator = new AnswerableGenerator();
+            var source = $@"
         using Answers;
 
-        namespace TestNamespace
-        {
-            public partial class TestClass : IAnswerable
-            {
-                public TestClass()
-                {
-                }
+        namespace {TestNamespace}
+        {{
+            public partial class {TestClassName} : {generator.InterfaceName}
+            {{
+                public {TestClassName}()
+                {{
+                }}
 
-                public TestClass(int value)
-                {
-                }
-            }
-        }
-  
+                public {TestClassName}(int value)
+                {{
+                }}
+            }}
+        }}  
         ";
 
             // Compile and run the generator
-            var (assembly, diagnostics) = CompileAndRunGenerator(source, GetAnswersDllPath());
+            var (assembly, diagnostics) = CompileAndRunGenerator(source, generator);
 
             // Verify no errors
             Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
 
-            var testClassType = assembly.GetType("TestNamespace.TestClass");
+            var testClassType = assembly.GetType($"{TestNamespace}.{TestClassName}");
             Assert.NotNull(testClassType);
 
             var constructors = testClassType.GetConstructors();
@@ -109,7 +112,7 @@ namespace TestNamespace
             Assert.Contains(constructors, c =>
             {
                 var parameters = c.GetParameters();
-                return parameters.Length == 1 && parameters[0].ParameterType.FullName == "Answers.IAnswerService";
+                return parameters.Length == 1 && parameters[0].ParameterType.FullName ==generator.ServiceName;
             });
 
             Assert.Contains(constructors, c =>
@@ -117,39 +120,40 @@ namespace TestNamespace
                 var parameters = c.GetParameters();
                 return parameters.Length == 2 &&
                        parameters[0].ParameterType == typeof(int) &&
-                       parameters[1].ParameterType.FullName == "Answers.IAnswerService";
+                       parameters[1].ParameterType.FullName ==generator.ServiceName;
             });
         }
 
         [Fact]
         public void ClassWithConstructorHavingIAnswerService_ShouldNotAddOverload()
         {
-            var source = @"
+            var generator = new AnswerableGenerator();
+            var source = $@"
         using Answers;
 
 
-        namespace TestNamespace
-        {
-            public partial class TestClass : IAnswerable
-            {
-                public TestClass(Answers.IAnswerService answerService)
-                {
-                }
+        namespace {TestNamespace}
+        {{
+            public partial class {TestClassName} : {generator.InterfaceName}
+            {{
+                public {TestClassName}({generator.ServiceName} answerService)
+                {{
+                }}
 
-                public TestClass(int value)
-                {
-                }
-            }
-        }       
+                public {TestClassName}(int value)
+                {{
+                }}
+            }}
+        }}  
         ";
 
             // Compile and run the generator
-            var (assembly, diagnostics) = CompileAndRunGenerator(source, GetAnswersDllPath());
+            var (assembly, diagnostics) = CompileAndRunGenerator(source, generator);
 
             // Verify no errors
             Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
 
-            var testClassType = assembly.GetType("TestNamespace.TestClass");
+            var testClassType = assembly.GetType($"{TestNamespace}.{TestClassName}");
             Assert.NotNull(testClassType);
 
             var constructors = testClassType.GetConstructors();
@@ -158,7 +162,7 @@ namespace TestNamespace
             Assert.Single(constructors.Where(c =>
             {
                 var parameters = c.GetParameters();
-                return parameters.Length == 1 && parameters[0].ParameterType.FullName == "Answers.IAnswerService";
+                return parameters.Length == 1 && parameters[0].ParameterType.FullName ==generator.ServiceName;
             }));
 
             // Check for overload for constructor without IAnswerService
@@ -167,7 +171,7 @@ namespace TestNamespace
                 var parameters = c.GetParameters();
                 return parameters.Length == 2 &&
                        parameters[0].ParameterType == typeof(int) &&
-                       parameters[1].ParameterType.FullName == "Answers.IAnswerService";
+                       parameters[1].ParameterType.FullName ==generator.ServiceName;
             });
         }
 
@@ -279,12 +283,12 @@ namespace TestNamespace
         //}
 
         // Helper method to compile source code and run the generator
-        private (Assembly assembly, ImmutableArray<Diagnostic> diagnostics) CompileAndRunGenerator(string source, string answersDllPath)
+        private (Assembly assembly, ImmutableArray<Diagnostic> diagnostics) CompileAndRunGenerator(string source, IIncrementalGenerator generator)
         {
             var syntaxTree = CSharpSyntaxTree.ParseText(source);
 
             // Reference to the Answers.dll
-            var answersReference = MetadataReference.CreateFromFile(answersDllPath);
+            var answersReference = MetadataReference.CreateFromFile(_answersDllPath);
 
             // Reference to netstandard.dll
             var netstandardPath = Path.Combine(
@@ -310,7 +314,7 @@ namespace TestNamespace
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
             // Create an instance of the generator
-            var generator = new AnswerableGenerator();
+            
 
             // Run the generator
             CSharpGeneratorDriver.Create(generator)
