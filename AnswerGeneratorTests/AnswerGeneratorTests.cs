@@ -160,38 +160,20 @@ namespace AnswerGeneratorTests
             Assert.NotNull(constructor);
         }
 
-        //        [Fact]
-        //        public void ClassWithMultipleIAnswerServiceMembers_ShouldEmitError()
-        //        {
-        //            var source = @"
-        //using Answers;
-
-        //namespace TestNamespace
+        //[Fact]
+        //public void ClassWithMultipleIAnswerServiceMembers_ShouldEmitError005()
         //{
-        //    public partial class TestClass : IAnswerable
-        //    {
-        //        private Answers.IAnswerService _service1;
-        //        private Answers.IAnswerService _service2;
-        //    }
+
+        //    var generator = new AnswerableGenerator();
+        //    var (assembly, diagnostics) = CompileAndRunGenerator(Source_005(generator), generator);
+
+        //    // Verify that an error diagnostic is produced
+        //    var errorDiagnostics = diagnostics.Where(d => d.Severity == DiagnosticSeverity.Warning);
+        //    Assert.NotEmpty(errorDiagnostics);
+
+        //    // Optionally check the diagnostic message
+        //    Assert.Contains(errorDiagnostics, d => d.GetMessage().Contains("multiple IAnswerService members found"));
         //}
-
-        //namespace Answers
-        //{
-        //    public interface IAnswerable { }
-        //    public interface IAnswerService { }
-        //}
-        //";
-
-        //            // Compile and run the generator
-        //            var (_, diagnostics) = CompileAndRunGenerator(source);
-
-        //            // Verify that an error diagnostic is produced
-        //            var errorDiagnostics = diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error);
-        //            Assert.NotEmpty(errorDiagnostics);
-
-        //            // Optionally check the diagnostic message
-        //            Assert.Contains(errorDiagnostics, d => d.GetMessage().Contains("multiple IAnswerService members found"));
-        //        }
 
         // Helper method to compile source code and run the generator
         //private (Assembly assembly, ImmutableArray<Diagnostic> diagnostics) CompileAndRunGenerator(string source)

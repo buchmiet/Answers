@@ -132,8 +132,12 @@ namespace AnswerGenerator
             {
                 case > 1:
                     // More than one answer service member found, this class won't be processed
-                    answerServiceMemberName = answerServiceMembers.First().Name;
-                    break;
+                    var diagnostic = Diagnostic.Create(
+                        MultipleAnswerServiceMembersWarning,
+                        classSymbol.Locations.FirstOrDefault(), // You can improve this to be more precise
+                        classSymbol.Name);
+                    return;
+             
                 case 1:
                     {
                         var member = answerServiceMembers.First();
@@ -165,10 +169,7 @@ namespace AnswerGenerator
 
             List<ISymbol> GetAnswerServiceMembers(INamedTypeSymbol symbol)
             {
-                var x = symbol.GetMembers()
-                    .Where(m =>
-                        !m.IsStatic &&
-                        m is IFieldSymbol field);
+
                 return symbol.GetMembers()
                     .Where(m =>
                         !m.IsStatic &&
@@ -185,6 +186,17 @@ namespace AnswerGenerator
                                     or Accessibility.Internal)
                     .ToList();
             }
-        }
+
+       
+
+    }
+
+        private static readonly DiagnosticDescriptor MultipleAnswerServiceMembersWarning = new DiagnosticDescriptor(
+            id: "ANSWR001",
+            title: "Multiple IAnswerService members found",
+            messageFormat: "The class {0} contains multiple IAnswerService members, which might lead to unexpected behavior.",
+            category: "AnswerServiceGeneration",
+            DiagnosticSeverity.Warning,
+            isEnabledByDefault: true);
     }
 }

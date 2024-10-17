@@ -64,5 +64,22 @@ namespace AnswerGeneratorTests
                           }
                       }
               """;
+
+        public static string Source_005(ITestableGenerator generator) =>
+            $$"""
+              
+                      using Answers;
+              
+                      namespace TestNamespace
+                      {
+                          public partial class {{TestClassName}}005 : {{generator.InterfaceName}}
+                          {
+                              private {{generator.ServiceInterface}} _service1;
+                              private {{generator.ServiceInterface}} _service2;
+                          }
+                      }
+              
+                      
+              """;
     }
 }
