@@ -9,7 +9,9 @@ using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
 using Answers;
 using System.Runtime.InteropServices;
+using static AnswerGeneratorTests.TestSourcesProvider;
 using FluentAssertions;
+using static Microsoft.CodeAnalysis.DiagnosticSeverity;
 
 namespace AnswerGeneratorTests
 {
@@ -17,31 +19,57 @@ namespace AnswerGeneratorTests
     {
         // Automatically detect the path to Answers.dll
        
-        private const string TestNamespace = "TestNamespace";
-        private const string TestClassName = "TestClass";
-        private readonly string _answersDllPath;
+        public static string TestNamespace = "TestNamespace";
+        public static string TestClassName = "TestClass";
+      
+        private readonly PortableExecutableReference _answersReference;
+        private readonly PortableExecutableReference _netstandardReference;
         public AnswerGeneratorUnitTests()
         {
-            _answersDllPath = GetAnswersDllPath();
+            _answersReference = MetadataReference.CreateFromFile(GetAnswersDllPath());
+            var netstandardPath = Path.Combine(RuntimeEnvironment.GetRuntimeDirectory(), "netstandard.dll");
+            _netstandardReference = MetadataReference.CreateFromFile(netstandardPath);
         }
+
+        //[Fact]
+        //public void ClassWithNoConstructorAndNoIAnswerServiceMember_ShouldAddFieldAndConstructor_001()
+        //{
+        //    var generator = new AnswerableGenerator();
+        //    // Compile and run the generator
+        //    var (assembly, diagnostics) = CompileAndRunGenerator(Source_001(generator), generator);
+
+        //    // Verify no errors
+        //    Assert.Empty(diagnostics.Where(d => d.Severity == Error));
+
+        //    // Use reflection to verify the generated members
+        //    var testClassType = assembly.GetType($"{TestNamespace}.{TestClassName}");
+        //    Assert.NotNull(testClassType);
+        //    var fields = testClassType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+        //    var answerServiceFields = fields.Where(p => p.FieldType.FullName == generator.ServiceName);
+        //    Assert.True(answerServiceFields.Any());
+        //    bool passed = false;
+        //    foreach (var answerServiceField in answerServiceFields)
+        //    {
+        //        if (answerServiceField.IsInitOnly)
+        //        {
+        //            passed = true;
+        //            break;
+        //        }
+        //    }
+        //    Assert.True(passed);
+
+        //    // Check for the constructor that accepts IAnswerService
+        //    var ctor = testClassType.GetConstructor([typeof(IAnswerService)]);
+
+        //    Assert.NotNull(ctor);
+        //}
 
         [Fact]
         public void ClassWithNoConstructorAndNoIAnswerServiceMember_ShouldAddFieldAndConstructor()
         {
             var generator = new AnswerableGenerator();
-            var source = $@"
 
-                         namespace {TestNamespace}
-                         {{
-                             public partial class {TestClassName} : {generator.InterfaceName}
-                             {{
-                                 // Empty class
-                             }}
-                         }}
-                         ";
-
-            // Compile and run the generator
-            var (assembly, diagnostics) = CompileAndRunGenerator(source, generator);
+            var (assembly, diagnostics) = CompileAndRunGenerator(Source_001(generator), generator);
 
             // Verify no errors
             Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
@@ -69,35 +97,18 @@ namespace AnswerGeneratorTests
             Assert.NotNull(ctor);
         }
 
-     
 
         [Fact]
         public void ClassWithExistingConstructors_ShouldAddOverloads()
         {
             var generator = new AnswerableGenerator();
-            var source = $@"
-        using Answers;
-
-        namespace {TestNamespace}
-        {{
-            public partial class {TestClassName} : {generator.InterfaceName}
-            {{
-                public {TestClassName}()
-                {{
-                }}
-
-                public {TestClassName}(int value)
-                {{
-                }}
-            }}
-        }}  
-        ";
+         
 
             // Compile and run the generator
-            var (assembly, diagnostics) = CompileAndRunGenerator(source, generator);
+            var (assembly, diagnostics) = CompileAndRunGenerator(Source_002(generator), generator);
 
             // Verify no errors
-            Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+            Assert.Empty(diagnostics.Where(d => d.Severity == Error));
 
             var testClassType = assembly.GetType($"{TestNamespace}.{TestClassName}");
             Assert.NotNull(testClassType);
@@ -128,30 +139,11 @@ namespace AnswerGeneratorTests
         public void ClassWithConstructorHavingIAnswerService_ShouldNotAddOverload()
         {
             var generator = new AnswerableGenerator();
-            var source = $@"
-        using Answers;
-
-
-        namespace {TestNamespace}
-        {{
-            public partial class {TestClassName} : {generator.InterfaceName}
-            {{
-                public {TestClassName}({generator.ServiceName} answerService)
-                {{
-                }}
-
-                public {TestClassName}(int value)
-                {{
-                }}
-            }}
-        }}  
-        ";
-
             // Compile and run the generator
-            var (assembly, diagnostics) = CompileAndRunGenerator(source, generator);
+            var (assembly, diagnostics) = CompileAndRunGenerator(Source_003(generator), generator);
 
             // Verify no errors
-            Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+            Assert.Empty(diagnostics.Where(d => d.Severity == Error));
 
             var testClassType = assembly.GetType($"{TestNamespace}.{TestClassName}");
             Assert.NotNull(testClassType);
@@ -287,33 +279,19 @@ namespace AnswerGeneratorTests
         {
             var syntaxTree = CSharpSyntaxTree.ParseText(source);
 
-            // Reference to the Answers.dll
-            var answersReference = MetadataReference.CreateFromFile(_answersDllPath);
-
-            // Reference to netstandard.dll
-            var netstandardPath = Path.Combine(
-                RuntimeEnvironment.GetRuntimeDirectory(),
-                "netstandard.dll");
-            var netstandardReference = MetadataReference.CreateFromFile(netstandardPath);
-
-
-
-            var references = AppDomain.CurrentDomain.GetAssemblies()
+            List<MetadataReference> references = AppDomain.CurrentDomain.GetAssemblies()
                 .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
                 .Select(a => MetadataReference.CreateFromFile(a.Location))
                 .Cast<MetadataReference>()
                 .ToList();
 
-
-            references.Add(answersReference);
-            references.Add(netstandardReference);
+            references.Add(_answersReference);
+            references.Add(_netstandardReference);
 
             var compilation = CSharpCompilation.Create("TestAssembly",
-                new[] { syntaxTree },
+                [syntaxTree],
                 references,
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
-
-            // Create an instance of the generator
             
 
             // Run the generator
@@ -321,16 +299,16 @@ namespace AnswerGeneratorTests
                 .RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
 
             // Emit the assembly to a stream
-            using var ms = new System.IO.MemoryStream();
+            using var ms = new MemoryStream();
             var emitResult = outputCompilation.Emit(ms);
 
             if (!emitResult.Success)
             {
-                var errors = string.Join(Environment.NewLine, emitResult.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
+                var errors = string.Join(Environment.NewLine, emitResult.Diagnostics.Where(d => d.Severity == Error));
                 throw new InvalidOperationException($"Compilation failed: {errors}");
             }
 
-            ms.Seek(0, System.IO.SeekOrigin.Begin);
+            ms.Seek(0, SeekOrigin.Begin);
             var assembly = Assembly.Load(ms.ToArray());
 
             return (assembly, diagnostics);

@@ -8,7 +8,23 @@ namespace Answers
         object GetValue();
     }
 
-    public class Answer 
+    public interface IAnswer
+    {
+        void AddValue<T>(T value);
+        T GetValue<T>();
+        bool IsSuccess { get; }
+        bool DialogConcluded { get; set; }
+        string Message { get; }
+        bool HasValue { get; }
+        void ConcludeDialog();
+        Answer Attach(Answer answer);
+        Answer Error(string message);
+        string ToString();
+        Answer WithValue<T>(T value);
+        bool Out<T>(out T value);
+    }
+
+    public class Answer : IAnswer
     {
 
         private IAnswerValue _answerValue;
