@@ -7,7 +7,7 @@ namespace AnswerGenerator
     //interface for tests
     public interface ITestableGenerator
     {
-        string ServiceName { get; }
+        string ServiceInterface { get; }
         string InterfaceName { get; }
         string ConstructorServiceField { get; }
         string DefaultAnswerServiceMemberName { get; }

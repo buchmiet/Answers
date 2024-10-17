@@ -11,7 +11,7 @@ namespace AnswerGeneratorTests
               
                                        namespace {{TestNamespace}}
                                        {
-                                           public partial class {{TestClassName}} : {{generator.InterfaceName}}
+                                           public partial class {{TestClassName}}001 : {{generator.InterfaceName}}
                                            {
                                                // Empty class
                                            }
@@ -22,17 +22,15 @@ namespace AnswerGeneratorTests
         public static string Source_002(ITestableGenerator generator) =>
             $$"""
               
-                      using Answers;
-              
                       namespace {{TestNamespace}}
                       {
-                          public partial class {{TestClassName}} : {{generator.InterfaceName}}
+                          public partial class {{TestClassName}}002 : {{generator.InterfaceName}}
                           {
-                              public {{TestClassName}}()
+                              public {{TestClassName}}002()
                               {
                               }
               
-                              public {{TestClassName}}(int value)
+                              public {{TestClassName}}002(int value)
                               {
                               }
                           }
@@ -42,23 +40,29 @@ namespace AnswerGeneratorTests
 
         public static string Source_003(ITestableGenerator generator) =>
             $$"""
-              
-                      using Answers;
-              
-              
                       namespace {{TestNamespace}}
                       {
-                          public partial class {{TestClassName}} : {{generator.InterfaceName}}
+                          public partial class {{TestClassName}}003 : {{generator.InterfaceName}}
                           {
-                              public {{TestClassName}}({{generator.ServiceName}} answerService)
+                              public {{TestClassName}}003({{generator.ServiceInterface}} {{generator.ConstructorServiceField}})
                               {
                               }
               
-                              public {{TestClassName}}(int value)
+                              public {{TestClassName}}003(int value)
                               {
                               }
                           }
                       }  
+              """;
+        public static string Source_004(ITestableGenerator generator) =>
+            $$"""
+                      namespace {{TestNamespace}}
+                      {
+                          public partial class {{TestClassName}}004: {{generator.InterfaceName}}
+                          {
+                              private {{generator.ServiceInterface}} _customAnswerService;
+                          }
+                      }
               """;
     }
 }

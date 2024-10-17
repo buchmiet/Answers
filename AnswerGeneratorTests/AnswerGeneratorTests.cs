@@ -12,6 +12,7 @@ using System.Runtime.InteropServices;
 using static AnswerGeneratorTests.TestSourcesProvider;
 using FluentAssertions;
 using static Microsoft.CodeAnalysis.DiagnosticSeverity;
+using System.Reflection.Emit;
 
 namespace AnswerGeneratorTests
 {
@@ -31,41 +32,10 @@ namespace AnswerGeneratorTests
             _netstandardReference = MetadataReference.CreateFromFile(netstandardPath);
         }
 
-        //[Fact]
-        //public void ClassWithNoConstructorAndNoIAnswerServiceMember_ShouldAddFieldAndConstructor_001()
-        //{
-        //    var generator = new AnswerableGenerator();
-        //    // Compile and run the generator
-        //    var (assembly, diagnostics) = CompileAndRunGenerator(Source_001(generator), generator);
 
-        //    // Verify no errors
-        //    Assert.Empty(diagnostics.Where(d => d.Severity == Error));
-
-        //    // Use reflection to verify the generated members
-        //    var testClassType = assembly.GetType($"{TestNamespace}.{TestClassName}");
-        //    Assert.NotNull(testClassType);
-        //    var fields = testClassType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-        //    var answerServiceFields = fields.Where(p => p.FieldType.FullName == generator.ServiceName);
-        //    Assert.True(answerServiceFields.Any());
-        //    bool passed = false;
-        //    foreach (var answerServiceField in answerServiceFields)
-        //    {
-        //        if (answerServiceField.IsInitOnly)
-        //        {
-        //            passed = true;
-        //            break;
-        //        }
-        //    }
-        //    Assert.True(passed);
-
-        //    // Check for the constructor that accepts IAnswerService
-        //    var ctor = testClassType.GetConstructor([typeof(IAnswerService)]);
-
-        //    Assert.NotNull(ctor);
-        //}
 
         [Fact]
-        public void ClassWithNoConstructorAndNoIAnswerServiceMember_ShouldAddFieldAndConstructor()
+        public void ClassWithNoConstructorAndNoIAnswerServiceMember_ShouldAddFieldAndConstructor_001()
         {
             var generator = new AnswerableGenerator();
 
@@ -75,10 +45,10 @@ namespace AnswerGeneratorTests
             Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
 
             // Use reflection to verify the generated members
-            var testClassType = assembly.GetType($"{TestNamespace}.{TestClassName}");
+            var testClassType = assembly.GetType($"{TestNamespace}.{TestClassName}001");
             Assert.NotNull(testClassType);
             var fields = testClassType.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            var answerServiceFields = fields.Where(p => p.FieldType.FullName == generator.ServiceName);
+            var answerServiceFields = fields.Where(p => p.FieldType.FullName == generator.ServiceInterface);
             Assert.True(answerServiceFields.Any());
             bool passed = false;
             foreach (var answerServiceField in answerServiceFields)
@@ -99,18 +69,19 @@ namespace AnswerGeneratorTests
 
 
         [Fact]
-        public void ClassWithExistingConstructors_ShouldAddOverloads()
+        public void ClassWithExistingConstructors_ShouldAddOverloads_002()
         {
             var generator = new AnswerableGenerator();
-         
+
 
             // Compile and run the generator
             var (assembly, diagnostics) = CompileAndRunGenerator(Source_002(generator), generator);
-
+            var ax = Source_001(generator);
+            var bx = $"{TestNamespace}.{TestClassName}002";
             // Verify no errors
             Assert.Empty(diagnostics.Where(d => d.Severity == Error));
 
-            var testClassType = assembly.GetType($"{TestNamespace}.{TestClassName}");
+            var testClassType = assembly.GetType($"{TestNamespace}.{TestClassName}002");
             Assert.NotNull(testClassType);
 
             var constructors = testClassType.GetConstructors();
@@ -123,7 +94,7 @@ namespace AnswerGeneratorTests
             Assert.Contains(constructors, c =>
             {
                 var parameters = c.GetParameters();
-                return parameters.Length == 1 && parameters[0].ParameterType.FullName ==generator.ServiceName;
+                return parameters.Length == 1 && parameters[0].ParameterType.FullName == generator.ServiceInterface;
             });
 
             Assert.Contains(constructors, c =>
@@ -131,12 +102,12 @@ namespace AnswerGeneratorTests
                 var parameters = c.GetParameters();
                 return parameters.Length == 2 &&
                        parameters[0].ParameterType == typeof(int) &&
-                       parameters[1].ParameterType.FullName ==generator.ServiceName;
+                       parameters[1].ParameterType.FullName == generator.ServiceInterface;
             });
         }
 
         [Fact]
-        public void ClassWithConstructorHavingIAnswerService_ShouldNotAddOverload()
+        public void ClassWithConstructorHavingIAnswerService_ShouldNotAddOverload_003()
         {
             var generator = new AnswerableGenerator();
             // Compile and run the generator
@@ -145,7 +116,7 @@ namespace AnswerGeneratorTests
             // Verify no errors
             Assert.Empty(diagnostics.Where(d => d.Severity == Error));
 
-            var testClassType = assembly.GetType($"{TestNamespace}.{TestClassName}");
+            var testClassType = assembly.GetType($"{TestNamespace}.{TestClassName}003");
             Assert.NotNull(testClassType);
 
             var constructors = testClassType.GetConstructors();
@@ -154,7 +125,7 @@ namespace AnswerGeneratorTests
             Assert.Single(constructors.Where(c =>
             {
                 var parameters = c.GetParameters();
-                return parameters.Length == 1 && parameters[0].ParameterType.FullName ==generator.ServiceName;
+                return parameters.Length == 1 && parameters[0].ParameterType.FullName == generator.ServiceInterface;
             }));
 
             // Check for overload for constructor without IAnswerService
@@ -163,44 +134,31 @@ namespace AnswerGeneratorTests
                 var parameters = c.GetParameters();
                 return parameters.Length == 2 &&
                        parameters[0].ParameterType == typeof(int) &&
-                       parameters[1].ParameterType.FullName ==generator.ServiceName;
+                       parameters[1].ParameterType.FullName == generator.ServiceInterface;
             });
         }
 
-        //[Fact]
-        //public void ClassWithSingleIAnswerServiceMember_ShouldUseExistingMember()
-        //{
-        //    var source = @"
-        //using Answers;
+        [Fact]
+        public void ClassWithSingleIAnswerServiceMember_ShouldUseExistingMember_004()
+        {
+            var generator = new AnswerableGenerator();
+            var (assembly, diagnostics) = CompileAndRunGenerator(Source_004(generator), generator);
 
-        //namespace TestNamespace
-        //{
-        //    public partial class TestClass : IAnswerable
-        //    {
-        //        private Answers.IAnswerService _customAnswerService;
-        //    }
-        //}
-       
-        //";
+            // Verify no errors
+            Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
 
-        //    // Compile and run the generator
-        //    var (assembly, diagnostics) = CompileAndRunGenerator(source, GetAnswersDllPath());
+            var testClassType = assembly.GetType($"{TestNamespace}.{TestClassName}004");
+            Assert.NotNull(testClassType);
 
-        //    // Verify no errors
-        //    Assert.Empty(diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
-
-        //    var testClassType = assembly.GetType("TestNamespace.TestClass");
-        //    Assert.NotNull(testClassType);
-
-        //    // Ensure the generator did not add a new field
-        //    var fields = testClassType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
-        //    Assert.Single(fields);
-        //    Assert.Equal("_customAnswerService", fields[0].Name);
-
-        //    // Check for constructor that assigns to the existing field
-        //    var constructor = testClassType.GetConstructor(new Type[] { assembly.GetType("Answers.IAnswerService") });
-        //    Assert.NotNull(constructor);
-        //}
+            // Ensure the generator did not add a new property
+            var fields = testClassType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
+            Assert.Single(fields);
+            Assert.Equal("_customAnswerService", fields[0].Name);
+        
+            // Check for constructor that assigns to the existing field
+            var constructor = testClassType.GetConstructor([typeof(Answers.IAnswerService)]);
+            Assert.NotNull(constructor);
+        }
 
         //        [Fact]
         //        public void ClassWithMultipleIAnswerServiceMembers_ShouldEmitError()

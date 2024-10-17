@@ -8,73 +8,13 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp;
 using System.IO;
 using System.Reflection;
+using System.Diagnostics;
 
 namespace AnswerGenerator
 {
     public partial class AnswerableGenerator
     {
-        private void ProcessClass(SourceProductionContext context, INamedTypeSymbol classSymbol)
-        {
-            // Find all constructors
-            List<IMethodSymbol> constructors = GetConstructors();
-            List<ISymbol> answerServiceMembers = GetAnswerServiceMembers(classSymbol);
-            string answerServiceMemberName = DefaultAnswerServiceMemberName;
-
-            switch (answerServiceMembers.Count)
-            {
-                case > 1:
-                    // More than one answer service member found, this class won't be processed
-                    answerServiceMemberName = answerServiceMembers.First().Name;
-                    break;
-                case 1:
-                {
-                    var member = answerServiceMembers.First();
-                    answerServiceMemberName = member.Name;
-                    break;
-                }
-                case 0:
-                    GenerateAnswerServiceMember(context, classSymbol, answerServiceMemberName);
-                    break;
-            }
-
-            // For each constructor that does not have IAnswerService parameter, generate an overload
-            if (constructors.Count == 0)
-            {
-                // No constructors declared, generate the constructor
-                GenerateConstructorOverload(context, classSymbol, null, answerServiceMemberName);
-            }
-            else
-            {
-                foreach (var constructor in constructors.Where(p =>
-                             !p.Parameters.Any(q => q.Type.ToDisplayString().EndsWith("IAnswerService"))))
-                {
-                    GenerateConstructorOverload(context, classSymbol, constructor, answerServiceMemberName);
-                }
-            }
-
-            // Generate helper methods with the appropriate field/property name
-            GenerateHelperMethods(context, classSymbol, answerServiceMemberName);
-
-            List<ISymbol> GetAnswerServiceMembers(INamedTypeSymbol symbol)
-            {
-                return symbol.GetMembers()
-                    .Where(m =>
-                        !m.IsStatic &&
-                        m is IPropertySymbol prop &&
-                        prop.Type.ToDisplayString() == ServiceName &&
-                        !prop.Name.Contains("k__BackingField"))
-                    .ToList();
-            }
-
-            List<IMethodSymbol> GetConstructors()
-            {
-                return classSymbol.Constructors
-                    .Where(c => !c.IsImplicitlyDeclared &&
-                                c.DeclaredAccessibility is Accessibility.Public or Accessibility.Protected
-                                    or Accessibility.Internal)
-                    .ToList();
-            }
-        }
+       
 
         private void GenerateAnswerServiceMember(SourceProductionContext context, INamedTypeSymbol classSymbol,
             string propertyName)
@@ -88,7 +28,7 @@ namespace AnswerGenerator
                 ? $$"""
                     public partial class {{className}}
                     {
-                         private readonly {{ServiceName}} {{propertyName}};
+                        private readonly {{ServiceInterface}} {{propertyName}};
                     }
                     """
                 : $$"""
@@ -96,7 +36,7 @@ namespace AnswerGenerator
                     {
                         public partial class {{className}}
                         {
-                            private readonly {{ServiceName}} {{propertyName}};
+                           private readonly {{ServiceInterface}} {{propertyName}};
                         }
                     }
                     """;
@@ -121,7 +61,7 @@ namespace AnswerGenerator
                 classBody = $@"
 public partial class {className}
 {{
-    public {className}({ServiceName}  {ConstructorServiceField})
+    public {className}({ServiceInterface}  {ConstructorServiceField})
     {{
         {answerServiceMemberName} = {ConstructorServiceField};
     }}
@@ -135,7 +75,7 @@ public partial class {className}
                 var parameterList = string.Join(", ", parameters.Select(p => $"{p.Type.ToDisplayString()} {p.Name}"));
                 if (parameters.Length > 0)
                     parameterList += ", ";
-                parameterList += $"{ServiceName} {ConstructorServiceField}";
+                parameterList += $"{ServiceInterface} {ConstructorServiceField}";
 
                 // Build argument list (only original parameters)
                 var argumentList = string.Join(", ", parameters.Select(p => p.Name));
