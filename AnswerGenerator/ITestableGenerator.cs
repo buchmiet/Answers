@@ -8,7 +8,7 @@ namespace AnswerGenerator
     public interface ITestableGenerator
     {
         string ServiceInterface { get; }
-        string InterfaceName { get; }
+        string ClassInterfaceName { get; }
         string ConstructorServiceField { get; }
         string DefaultAnswerServiceMemberName { get; }
     }

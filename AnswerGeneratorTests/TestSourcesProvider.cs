@@ -11,7 +11,7 @@ namespace AnswerGeneratorTests
               
                                        namespace {{TestNamespace}}
                                        {
-                                           public partial class {{TestClassName}}001 : {{generator.InterfaceName}}
+                                           public partial class {{TestClassName}}001 : {{generator.ClassInterfaceName}}
                                            {
                                                // Empty class
                                            }
@@ -24,7 +24,7 @@ namespace AnswerGeneratorTests
               
                       namespace {{TestNamespace}}
                       {
-                          public partial class {{TestClassName}}002 : {{generator.InterfaceName}}
+                          public partial class {{TestClassName}}002 : {{generator.ClassInterfaceName}}
                           {
                               public {{TestClassName}}002()
                               {
@@ -42,7 +42,7 @@ namespace AnswerGeneratorTests
             $$"""
                       namespace {{TestNamespace}}
                       {
-                          public partial class {{TestClassName}}003 : {{generator.InterfaceName}}
+                          public partial class {{TestClassName}}003 : {{generator.ClassInterfaceName}}
                           {
                               public {{TestClassName}}003({{generator.ServiceInterface}} {{generator.ConstructorServiceField}})
                               {
@@ -58,7 +58,7 @@ namespace AnswerGeneratorTests
             $$"""
                       namespace {{TestNamespace}}
                       {
-                          public partial class {{TestClassName}}004: {{generator.InterfaceName}}
+                          public partial class {{TestClassName}}004: {{generator.ClassInterfaceName}}
                           {
                               private {{generator.ServiceInterface}} _customAnswerService;
                           }
@@ -72,7 +72,7 @@ namespace AnswerGeneratorTests
               
                       namespace TestNamespace
                       {
-                          public partial class {{TestClassName}}005 : {{generator.InterfaceName}}
+                          public partial class {{TestClassName}}005 : {{generator.ClassInterfaceName}}
                           {
                               private {{generator.ServiceInterface}} _service1;
                               private {{generator.ServiceInterface}} _service2;

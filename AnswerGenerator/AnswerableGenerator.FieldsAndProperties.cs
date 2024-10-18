@@ -9,7 +9,7 @@ namespace AnswerGenerator
     {
 
         public string ServiceInterface => "Answers.IAnswerService";
-        public string InterfaceName => "Answers.IAnswerable";
+        public string ClassInterfaceName => "Answers.IAnswerable";
         public string ConstructorServiceField => "answerService";
 
         public string DefaultAnswerServiceMemberName => "_answerService";

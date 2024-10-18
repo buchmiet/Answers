@@ -58,7 +58,7 @@ namespace AnswerGenerator
                     continue;
 
 
-                if (!classSymbol.AllInterfaces.Contains(compilation.GetTypeByMetadataName(InterfaceName)))
+                if (!classSymbol.AllInterfaces.Contains(compilation.GetTypeByMetadataName(ClassInterfaceName)))
                     continue;
               
                 if (!_processedClasses.Add(classSymbol.ToDisplayString()))
@@ -132,10 +132,16 @@ namespace AnswerGenerator
             {
                 case > 1:
                     // More than one answer service member found, this class won't be processed
-                    var diagnostic = Diagnostic.Create(
-                        MultipleAnswerServiceMembersWarning,
-                        classSymbol.Locations.FirstOrDefault(), // You can improve this to be more precise
-                        classSymbol.Name);
+                    var memberLocations = answerServiceMembers.Select(m => m.Locations.FirstOrDefault()).Where(loc => loc != null).ToList();
+
+                    foreach (var location in memberLocations)
+                    {
+                        var diagnostic = Diagnostic.Create(
+                            WarningGenerator(Warnings.MultipleAnswerServiceMembers),
+                            location, 
+                            classSymbol.Name);
+                        context.ReportDiagnostic(diagnostic);
+                    }
                     return;
              
                 case 1:
@@ -191,12 +197,27 @@ namespace AnswerGenerator
 
     }
 
-        private static readonly DiagnosticDescriptor MultipleAnswerServiceMembersWarning = new DiagnosticDescriptor(
-            id: "ANSWR001",
-            title: "Multiple IAnswerService members found",
-            messageFormat: "The class {0} contains multiple IAnswerService members, which might lead to unexpected behavior.",
-            category: "AnswerServiceGeneration",
-            DiagnosticSeverity.Warning,
-            isEnabledByDefault: true);
+        public enum Warnings
+        {
+            MultipleAnswerServiceMembers
+        }
+
+        private DiagnosticDescriptor WarningGenerator(Warnings warning)
+        {
+            return warning switch
+            {
+                Warnings.MultipleAnswerServiceMembers => new DiagnosticDescriptor(
+                    id: "ANSWR001",
+                    title: $"Multiple {ServiceInterface} members found",
+                    messageFormat: $"The class {{0}} contains multiple {ServiceInterface} members, which might lead to unexpected behavior.",
+                    category: "AnswerServiceGeneration",
+                    DiagnosticSeverity.Warning,
+                    isEnabledByDefault: true
+                    ),
+                _ => throw new NotImplementedException()
+            };
+        }
+
+        
     }
 }

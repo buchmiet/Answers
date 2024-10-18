@@ -160,20 +160,20 @@ namespace AnswerGeneratorTests
             Assert.NotNull(constructor);
         }
 
-        //[Fact]
-        //public void ClassWithMultipleIAnswerServiceMembers_ShouldEmitError005()
-        //{
+        [Fact]
+        public void ClassWithMultipleIAnswerServiceMembers_ShouldEmitError005()
+        {
 
-        //    var generator = new AnswerableGenerator();
-        //    var (assembly, diagnostics) = CompileAndRunGenerator(Source_005(generator), generator);
+            var generator = new AnswerableGenerator();
+            var (assembly, diagnostics) = CompileAndRunGenerator(Source_005(generator), generator);
 
-        //    // Verify that an error diagnostic is produced
-        //    var errorDiagnostics = diagnostics.Where(d => d.Severity == DiagnosticSeverity.Warning);
-        //    Assert.NotEmpty(errorDiagnostics);
+            // Verify that an error diagnostic is produced
+            var errorDiagnostics = diagnostics.Where(d => d.Severity == DiagnosticSeverity.Warning);
+            Assert.NotEmpty(errorDiagnostics);
 
-        //    // Optionally check the diagnostic message
-        //    Assert.Contains(errorDiagnostics, d => d.GetMessage().Contains("multiple IAnswerService members found"));
-        //}
+            // Optionally check the diagnostic message
+            Assert.Contains(errorDiagnostics, d => d.GetMessage().Contains($"multiple {generator.ServiceInterface} members"));
+        }
 
         // Helper method to compile source code and run the generator
         //private (Assembly assembly, ImmutableArray<Diagnostic> diagnostics) CompileAndRunGenerator(string source)
