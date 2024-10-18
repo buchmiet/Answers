@@ -33,11 +33,11 @@ namespace AnswerGeneratorTests
         }
 
 
-
         [Fact]
         public void ClassWithNoConstructorAndNoIAnswerServiceMember_ShouldAddFieldAndConstructor_001()
         {
             var generator = new AnswerableGenerator();
+
 
             var (assembly, diagnostics) = CompileAndRunGenerator(Source_001(generator), generator);
 
@@ -53,11 +53,9 @@ namespace AnswerGeneratorTests
             bool passed = false;
             foreach (var answerServiceField in answerServiceFields)
             {
-                if (answerServiceField.IsInitOnly)
-                {
-                    passed = true;
-                    break;
-                }
+                if (!answerServiceField.IsInitOnly) continue;
+                passed = true;
+                break;
             }
             Assert.True(passed);
 

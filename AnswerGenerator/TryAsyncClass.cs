@@ -29,43 +29,36 @@ namespace AnswerGenerator
                 if (timeoutTask != null)
                 {
                     // Wait for either the method to complete or the timeout to occur
-           
                     System.Threading.Tasks.Task completedTask = await System.Threading.Tasks.Task.WhenAny(methodTask, timeoutTask);
-
 
                     if (completedTask == methodTask)
                     {
                         // The method completed before the timeout
-
                         answer = await methodTask;
                         if (answer.IsSuccess || answer.DialogConcluded || !_answerService.HasDialog)
                         {
                             return answer;
                         }
-
                         // Method failed; prompt the user to retry
                         if (await _answerService.AskYesNoAsync(answer.Message, ct))
                         {
                             continue;
                         }
-
                         answer.ConcludeDialog();
                         return answer;
                     }
-
                     // The timeout occurred before the method completed
+                    var message = Answers.Answer.Current?.Message ?? "Unknown task";
                     if (!_answerService.HasTimeOutDialog || !await _answerService.AskYesNoToWaitAsync(
-                            "The operation timed out. Do you want to retry?", ct))
+                            "The operation {Message} timed out. Do you want to retry?", ct))
                     {
                         // Cannot prompt the user or user chose not to retry; return timed-out answer
-                        answer = Answers.Answer.Prepare("Time out timer");
+                        answer = Answers.Answer.Prepare(message);
                         return answer.Error($"{timeout.Value.TotalSeconds} seconds elapsed");
                     }
-
                     // User chose to retry; loop again
                     continue;
                 }
-
                 // No timeout specified; await the method normally
                 answer = await methodTask; // Let exceptions propagate if any
 

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace AnswerGenerator
+﻿namespace AnswerGenerator
 {
     //interface for tests
     public interface ITestableGenerator

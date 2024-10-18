@@ -13,8 +13,8 @@ namespace Answers.Tests
             CancellationToken ct,
             TimeSpan? timeout = null)
         {
-
-            return await TryAsync(method, ct, timeout);
+            var answer = Answer.Prepare("MethodReturningAnswer");
+            return await TryAsync(method, ct, timeout).ConfigureAwait(false);
         }
 
 
