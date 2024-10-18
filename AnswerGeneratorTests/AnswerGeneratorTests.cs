@@ -175,45 +175,7 @@ namespace AnswerGeneratorTests
             Assert.Contains(errorDiagnostics, d => d.GetMessage().Contains($"multiple {generator.ServiceInterface} members"));
         }
 
-        // Helper method to compile source code and run the generator
-        //private (Assembly assembly, ImmutableArray<Diagnostic> diagnostics) CompileAndRunGenerator(string source)
-        //{
-        //    var syntaxTree = CSharpSyntaxTree.ParseText(source);
-
-        //    var references = AppDomain.CurrentDomain.GetAssemblies()
-        //        .Where(a => !a.IsDynamic && !string.IsNullOrEmpty(a.Location))
-        //        .Select(a => MetadataReference.CreateFromFile(a.Location))
-        //        .Cast<MetadataReference>()
-        //        .ToList();
-
-        //    var compilation = CSharpCompilation.Create("TestAssembly",
-        //        new[] { syntaxTree },
-        //        references,
-        //        new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
-
-        //    // Create an instance of the generator
-        //    var generator = new AnswerableGenerator();
-
-        //    // Run the generator
-        //    CSharpGeneratorDriver.Create(generator)
-        //        .RunGeneratorsAndUpdateCompilation(compilation, out var outputCompilation, out var diagnostics);
-
-        //    // Emit the assembly to a stream
-        //    using var ms = new System.IO.MemoryStream();
-        //    var emitResult = outputCompilation.Emit(ms);
-
-        //    if (!emitResult.Success)
-        //    {
-        //        var errors = string.Join(Environment.NewLine, emitResult.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error));
-        //        throw new InvalidOperationException($"Compilation failed: {errors}");
-        //    }
-
-        //    ms.Seek(0, System.IO.SeekOrigin.Begin);
-        //    var assembly = Assembly.Load(ms.ToArray());
-
-        //    return (assembly, diagnostics);
-        //}
-
+        
         // Helper method to compile source code and run the generator
         private (Assembly assembly, ImmutableArray<Diagnostic> diagnostics) CompileAndRunGenerator(string source, IIncrementalGenerator generator)
         {
