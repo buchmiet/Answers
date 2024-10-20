@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading;
 
 namespace Answers
@@ -25,11 +26,14 @@ namespace Answers
         bool Out<T>(out T value);
     }
 
-    public class Answer : IAnswer
+    public class Answer : IAnswer,IDisposable
     {
 
         private IAnswerValue _answerValue;
-        private static AsyncLocal<Answer> _currentAnswer = new AsyncLocal<Answer>();
+    //    private static AsyncLocal<Answer> _currentAnswer = new AsyncLocal<Answer>();
+        private static readonly ActivitySource ActivitySource = new ActivitySource("Answer");
+        public Activity CurrentActivity { get; private set; }
+
 
         public void AddValue<T>(T value)
         {
@@ -70,13 +74,15 @@ namespace Answers
 
         public void ConcludeDialog() => State.ConcludeDialog();
 
-        public static Answer Current => _currentAnswer.Value;
+ //       public static Answer Current => _currentAnswer.Value;
 
         public static Answer Prepare(string action)
         {
             var answer = new Answer();
             answer.Messages.AddAction(action);
-            _currentAnswer.Value = answer;
+            answer.CurrentActivity = ActivitySource.StartActivity(action);
+      //      _currentAnswer.Value = answer;
+
             return answer;
         }
 
@@ -129,6 +135,11 @@ namespace Answers
                 }
             }
             throw new InvalidOperationException("Value not set.");
+        }
+
+        public void Dispose()
+        {
+            CurrentActivity?.Stop();
         }
     }
 }
