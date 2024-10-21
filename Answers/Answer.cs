@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 
@@ -31,7 +32,7 @@ namespace Answers
 
         private IAnswerValue _answerValue;
     //    private static AsyncLocal<Answer> _currentAnswer = new AsyncLocal<Answer>();
-        private static readonly ActivitySource ActivitySource = new ActivitySource("Answer");
+        private static readonly ActivitySource ActivitySource = new ActivitySource("Answers");
         public Activity CurrentActivity { get; private set; }
 
 
@@ -76,17 +77,14 @@ namespace Answers
 
  //       public static Answer Current => _currentAnswer.Value;
 
-        public static Answer Prepare(string action)
+        public Answer(string action)
         {
-            var answer = new Answer();
-            answer.Messages.AddAction(action);
-            answer.CurrentActivity = ActivitySource.StartActivity(action);
-      //      _currentAnswer.Value = answer;
-
-            return answer;
+            CurrentActivity = ActivitySource.StartActivity(action, ActivityKind.Internal);
+            Messages.AddAction(action);
         }
 
-
+        public static Answer Prepare(string action)=>new(action);
+        
 
         public Answer Attach(Answer answer)
         {

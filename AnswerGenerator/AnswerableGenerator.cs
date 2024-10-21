@@ -29,7 +29,7 @@ namespace AnswerGenerator
 #if DEBUG
             if (!Debugger.IsAttached)
             {
-                //            Debugger.Launch();
+          //                 Debugger.Launch();
             }
 #endif
 
