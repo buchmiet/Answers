@@ -31,9 +31,8 @@ namespace Answers
     {
 
         private IAnswerValue _answerValue;
-    //    private static AsyncLocal<Answer> _currentAnswer = new AsyncLocal<Answer>();
-        private static readonly ActivitySource ActivitySource = new ActivitySource("Answers");
-        public Activity CurrentActivity { get; private set; }
+        private static readonly ActivitySource ActivitySource = new("Answers");
+        public Activity CurrentActivity { get; }
 
 
         public void AddValue<T>(T value)
