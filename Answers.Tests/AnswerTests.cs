@@ -112,7 +112,7 @@ namespace Answers.Tests
         [Fact]
         public void IsSuccess_ShouldBeTrueByDefault()
         {
-            var answer = new Answer();
+            var answer = new Answer("IsSuccess_ShouldBeTrueByDefault");
 
             Assert.True(answer.IsSuccess);
         }
@@ -122,7 +122,7 @@ namespace Answers.Tests
         [Fact]
         public void DialogConcluded_ShouldBeFalseByDefault()
         {
-            var answer = new Answer();
+            var answer = new Answer("DialogConcluded_ShouldBeFalseByDefault");
 
             Assert.False(answer.DialogConcluded);
         }
@@ -130,7 +130,7 @@ namespace Answers.Tests
         [Fact]
         public void DialogConcluded_ShouldBeSettable()
         {
-            var answer = new Answer();
+            var answer = new Answer("DialogConcluded_ShouldBeSettable");
             answer.DialogConcluded = true;
 
             Assert.True(answer.DialogConcluded);

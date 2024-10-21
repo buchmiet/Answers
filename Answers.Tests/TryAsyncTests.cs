@@ -62,7 +62,7 @@ namespace Answers.Tests
         public async Task TryAsync_MethodCompletesSuccessfully_ReturnsAnswer()
         {
             // Arrange
-            var expectedAnswer = new Answer();
+            var expectedAnswer = new Answer("TryAsync_MethodCompletesSuccessfully_ReturnsAnswer");
             Func<Task<Answer>> method = () => Task.FromResult<Answer>(expectedAnswer);
 
             // Act
@@ -88,7 +88,7 @@ namespace Answers.Tests
                 }
                 else
                 {
-                    var answer = new Answer();
+                    var answer = new Answer("TryAsync_MethodFails_UserRetriesUntilSuccess");
                     return Task.FromResult<Answer>(answer);
                 }
             };
@@ -147,7 +147,7 @@ namespace Answers.Tests
         public async Task TryAsync_MethodReturnsAnswerWithDialogConcluded_ReturnsAnswer()
         {
             // Arrange
-            var answer = new Answer().Error("Test error"); 
+            var answer = new Answer("TryAsync_MethodReturnsAnswerWithDialogConcluded_ReturnsAnswer").Error("Test error"); 
             answer.DialogConcluded= true;
             
             Func<Task<Answer>> method = () => Task.FromResult<Answer>(answer);
@@ -166,7 +166,7 @@ namespace Answers.Tests
         public async Task TryAsync_MethodFails_NoDialog_ReturnsAnswer()
         {
             // Arrange
-            var answer = new Answer();
+            var answer = new Answer("TryAsync_MethodFails_NoDialog_ReturnsAnswer");
             answer=answer.Error("error");
             Func<Task<Answer>> method = () => Task.FromResult<Answer>(answer);
 
