@@ -48,12 +48,12 @@ namespace AnswerGenerator
                         return answer;
                     }
                     // The timeout occurred before the method completed
-                    var message = Answers.Answer.Current?.Message ?? "Unknown task";
+                 //   var message = Answers.Answer.Current?.Message ?? "Unknown task";
                     if (!_answerService.HasTimeOutDialog || !await _answerService.AskYesNoToWaitAsync(
-                            "The operation {Message} timed out. Do you want to retry?", ct))
+                            "The operation timed out. Do you want to retry?", ct))
                     {
                         // Cannot prompt the user or user chose not to retry; return timed-out answer
-                        answer = Answers.Answer.Prepare(message);
+                        answer = Answers.Answer.Prepare("Timeout occured.");
                         return answer.Error($"{timeout.Value.TotalSeconds} seconds elapsed");
                     }
                     // User chose to retry; loop again

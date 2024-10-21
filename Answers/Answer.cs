@@ -29,7 +29,6 @@ namespace Answers
     {
 
         private IAnswerValue _answerValue;
-        private static AsyncLocal<Answer> _currentAnswer = new AsyncLocal<Answer>();
 
         public void AddValue<T>(T value)
         {
@@ -70,13 +69,12 @@ namespace Answers
 
         public void ConcludeDialog() => State.ConcludeDialog();
 
-        public static Answer Current => _currentAnswer.Value;
 
         public static Answer Prepare(string action)
         {
             var answer = new Answer();
             answer.Messages.AddAction(action);
-            _currentAnswer.Value = answer;
+          
             return answer;
         }
 
