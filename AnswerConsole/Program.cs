@@ -316,7 +316,7 @@ public class PresentationLayer
     System.Func<System.Threading.Tasks. Task<Answers. Answer>> method,
     System.Threading. CancellationToken ct)
     {
-        TimeSpan timeoutValue = TimeSpan.Zero;
+        System.TimeSpan timeoutValue =System.TimeSpan.Zero;
         if (_answerService.HasTimeout)
         {
             timeoutValue = _answerService.GetTimeout();

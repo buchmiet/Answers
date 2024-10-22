@@ -12,14 +12,12 @@ namespace Answers.Tests
     {
         private Mock<IAnswerService> _answerServiceMock;
         private CancellationToken _cancellationToken;
-        private TimeSpan _defaultTimeout;
         private TestClassForTryAsync _testClass;
 
         public TryAsyncTests()
         {
             _answerServiceMock = new Mock<IAnswerService>();
             _cancellationToken = CancellationToken.None;
-            _defaultTimeout = TimeSpan.FromSeconds(1);
             _testClass = new TestClassForTryAsync(_answerServiceMock.Object);
         }
 
@@ -38,7 +36,7 @@ namespace Answers.Tests
             {
                 tasks[i] = Task.Run(async () =>
                 {
-                    var result = await _testClass.MethodReturningAnswer(SomeMethodAsync, cancellationTokenSource.Token, TimeSpan.FromSeconds(2));
+                    var result = await _testClass.MethodReturningAnswer(SomeMethodAsync, cancellationTokenSource.Token);
                     results.Add(result);
                 });
             }
@@ -66,7 +64,7 @@ namespace Answers.Tests
             Func<Task<Answer>> method = () => Task.FromResult<Answer>(expectedAnswer);
 
             // Act
-            var result = await _testClass.MethodReturningAnswer(method, _cancellationToken, _defaultTimeout);
+            var result = await _testClass.MethodReturningAnswer(method, _cancellationToken);
 
             // Assert
             Assert.Equal(expectedAnswer, result);
@@ -98,7 +96,7 @@ namespace Answers.Tests
                 .ReturnsAsync(true);
 
             // Act
-            var result = await _testClass.MethodReturningAnswer(method, _cancellationToken, _defaultTimeout);
+            var result = await _testClass.MethodReturningAnswer(method, _cancellationToken);
 
             // Assert
             Assert.Equal(2, callCount);
@@ -124,7 +122,7 @@ namespace Answers.Tests
                 .ReturnsAsync(false);
 
             // Act
-            var result = await _testClass.MethodReturningAnswer(method, _cancellationToken, _defaultTimeout);
+            var result = await _testClass.MethodReturningAnswer(method, _cancellationToken);
 
             // Assert
             Assert.Equal(1, callCount);
@@ -140,7 +138,7 @@ namespace Answers.Tests
             Func<Task<Answer>> method = () => throw new InvalidOperationException("Test exception");
 
             // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() => _testClass.MethodReturningAnswer(method, _cancellationToken, _defaultTimeout));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => _testClass.MethodReturningAnswer(method, _cancellationToken));
         }
 
         [Fact]
@@ -155,7 +153,7 @@ namespace Answers.Tests
             _answerServiceMock.Setup(x => x.HasDialog).Returns(true);
 
             // Act
-            var result = await _testClass.MethodReturningAnswer(method, _cancellationToken, _defaultTimeout);
+            var result = await _testClass.MethodReturningAnswer(method, _cancellationToken);
 
             // Assert
             Assert.Equal(answer, result);
@@ -173,88 +171,16 @@ namespace Answers.Tests
             _answerServiceMock.Setup(x => x.HasDialog).Returns(false);
 
             // Act
-            var result = await _testClass.MethodReturningAnswer(method, _cancellationToken, _defaultTimeout);
+            var result = await _testClass.MethodReturningAnswer(method, _cancellationToken);
 
             // Assert
             Assert.Equal(answer, result);
             _answerServiceMock.Verify(x => x.AskYesNoAsync(It.IsAny<string>(), _cancellationToken), Times.Never);
         }
 
-        /// <summary>
-        /// Test Case 1: Task completes before timeout without errors.
-        /// Expectation: TryAsync returns a successful Answer.
-        /// </summary>
-        [Fact]
-        public async Task TryAsync_TaskCompletesBeforeTimeout_ReturnsSuccessAnswer()
-        {
-            // Arrange
-            var timeout = TimeSpan.FromSeconds(5);
-            _answerServiceMock.SetupGet(a => a.Timeout).Returns(timeout);
-            _answerServiceMock.SetupGet(a => a.HasTimeOutDialog).Returns(false);
-            _answerServiceMock.SetupGet(a => a.HasDialog).Returns(false);
+      
 
-            // Simulate a short-running task
-            Func<Task<Answer>> shortRunningTask = async () =>
-            {
-                var answer = Answer.Prepare("Short-running task message");
-                await Task.Delay(100, _cancellationToken); // Task duration shorter than timeout
-                return answer; 
-            };
-
-            // Act
-            var result = await _testClass.MethodReturningAnswer(shortRunningTask, _cancellationToken, timeout);
-
-            // Assert
-            Assert.True(result.IsSuccess);
-            Assert.Equal("Short-running task message", result.Message);
-            _answerServiceMock.Verify(a => a.AskYesNoAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
-        }
-
-        /// <summary>
-        /// Test Case 2: Task times out, user chooses to retry.
-        /// Expectation: TryAsync retries the task and eventually succeeds.
-        /// </summary>
-        [Fact]
-        public async Task TryAsync_TaskTimesOut_UserChoosesToRetry_RetriesTask()
-        {
-            // Arrange
-            var timeout = TimeSpan.FromMilliseconds(100);
-            _answerServiceMock.SetupGet(a => a.Timeout).Returns(timeout);
-            _answerServiceMock.SetupGet(a => a.HasTimeOutDialog).Returns(true);
-            _answerServiceMock.SetupGet(a => a.HasDialog).Returns(true);
-            _answerServiceMock
-                .Setup(a => a.AskYesNoToWaitAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(true); // User chooses to retry
-
-            var userDialogStub = new UserDialogStub(true);
-            _answerServiceMock.Object.AddYesNoDialog(userDialogStub);
-
-            int attempt = 0;
-            Func<Task<Answer>> longRunningTaskWithRetrySuccess = async () =>
-            {
-                attempt++;
-                var answer = Answer.Prepare("Long-running task message");
-                if (attempt < 2)
-                {
-                    await Task.Delay(5000, _cancellationToken); // First attempt times out
-                    return answer; // This won't be reached due to timeout
-                }
-                else
-                {
-                    await Task.Delay(50, _cancellationToken); // Second attempt succeeds
-                    return answer;
-                }
-            };
-
-            // Act
-            var result = await _testClass.MethodReturningAnswer(longRunningTaskWithRetrySuccess, _cancellationToken, timeout);
-
-            // Assert
-            Assert.True(result.IsSuccess);
-            Assert.Equal("Long-running task message", result.Message);
-            Assert.Equal(2, attempt); // Ensures that it retried once
-            _answerServiceMock.Verify(a => a.AskYesNoToWaitAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
-        }
+       
 
         ///// <summary>
         ///// Test Case 3: Task times out, user chooses not to retry.

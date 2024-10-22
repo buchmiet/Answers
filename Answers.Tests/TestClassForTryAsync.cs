@@ -10,11 +10,11 @@ namespace Answers.Tests
     {
 
         public async Task<Answer> MethodReturningAnswer(Func<Task<Answers.Answer>> method,
-            CancellationToken ct,
-            TimeSpan? timeout = null)
+            CancellationToken ct
+            )
         {
             var answer = Answer.Prepare("MethodReturningAnswer");
-            return await TryAsync(method, ct, timeout).ConfigureAwait(false);
+            return await TryAsync(method, ct).ConfigureAwait(false);
         }
 
 
