@@ -1113,3 +1113,157 @@ Final Thoughts:
 Given the challenges and potential issues with the proposed solutions, it's advisable to accept minimal changes to your codebase to achieve the desired functionality reliably. Using CallerMemberName or passing context explicitly are both viable options that align with your requirement of avoiding significant refactoring and additional boilerplate code.
 
 I hope this analysis helps you understand the limitations of the proposed solutions and guides you toward a practical approach that meets your needs.
+
+REWIZJA:
+
+ou raise a valid point—passing the action string into TryAsync would indeed require the calling method to know about the internal actions of lower-level methods, which violates encapsulation principles in object-oriented programming.
+
+Given your constraints, here's an alternative solution that respects object-oriented principles, avoids adding boilerplate code, and doesn't require significant refactoring. We can leverage AsyncLocal<T> to maintain context across asynchronous calls without exposing implementation details to higher-level classes.
+
+Solution Overview
+Use AsyncLocal<Answer>: Modify the Answer class to store the current Answer instance in an AsyncLocal<Answer> variable whenever Answer.Prepare is called.
+Access Answer.Current in TryAsync: When a timeout occurs in TryAsync, retrieve the most recent Answer instance from AsyncLocal<Answer>.
+Include Context in Error Messages: Use the retrieved Answer to include the most recent action or message in your timeout error messages.
+Implementation Details
+1. Modify the Answer Class
+Add an AsyncLocal<Answer> static field and set its value in the constructor or Prepare method.
+
+csharp
+Copy code
+public class Answer : IAnswer
+{
+    // ... existing members ...
+
+    private static readonly AsyncLocal<Answer> _currentAnswer = new AsyncLocal<Answer>();
+
+    public static Answer Current => _currentAnswer.Value;
+
+    public Answer(string action)
+    {
+        CurrentActivity = ActivitySource.StartActivity(action, ActivityKind.Internal);
+        Messages.AddAction(action);
+
+        // Set the current Answer in AsyncLocal
+        _currentAnswer.Value = this;
+    }
+
+    public static Answer Prepare(string action)
+    {
+        return new Answer(action);
+    }
+
+    // ... rest of your Answer class ...
+}
+Explanation: The AsyncLocal<Answer> variable _currentAnswer holds the current Answer instance for the asynchronous control flow. This allows any code running in the same async context to access the current Answer via Answer.Current.
+2. Modify TryAsync to Use Answer.Current
+In TryAsync, when a timeout occurs, access Answer.Current to retrieve the most recent Answer.
+
+csharp
+Copy code
+private async Task<Answer> TryAsync(
+    Func<Task<Answer>> method,
+    CancellationToken ct)
+{
+    TimeSpan timeoutValue = TimeSpan.Zero;
+    if (_answerService.HasTimeout)
+    {
+        timeoutValue = _answerService.GetTimeout();
+    }
+
+    while (true)
+    {
+        Task<Answer> methodTask = method();
+        Task timeoutTask = null;
+
+        if (timeoutValue != TimeSpan.Zero)
+        {
+            timeoutTask = Task.Delay(timeoutValue, ct);
+        }
+
+        if (timeoutTask != null)
+        {
+            Task completedTask = await Task.WhenAny(methodTask, timeoutTask);
+
+            if (completedTask == methodTask)
+            {
+                var answer = await methodTask;
+
+                if (answer.IsSuccess || answer.DialogConcluded || !_answerService.HasDialog)
+                {
+                    return answer;
+                }
+
+                if (await _answerService.AskYesNoAsync(answer.Message, ct))
+                {
+                    continue;
+                }
+
+                answer.ConcludeDialog();
+                return answer;
+            }
+            else
+            {
+                // Timeout occurred
+                if (!_answerService.HasTimeOutDialog || !await _answerService.AskYesNoToWaitAsync(
+                        $"The operation timed out. Do you want to retry?", ct))
+                {
+                    // Retrieve the current Answer from AsyncLocal
+                    var currentAnswer = Answer.Current;
+
+                    // Use the action or message from the current Answer for context
+                    var timeoutAnswer = Answer.Prepare(currentAnswer?.Message ?? "Unknown operation");
+                    return timeoutAnswer.Error($"{timeoutValue.TotalSeconds} seconds elapsed");
+                }
+                _answerService.SetTimeout(timeoutValue);
+                continue;
+            }
+        }
+        else
+        {
+            var answer = await methodTask;
+
+            if (answer.IsSuccess || answer.DialogConcluded || !_answerService.HasDialog)
+            {
+                return answer;
+            }
+
+            if (await _answerService.AskYesNoAsync(answer.Message, ct))
+            {
+                continue;
+            }
+
+            answer.ConcludeDialog();
+            return answer;
+        }
+    }
+}
+Explanation: When a timeout occurs, Answer.Current provides the most recent Answer instance from the same asynchronous context. This allows you to include the action or message from the last Answer.Prepare call in your error message.
+How This Solution Meets Your Requirements
+Respects OOP Principles: The higher-level class doesn't need to know about the lower-level implementation details. All context management is encapsulated within the Answer class and TryAsync method.
+No Additional Boilerplate: Users of the Answer class don't need to add any extra code or parameters. The context flows automatically with the async control flow.
+Minimal Refactoring: The changes are confined to the Answer class and the TryAsync method. Your existing method signatures and calls remain unchanged.
+Accurate Context in Errors: By capturing the current Answer instance, your error messages will now include information about the most recent operation where Answer.Prepare was called.
+Example Usage
+Your existing code remains the same:
+
+csharp
+Copy code
+private async Task<Answer> FetchDatabaseData(int id, CancellationToken ct)
+{
+    _answerService.SetTimeout(TimeSpan.FromSeconds(2));
+    Answer answer = Answer.Prepare("[PresentationLayer] Fetching data from database");
+    var response = await TryAsync(() => _utilityLayer.GetDatabaseData(id, ct), ct);
+    return answer.Attach(response);
+}
+Behavior: If a timeout occurs during GetDatabaseData, the error message will now include "[PresentationLayer] Fetching data from database" or the most recent action captured by Answer.Prepare.
+Potential Considerations
+Asynchronous Context: AsyncLocal<T> works well with asynchronous methods and will maintain separate values for different asynchronous flows.
+Parallel Operations: If you have parallel tasks running in the same asynchronous context, they will each maintain their own Answer instance without interfering with one another.
+Overhead: The performance overhead of using AsyncLocal is minimal and acceptable in most applications.
+Addressing Potential Issues
+Nested Asynchronous Calls: Since AsyncLocal flows with the async context, nested calls to Answer.Prepare will update Answer.Current. When a timeout occurs, Answer.Current will reflect the most recent Answer in that flow.
+
+Memory Management: The AsyncLocal variable will not prevent Answer instances from being garbage collected, as it doesn't create strong references that affect the GC.
+
+Conclusion
+By leveraging AsyncLocal<Answer>, you can maintain context across asynchronous method calls without violating object-oriented principles or requiring significant code changes. This approach allows you to enhance your error messages with accurate, up-to-date information about the most recent operation, all while keeping your code clean and maintainable.
