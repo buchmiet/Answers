@@ -12,10 +12,9 @@ namespace Answers
     {
         bool HasDialog { get; }
         bool HasTimeOutDialog { get; }
-      //  TimeSpan Timeout { get; }
+
         bool HasTimeout { get; }
 
-        // Metody asynchroniczne
         void AddYesNoDialog(IUserDialog dialog);
         Task<bool> AskYesNoAsync(string message, CancellationToken ct);
         Task<bool> AskYesNoToWaitAsync(string message, CancellationToken ct);
