@@ -10,19 +10,25 @@ namespace AnswerGenerator
     public class TryAsyncClass
     {
         private async System.Threading.Tasks.Task<Answers.Answer> TryAsync(
-  System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
-  System.Threading.CancellationToken ct,
-  System.TimeSpan? timeout = null)
+   System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
+   System.Threading.CancellationToken ct)
         {
+            TimeSpan timeoutValue = TimeSpan.Zero;
+            if (_answerService.HasTimeout)
+            {
+                timeoutValue = _answerService.GetTimeout();
+            }
             while (true)
             {
+
                 System.Threading.Tasks.Task<Answers.Answer> methodTask = method();
                 System.Threading.Tasks.Task timeoutTask = null;
                 Answers.Answer answer;
 
-                if (timeout.HasValue)
+
+                if (timeoutValue != TimeSpan.Zero)
                 {
-                    timeoutTask = System.Threading.Tasks.Task.Delay(timeout.Value, ct);
+                    timeoutTask = System.Threading.Tasks.Task.Delay(timeoutValue, ct);
                 }
 
                 if (timeoutTask != null)
@@ -52,9 +58,9 @@ namespace AnswerGenerator
                             $"The operation timed out. Do you want to retry?", ct))
                     {
                         answer = Answers.Answer.Prepare("Time out");
-                        return answer.Error($"{timeout.Value.TotalSeconds} seconds elapsed");
+                        return answer.Error($"{timeoutValue.TotalSeconds} seconds elapsed");
                     }
-
+                    _answerService.SetTimeout(timeoutValue);
                     continue;
                 }
 

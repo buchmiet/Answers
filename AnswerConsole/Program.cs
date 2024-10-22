@@ -21,7 +21,7 @@ var businessLogic = new BusinessLogicClass(databaseClass, httpClass, answerServi
 var presentationLayer = new PresentationLayer(businessLogic, answerService);
 
 
-    await presentationLayer.ExecuteConcurrentOperations(new CancellationToken());
+await presentationLayer.ExecuteConcurrentOperations(new CancellationToken());
 
 
 string GetFullOperationName(System.Diagnostics.Activity activity)
@@ -314,18 +314,24 @@ public class PresentationLayer
 {
     private async System.Threading.Tasks.Task<Answers.Answer> TryAsync(
     System.Func<System.Threading.Tasks. Task<Answers. Answer>> method,
-    System.Threading. CancellationToken ct,
-    System.TimeSpan? timeout = null)
+    System.Threading. CancellationToken ct)
     {
+        TimeSpan timeoutValue = TimeSpan.Zero;
+        if (_answerService.HasTimeout)
+        {
+            timeoutValue = _answerService.GetTimeout();
+        } 
         while (true)
         {
+
             System.Threading.Tasks. Task<Answers. Answer> methodTask = method();
             System.Threading.Tasks.Task timeoutTask = null;
             Answers.Answer answer;
 
-            if (timeout.HasValue)
+            
+            if (timeoutValue!=TimeSpan.Zero)
             {
-                timeoutTask = System.Threading.Tasks.Task.Delay(timeout.Value, ct);
+                timeoutTask = System.Threading.Tasks.Task.Delay(timeoutValue, ct);
             }
 
             if (timeoutTask != null)
@@ -355,9 +361,9 @@ public class PresentationLayer
                         $"The operation timed out. Do you want to retry?", ct))
                 {
                     answer =Answers.Answer.Prepare("Time out");
-                    return answer.Error($"{timeout.Value.TotalSeconds} seconds elapsed");
+                    return answer.Error($"{timeoutValue.TotalSeconds} seconds elapsed");
                 }
-
+                _answerService.SetTimeout(timeoutValue);
                 continue;
             }
 
@@ -423,6 +429,7 @@ public class PresentationLayer
 
     private async Task<Answer> FetchDatabaseData(int id, CancellationToken ct)
     {
+        _answerService.SetTimeout(TimeSpan.FromSeconds(2));
         Answer answer = Answer.Prepare("[PresentationLayer] Fetching data from database");
         var response= await TryAsync(() => _utilityLayer.GetDatabaseData(id, ct), ct);
         return answer.Attach(response);
@@ -430,6 +437,7 @@ public class PresentationLayer
 
     private async Task<Answer> FetchWebApiData(int id, CancellationToken ct)
     {
+        _answerService.SetTimeout(TimeSpan.FromSeconds(3));
         Answer answer = Answer.Prepare("[PresentationLayer] Fetching data from web api");
         return answer.Attach(await TryAsync(() => _utilityLayer.GetWebApiData(id, ct), ct));
     }

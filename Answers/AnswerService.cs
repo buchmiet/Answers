@@ -12,7 +12,7 @@ namespace Answers
     {
         bool HasDialog { get; }
         bool HasTimeOutDialog { get; }
-        TimeSpan Timeout { get; }
+      //  TimeSpan Timeout { get; }
         bool HasTimeout { get; }
 
         // Metody asynchroniczne
@@ -27,6 +27,7 @@ namespace Answers
         // Metody synchroniczne
         bool AskYesNo(string message);
         bool AskYesNoToWait(string message);
+        TimeSpan GetTimeout();
     }
 
 
@@ -36,7 +37,16 @@ namespace Answers
         private IUserDialog _timeOutDialog;
         private readonly ILogger _logger;
         private readonly object _syncRoot = new();
-        public TimeSpan Timeout { get; private set; }
+        private TimeSpan Timeout { get; set; }
+        public TimeSpan GetTimeout()
+        {
+            lock (_syncRoot)
+            {
+                var returnValue = Timeout;
+                Timeout= TimeSpan.Zero;
+                return returnValue;
+            }
+        }
 
         public bool HasDialog => _dialog != null;
         public bool HasTimeout => Timeout != TimeSpan.Zero;
@@ -123,6 +133,7 @@ namespace Answers
             lock (_syncRoot)
             {
                 Timeout = timeout;
+
             }
         }
     }
