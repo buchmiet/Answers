@@ -11,7 +11,9 @@ namespace AnswerGenerator
     {
         private async System.Threading.Tasks.Task<Answers.Answer> TryAsync(
    System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
-   System.Threading.CancellationToken ct)
+   System.Threading.CancellationToken ct, [System.Runtime.CompilerServices.CallerMemberName] string callerName = "",
+   [System.Runtime.CompilerServices.CallerFilePath] string callerFilePath = "",
+   [System.Runtime.CompilerServices.CallerLineNumber] int callerLineNumber = 0)
         {
             System.TimeSpan timeoutValue = System.TimeSpan.Zero;
             if (_answerService.HasTimeout)
@@ -54,8 +56,9 @@ namespace AnswerGenerator
                     }
 
                     // Timeout occurred
+                    string action = $"{callerName} at {System.IO.Path.GetFileName(callerFilePath)}:{callerLineNumber}";
                     if (!_answerService.HasTimeOutDialog || !await _answerService.AskYesNoToWaitAsync(
-                            $"The operation timed out. Do you want to retry?", ct))
+                            $"The operation '{action}' timed out. Do you want to retry?", ct))
                     {
                         answer = Answers.Answer.Prepare("Time out");
                         return answer.Error($"{timeoutValue.TotalSeconds} seconds elapsed");

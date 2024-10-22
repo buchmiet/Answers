@@ -16,7 +16,8 @@ namespace AnswerConsole
 
         public Task<bool> ContinueTimedOutYesNoAsync(string errorMessage, CancellationToken ct)
         {
-            throw new NotImplementedException();
+            Console.WriteLine(errorMessage);
+            return Task.FromResult(false);
         }
 
         public bool YesNo(string errorMessage)
@@ -26,7 +27,7 @@ namespace AnswerConsole
 
         public async Task<bool> YesNoAsync(string errorMessage, CancellationToken ct)
         {
-            Console.WriteLine($"there has been an error while {errorMessage}, press (y/n) to continue");
+            Console.WriteLine(errorMessage);
 
             while (true)
             {
