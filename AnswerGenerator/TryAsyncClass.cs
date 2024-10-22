@@ -85,6 +85,17 @@ namespace AnswerGenerator
             }
         }
 
-
+        public void LogDetailedInfo(
+            [System.Runtime.CompilerServices.CallerMemberName] string callerName = "",
+            [System.Runtime.CompilerServices.CallerFilePath] string callerFilePath = "",
+            [System.Runtime.CompilerServices.CallerLineNumber] int callerLineNumber = 0,
+            [System.Runtime.CompilerServices.CallerArgumentExpression("callerName")] string callerExpression = "")
+        {
+            Console.WriteLine("Metoda została wywołana przez:");
+            Console.WriteLine($"- Nazwa metody: {callerName}");
+            Console.WriteLine($"- Ścieżka pliku: {callerFilePath}");
+            Console.WriteLine($"- Numer linii: {callerLineNumber}");
+            Console.WriteLine($"- Wyrażenie argumentu: {callerExpression}");
+        }
     }
 

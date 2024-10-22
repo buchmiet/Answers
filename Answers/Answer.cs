@@ -29,38 +29,12 @@ namespace Answers
 
     public class Answer : IAnswer
     {
-
-        protected IAnswerValue _answerValue;
-        private static readonly ActivitySource ActivitySource = new("Answers");
-        public Activity CurrentActivity { get; }
-
-
-        public void AddValue<T>(T value)
-        {
-            if (!IsSuccess)
-            {
-                throw new InvalidOperationException("Answer is in Error state, no values can be added");
-            }
-            _answerValue = new AnswerAnswerValue<T>(value);
-        }
-
-
-        public T GetValue<T>()
-        {
-            if (!State.HasValueSet) throw new InvalidOperationException("Value was not set.");
-            if (_answerValue is AnswerAnswerValue<T> record)
-            {
-                return record.GetValue();
-            }
-            throw new InvalidOperationException("Value is not of the correct type.");
-        }
-
         protected AnswerState State = new();
         protected readonly MessageAggregator Messages = new();
-
-
+        protected IAnswerValue AnswerValue;
         public bool IsSuccess => State.IsSuccess;
-       
+        public string Message => Messages.Message;
+        public bool HasValue => AnswerValue is not null;
 
         public bool DialogConcluded
         {
@@ -68,20 +42,9 @@ namespace Answers
             set => State.DialogConcluded = value;
         }
 
-        public string Message => Messages.Message;
-
-        public bool HasValue => _answerValue != null;
-
+        
         public void ConcludeDialog() => State.ConcludeDialog();
-
- //       public static Answer Current => _currentAnswer.Value;
-
-        public Answer(string action)
-        {
-            CurrentActivity = ActivitySource.StartActivity(action, ActivityKind.Internal);
-            Messages.AddAction(action);
-        }
-
+        public Answer(string action)=> Messages.AddAction(action);
         public static Answer Prepare(string action)=>new(action);
         
 
@@ -93,16 +56,16 @@ namespace Answers
             if (HasValue && !answer.IsSuccess)
             {
                 throw new InvalidOperationException(
-                    $"This object already has value ({_answerValue.GetValue()}) of type {_answerValue.GetType().FullName}, terefore it can not be merged with another object in an error state");
+                    $"This object already has value ({AnswerValue.GetValue()}) of type {AnswerValue.GetType().FullName}, terefore it can not be merged with another object in an error state");
             }
 
             if (HasValue && answer.HasValue)
             {
-                throw new InvalidOperationException($"There is already value ({_answerValue.GetValue()}) of type {_answerValue.GetType().FullName} assigned to this Answer object. You can not merge value {answer._answerValue.GetValue()} of Type {answer._answerValue.GetType()} from {answer.Message} with it.");
+                throw new InvalidOperationException($"There is already value ({AnswerValue.GetValue()}) of type {AnswerValue.GetType().FullName} assigned to this Answer object. You can not merge value {answer.AnswerValue.GetValue()} of Type {answer.AnswerValue.GetType()} from {answer.Message} with it.");
             }
             if (answer.HasValue)
             {
-                _answerValue = answer._answerValue;
+                AnswerValue = answer.AnswerValue;
                 State.HasValueSet = true;
             }
             return this;
@@ -129,23 +92,38 @@ namespace Answers
 
         public Answer WithValue<T>(T value)
         {
-            _answerValue = new AnswerAnswerValue<T>(value);
+            AnswerValue = new AnswerAnswerValue<T>(value);
             State.HasValueSet = true;
             return this;
         }
+        public void AddValue<T>(T value)
+        {
+            if (!IsSuccess)
+            {
+                throw new InvalidOperationException("Answer is in Error state, no values can be added");
+            }
+            AnswerValue = new AnswerAnswerValue<T>(value);
+        }
 
-    
+        public T GetValue<T>()
+        {
+            if (!State.HasValueSet) throw new InvalidOperationException("Value was not set.");
+            if (AnswerValue is AnswerAnswerValue<T> record)
+            {
+                return record.GetValue();
+            }
+            throw new InvalidOperationException("Value is not of the correct type.");
+        }
+
 
         public bool Out<T>(out T value)
         {
-            if (State.HasValueSet)
+            if (State.HasValueSet && AnswerValue is AnswerAnswerValue<T> record)
             {
-                if (_answerValue is AnswerAnswerValue<T> record)
-                {
-                    value = record.GetValue();
-                    return true;
-                }
+                value = record.GetValue();
+                return true;
             }
+
             throw new InvalidOperationException("Value not set.");
         }
 

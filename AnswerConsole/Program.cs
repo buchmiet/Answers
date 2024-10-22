@@ -4,6 +4,8 @@ using AnswerConsole;
 using Answers;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
+using Spectre.Console;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 var loggerFactory = LoggerFactory.Create(builder =>
 {
@@ -12,34 +14,24 @@ var loggerFactory = LoggerFactory.Create(builder =>
 
 var logger = loggerFactory.CreateLogger<Program>();
 var answerService = new AnswerService(null, logger);
-answerService.AddTimeoutDialog(new ConsoleUserDialog());
+//answerService.AddTimeoutDialog(new ConsoleUserDialog());
 var randomServie = new RandomService(logger);
 var cancellationToken = new CancellationToken();
 #endregion AUTOEXEC.BAT
+
+
 var databaseClass = new DatabaseTierClass(randomServie, answerService);
 var httpClass = new HttpTierClass(randomServie, answerService);
 var businessLogic = new BusinessLogicClass(databaseClass, httpClass, answerService);
 var presentationLayer = new PresentationLayer(businessLogic, answerService);
-
+//presentationLayer.jednaMetoda();
+//presentationLayer.drugametoda();
+//presentationLayer.trzeciaMetoda();
 
 await presentationLayer.ExecuteConcurrentOperations(new CancellationToken());
 
 
-string GetFullOperationName(System.Diagnostics.Activity activity)
-{
-    if (activity == null) return null;
 
-    var operationNames = new Stack<string>();
-    var currentActivity = activity;
-
-    while (currentActivity != null)
-    {
-        operationNames.Push(currentActivity.OperationName);
-        currentActivity = currentActivity.Parent;
-    }
-
-    return string.Join(" -> ", operationNames);
-}
 
 //await wyswietlacz.DisplayProductInformation(0, cancellationToken);
 
@@ -391,46 +383,66 @@ public partial class PresentationLayer:IAnswerable
     public PresentationLayer(BusinessLogicClass utilityLayer, Answers.IAnswerService answerService)
     {
         _answerService = answerService;
-        _answerService.AddYesNoDialog(new ConsoleUserDialog());
+     //   _answerService.AddYesNoDialog(new UserDialogStub(true));
         _utilityLayer = utilityLayer;
+     //   LogDetailedInfo();
+    }
+
+
+    public void jednaMetoda()
+    {
+    //    LogDetailedInfo();
+    }
+
+    public void drugametoda()
+    {
+     //   LogDetailedInfo();
+    }
+
+    public void trzeciaMetoda()
+    {
+      //  LogDetailedInfo();
     }
 
     public async Task ExecuteConcurrentOperations(CancellationToken ct)
     {
+        AnsiConsole.MarkupLine("[cyan]public[/] [green]async Task[/][cyan]<Answer>[/] [green]ExecuteConcurrentOperations[/][white]([cyan]CancellationToken[/] [white]ct[/])[/]");
+        //LogDetailedInfo();
         Task<Answer> task1 = FetchDatabaseData(1, ct);
-        Task<Answer> task2 = FetchWebApiData(2, ct);
+     //   Task<Answer> task2 = FetchWebApiData(2, ct);
 
         // Poczekaj na wszystkie taski
-        await Task.WhenAll(task1, task2);
+        await Task.WhenAll(task1);//, task2);
 
         // Pobierz wyniki z tasków
         Answer result1 = await task1;
-        Answer result2 = await task2;
+        //Answer result2 = await task2;
 
         // Teraz możesz operować na odpowiedziach
         if (result1.IsSuccess)
         {
-            Console.WriteLine($"Result from FetchDatabaseData: {result1.GetValue<string>()}");
+            AnsiConsole.WriteLine($"Result of operation : {result1.GetValue<string>()}");
         }
         else
         {
-            Console.WriteLine($"Error in FetchDatabaseData: {result1.Message}");
+            AnsiConsole.WriteLine($"Error in FetchDatabaseData: {result1.Message}");
         }
 
-        if (result2.IsSuccess)
-        {
-            Console.WriteLine($"Result from FetchWebApiData: {result2.GetValue<string>()}");
-        }
-        else
-        {
-            Console.WriteLine($"Error in FetchWebApiData: {result2.Message}");
-        }
+        //if (result2.IsSuccess)
+        //{
+        //    Console.WriteLine($"Result from FetchWebApiData: {result2.GetValue<string>()}");
+        //}
+        //else
+        //{
+        //    Console.WriteLine($"Error in FetchWebApiData: {result2.Message}");
+        //}
     }
 
 
     private async Task<Answer> FetchDatabaseData(int id, CancellationToken ct)
     {
-        _answerService.SetTimeout(TimeSpan.FromSeconds(2));
+        AnsiConsole.MarkupLine("[cyan]public[/] [green]async Task[/][cyan]<Answer>[/] [green]FetchDatabaseData[/][white]([cyan]int[/] [white]id[/], [cyan]CancellationToken[/] [white]ct[/])[/]");
+     //   _answerService.SetTimeout(TimeSpan.FromSeconds(2));
         Answer answer = Answer.Prepare("[PresentationLayer] Fetching data from database");
         var response= await TryAsync(() => _utilityLayer.GetDatabaseData(id, ct), ct);
         return answer.Attach(response);
@@ -451,6 +463,7 @@ public partial class BusinessLogicClass(DatabaseTierClass databaseTier, HttpTier
 {
     public async Task<Answer> GetDatabaseData(int id, CancellationToken ct)
     {
+        AnsiConsole.MarkupLine("[cyan]public[/] [green]async Task[/][cyan]<Answer>[/] [green]GetDatabaseData[/][white]([cyan]int[/] [white]id[/], [cyan]CancellationToken[/] [white]ct[/])[/]");
         var answer = Answer.Prepare($"[BusinessLogicClass] GetDatabaseData({id})");
         Answer result = await TryAsync(() => databaseTier.GetDataFromDatabase(id, ct), ct);
         return answer.Attach(result);
@@ -469,10 +482,21 @@ public partial class DatabaseTierClass(RandomService randomService) : IAnswerabl
 {
     public async Task<Answer> GetDataFromDatabase(int id, CancellationToken ct)
     {
+        AnsiConsole.MarkupLine("[cyan]private[/] [green]async Task[/][cyan]<Answer>[/] [green]GetDataFromDatabase[/][white]([cyan]int[/] {id}, [cyan]CancellationToken[/] [white]ct[/])[/]");
         var answer = Answer.Prepare($"[DatabaseTierClass] GetDataFromDatabase({id})");
         // Simulate work
         await Task.Delay(2000, ct);
-        return randomService.NextBool() ? answer.WithValue($"DatabaseData_{id}") : answer.Error($"Error fetching data from database for ID {id}");
+        var randomValue = randomService.NextBool();
+        AnsiConsole.MarkupLine($"Next random value is [green]{randomValue}[/]");
+        if (randomValue)
+        {
+            AnsiConsole.MarkupLine($"I am returning answer with [green]IsSuccess=true[/] and value='[yellow]DatabaseData_{id}[/]'");
+            return answer.WithValue($"[yellow]DatabaseData_{id}[/]");
+        }
+
+        AnsiConsole.MarkupLine(
+            $"I am returning answer with [red]IsSuccess=false[/] and message='[red]Error fetching data from database for ID {id}[/]'");
+        return answer.Error($"[red]Error fetching data from database for ID {id}[/]");
     }
 
 }
@@ -481,10 +505,22 @@ public partial class HttpTierClass(RandomService randomService) : IAnswerable
 {
     public async Task<Answer> GetDataFromWebApi(int id, CancellationToken ct)
     {
+      
         var answer = Answer.Prepare($"[HttpTierClass] GetDataFromWebApi({id})");
         // Simulate work
         await Task.Delay(2000, ct);
-        return randomService.NextBool() ? answer.WithValue($"WebApiData_{id}") : answer.Error($"Error fetching data from Web API for ID {id}");
+        var randomValue = randomService.NextBool();
+        AnsiConsole.MarkupLine($"Next random value is {randomValue}");
+        if (randomValue)
+        {
+            AnsiConsole.MarkupLine($"I am returning answer with IsSuccess=true and value='WebApiData_{ id}'");
+            return answer.WithValue($"WebApiData_{id}");
+        }
+
+        AnsiConsole.MarkupLine(
+            $"I am returning answer with IsSuccess=false and message='Error fetching data from Web API for ID {id}");
+        return answer.WithValue($"WebApiData_{id}");
+        
     }
 }
 

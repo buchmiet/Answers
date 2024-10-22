@@ -12,29 +12,22 @@ namespace Answers
     {
         bool HasDialog { get; }
         bool HasTimeOutDialog { get; }
-
         bool HasTimeout { get; }
-
         void AddYesNoDialog(IUserDialog dialog);
         Task<bool> AskYesNoAsync(string message, CancellationToken ct);
         Task<bool> AskYesNoToWaitAsync(string message, CancellationToken ct);
         void SetTimeout(TimeSpan timeout);
-        void LogInfo(string message);
-        void LogError(string message);
-        void LogWarning(string message);
-
-        // Metody synchroniczne
+        
         bool AskYesNo(string message);
         bool AskYesNoToWait(string message);
         TimeSpan GetTimeout();
     }
 
 
-    public class AnswerService : IAnswerService
+    public class AnswerService(IUserDialog dialog, ILogger logger) : IAnswerService
     {
-        private IUserDialog _dialog;
         private IUserDialog _timeOutDialog;
-        private readonly ILogger _logger;
+        public ILogger Logger { get; } = logger;
         private readonly object _syncRoot = new();
         private TimeSpan Timeout { get; set; }
         public TimeSpan GetTimeout()
@@ -47,17 +40,13 @@ namespace Answers
             }
         }
 
-        public bool HasDialog => _dialog != null;
+        public bool HasDialog => dialog != null;
         public bool HasTimeout => Timeout != TimeSpan.Zero;
         public bool HasTimeOutDialog => _timeOutDialog != null;
 
-        public void LogInfo(string message) => _logger.LogInformation(message);
-        public void LogError(string message) => _logger.LogError(message);
-        public void LogWarning(string message) => _logger.LogWarning(message);
-
-        public void AddYesNoDialog(IUserDialog dialog)
+        public void AddYesNoDialog(IUserDialog dialog1)
         {
-            Interlocked.Exchange(ref _dialog, dialog);
+            Interlocked.Exchange(ref dialog, dialog1);
         }
 
         public void AddTimeoutDialog(IUserDialog dialog)
@@ -68,33 +57,29 @@ namespace Answers
         // Metody asynchroniczne
         public Task<bool> AskYesNoAsync(string message, CancellationToken ct)
         {
-            var dialog = _dialog;
             if (dialog is not null)
             {
                 return dialog.YesNoAsync(message, ct);
             }
-
             throw new InvalidOperationException("Dialog is not set.");
         }
 
         public Task<bool> AskYesNoToWaitAsync(string message, CancellationToken ct)
         {
-            var dialog = _dialog;
             if (dialog is not null)
             {
                 return dialog.ContinueTimedOutYesNoAsync(message, ct);
             }
-
             throw new InvalidOperationException("Dialog is not set.");
         }
 
         // Metody synchroniczne
         public bool AskYesNo(string message)
         {
-            var dialog = _dialog;
-            if (dialog is not null)
+            var dialog1 = dialog;
+            if (dialog1 is not null)
             {
-                return dialog.YesNo(message);
+                return dialog1.YesNo(message);
             }
 
             throw new InvalidOperationException("Dialog is not set.");
@@ -102,37 +87,25 @@ namespace Answers
 
         public bool AskYesNoToWait(string message)
         {
-            var dialog = _dialog;
-            if (dialog is not null)
+            var dialog1 = dialog;
+            if (dialog1 is not null)
             {
-                return dialog.ContinueTimedOutYesNo(message);
+                return dialog1.ContinueTimedOutYesNo(message);
             }
 
             throw new InvalidOperationException("Dialog is not set.");
         }
 
-        public AnswerService(IUserDialog dialog, ILogger logger)
-        {
-            _dialog = dialog;
-            _logger = logger;
-        }
-
-        public AnswerService()
+        public AnswerService(ILogger logger) : this(null, logger)
         {
         }
 
-        public AnswerService(ILogger logger)
-        {
-            _logger = logger;
-
-        }
 
         public void SetTimeout(TimeSpan timeout)
         {
             lock (_syncRoot)
             {
                 Timeout = timeout;
-
             }
         }
     }
