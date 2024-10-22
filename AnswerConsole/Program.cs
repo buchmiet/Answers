@@ -15,13 +15,29 @@ var answerService = new AnswerService(null, logger);
 var randomServie = new RandomService(logger);
 var cancellationToken = new CancellationToken();
 #endregion AUTOEXEC.BAT
-var tescik = new ServiceTierClass(randomServie, answerService);
-var tescik2 = new UtilityLayerClass(tescik, answerService);
-var presentationLayer = new PresentationLayer( tescik2, answerService);
-using (var cts = new CancellationTokenSource())
+var databaseClass = new DatabaseTierClass(randomServie, answerService);
+var httpClass = new HttpTierClass(randomServie, answerService);
+var businessLogic = new BusinessLogicClass(databaseClass, httpClass, answerService);
+var presentationLayer = new PresentationLayer(businessLogic, answerService);
+
+
+    await presentationLayer.ExecuteConcurrentOperations(new CancellationToken());
+
+
+string GetFullOperationName(System.Diagnostics.Activity activity)
 {
-    cts.CancelAfter(TimeSpan.FromSeconds(5)); // Set a global timeout
-    await presentationLayer.ExecuteConcurrentOperations(cts.Token);
+    if (activity == null) return null;
+
+    var operationNames = new Stack<string>();
+    var currentActivity = activity;
+
+    while (currentActivity != null)
+    {
+        operationNames.Push(currentActivity.OperationName);
+        currentActivity = currentActivity.Parent;
+    }
+
+    return string.Join(" -> ", operationNames);
 }
 
 //await wyswietlacz.DisplayProductInformation(0, cancellationToken);
@@ -38,9 +54,9 @@ using (var cts = new CancellationTokenSource())
 //public class PresentationLayer
 //{
 //    IAnswerService _answerService;
-//    //private UtilityLayerClass _utilityLayer;
+//    //private BusinessLogicClass _utilityLayer;
 
-//    //public PresentationLayer(Answers.IAnswerService answerService, UtilityLayerClass utilityLayer)
+//    //public PresentationLayer(Answers.IAnswerService answerService, BusinessLogicClass utilityLayer)
 //    //{
 //    //    _answerService = answerService;
 //    //    _answerService.AddYesNoDialog(new ConsoleUserDialog());
@@ -69,10 +85,10 @@ using (var cts = new CancellationTokenSource())
 //    //}
 
 
-//    private UtilityLayerClass _utilityLayer;
-//    private UtilityLayerClass _anotherUtilityLayer;
+//    private BusinessLogicClass _utilityLayer;
+//    private BusinessLogicClass _anotherUtilityLayer;
 
-//    public PresentationLayer(Answers.IAnswerService answerService, UtilityLayerClass utilityLayer, UtilityLayerClass anotherUtilityLayer)
+//    public PresentationLayer(Answers.IAnswerService answerService, BusinessLogicClass utilityLayer, BusinessLogicClass anotherUtilityLayer)
 //    {
 //        _answerService = answerService;
 //        _answerService.AddYesNoDialog(new ConsoleUserDialog());
@@ -202,11 +218,11 @@ using (var cts = new CancellationTokenSource())
 //    }
 
 //}
-//public partial class ServiceTierClass:IAnswerable
+//public partial class DatabaseTierClass:IAnswerable
 //{
 //    private RandomService _randomService;
 
-//    public ServiceTierClass(RandomService randomService)
+//    public DatabaseTierClass(RandomService randomService)
 //    {
 //        _randomService = randomService;
 //    }
@@ -244,11 +260,11 @@ using (var cts = new CancellationTokenSource())
 //    }
 //}
 
-//public partial class UtilityLayerClass:IAnswerable
+//public partial class BusinessLogicClass:IAnswerable
 //{
-//    private ServiceTierClass _serviceTier;
+//    private DatabaseTierClass _serviceTier;
 
-//    public UtilityLayerClass(ServiceTierClass serviceTier)
+//    public BusinessLogicClass(DatabaseTierClass serviceTier)
 //    {
 //        this._serviceTier = serviceTier;
 //    }
@@ -296,8 +312,8 @@ using (var cts = new CancellationTokenSource())
 
 public class PresentationLayer
 {
-    private async Task<Answers.Answer> TryAsync(
-    Func<System.Threading.Tasks. Task<Answers. Answer>> method,
+    private async System.Threading.Tasks.Task<Answers.Answer> TryAsync(
+    System.Func<System.Threading.Tasks. Task<Answers. Answer>> method,
     System.Threading. CancellationToken ct,
     System.TimeSpan? timeout = null)
     {
@@ -335,12 +351,10 @@ public class PresentationLayer
                 }
 
                 // Timeout occurred
-                var fullOperationName = GetFullOperationName(System.Diagnostics.Activity.Current);
-                var message = fullOperationName ?? "Unknown task";
                 if (!_answerService.HasTimeOutDialog || !await _answerService.AskYesNoToWaitAsync(
-                        $"The operation {message} timed out. Do you want to retry?", ct))
+                        $"The operation timed out. Do you want to retry?", ct))
                 {
-                    answer =Answers.Answer.Prepare(message);
+                    answer =Answers.Answer.Prepare("Time out");
                     return answer.Error($"{timeout.Value.TotalSeconds} seconds elapsed");
                 }
 
@@ -365,143 +379,112 @@ public class PresentationLayer
         }
     }
 
-    private string GetFullOperationName(System.Diagnostics. Activity activity)
-    {
-        if (activity == null) return null;
-
-        var operationNames = new Stack<string>();
-        var currentActivity = activity;
-
-        while (currentActivity != null)
-        {
-            operationNames.Push(currentActivity.OperationName);
-            currentActivity = currentActivity.Parent;
-        }
-
-        return string.Join(" -> ", operationNames);
-    }
-
-
-    private UtilityLayerClass _utilityLayer;
     private IAnswerService _answerService;
-
-    public PresentationLayer(UtilityLayerClass utilityLayer,IAnswerService answerService)
+    private BusinessLogicClass _utilityLayer;
+    public PresentationLayer(BusinessLogicClass utilityLayer, Answers.IAnswerService answerService)
     {
-        _answerService= answerService;
+        _answerService = answerService;
+        _answerService.AddYesNoDialog(new ConsoleUserDialog());
         _utilityLayer = utilityLayer;
     }
 
     public async Task ExecuteConcurrentOperations(CancellationToken ct)
     {
-        var task1 = FetchDatabaseData(1, ct);
-        var task2 = FetchWebApiData(2, ct);
+        Task<Answer> task1 = FetchDatabaseData(1, ct);
+        Task<Answer> task2 = FetchWebApiData(2, ct);
 
+        // Poczekaj na wszystkie taski
         await Task.WhenAll(task1, task2);
-    }
 
-    private async Task FetchDatabaseData(int id, CancellationToken ct)
-    {
-        Answer response = await TryAsync(() => _utilityLayer.GetDatabaseData(id, ct), ct);
-        if (response.IsSuccess)
+        // Pobierz wyniki z tasków
+        Answer result1 = await task1;
+        Answer result2 = await task2;
+
+        // Teraz możesz operować na odpowiedziach
+        if (result1.IsSuccess)
         {
-            Console.WriteLine($"[Database] Success: {response.GetValue<string>()}");
+            Console.WriteLine($"Result from FetchDatabaseData: {result1.GetValue<string>()}");
         }
         else
         {
-            Console.WriteLine($"[Database] Error: {response.Message}");
+            Console.WriteLine($"Error in FetchDatabaseData: {result1.Message}");
         }
-    }
 
-    private async Task FetchWebApiData(int id, CancellationToken ct)
-    {
-        Answer response = await TryAsync(() => _utilityLayer.GetWebApiData(id, ct), ct);
-        if (response.IsSuccess)
+        if (result2.IsSuccess)
         {
-            Console.WriteLine($"[Web API] Success: {response.GetValue<string>()}");
+            Console.WriteLine($"Result from FetchWebApiData: {result2.GetValue<string>()}");
         }
         else
         {
-            Console.WriteLine($"[Web API] Error: {response.Message}");
+            Console.WriteLine($"Error in FetchWebApiData: {result2.Message}");
         }
     }
 
-    // Assume TryAsync is implemented as shown earlier
+
+    private async Task<Answer> FetchDatabaseData(int id, CancellationToken ct)
+    {
+        Answer answer = Answer.Prepare("[PresentationLayer] Fetching data from database");
+        var response= await TryAsync(() => _utilityLayer.GetDatabaseData(id, ct), ct);
+        return answer.Attach(response);
+    }
+
+    private async Task<Answer> FetchWebApiData(int id, CancellationToken ct)
+    {
+        Answer answer = Answer.Prepare("[PresentationLayer] Fetching data from web api");
+        return answer.Attach(await TryAsync(() => _utilityLayer.GetWebApiData(id, ct), ct));
+    }
+
 }
 
 
 
-public partial class UtilityLayerClass:IAnswerable
+public partial class BusinessLogicClass(DatabaseTierClass databaseTier, HttpTierClass httpTier) : IAnswerable
 {
-    private ServiceTierClass _serviceTier;
-
-    public UtilityLayerClass(ServiceTierClass serviceTier)
-    {
-        this._serviceTier = serviceTier;
-    }
-
     public async Task<Answer> GetDatabaseData(int id, CancellationToken ct)
     {
-        using (var answer = Answer.Prepare($"GetDatabaseData({id})"))
-        {
-            Answer result = await TryAsync(() => _serviceTier.GetDataFromDatabase(id, ct), ct);
-            if (!result.IsSuccess)
-            {
-                return answer.Error($"UtilityLayer Error: {result.Message}");
-            }
-            return answer.WithValue(result.GetValue<string>());
-        }
+        var answer = Answer.Prepare($"[BusinessLogicClass] GetDatabaseData({id})");
+        Answer result = await TryAsync(() => databaseTier.GetDataFromDatabase(id, ct), ct);
+        return answer.Attach(result);
     }
 
     public async Task<Answer> GetWebApiData(int id, CancellationToken ct)
     {
-        using (var answer = Answer.Prepare($"GetWebApiData({id})"))
-        {
-            Answer result = await TryAsync(() => _serviceTier.GetDataFromWebApi(id, ct), ct);
-            if (!result.IsSuccess)
-            {
-                return answer.Error($"UtilityLayer Error: {result.Message}");
-            }
-            return answer.WithValue(result.GetValue<string>());
-        }
+        var answer = Answer.Prepare($"[BusinessLogicClass] GetWebApiData({id})");
+        Answer result = await TryAsync(() => httpTier.GetDataFromWebApi(id, ct), ct);
+        return answer.Attach(result);
     }
 }
 
 
-public partial class ServiceTierClass:IAnswerable
+public partial class DatabaseTierClass(RandomService randomService) : IAnswerable
 {
-    private RandomService _randomService;
-
-    public ServiceTierClass(RandomService randomService)
-    {
-        _randomService = randomService;
-    }
-
     public async Task<Answer> GetDataFromDatabase(int id, CancellationToken ct)
     {
-        using (var answer = Answer.Prepare($"GetDataFromDatabase({id})"))
-        {
-            // Simulate work
-            await Task.Delay(2000, ct);
-            return _randomService.NextBool() ? answer.WithValue($"DatabaseData_{id}") : answer.Error($"Error fetching data from database for ID {id}");
-        }
+        var answer = Answer.Prepare($"[DatabaseTierClass] GetDataFromDatabase({id})");
+        // Simulate work
+        await Task.Delay(2000, ct);
+        return randomService.NextBool() ? answer.WithValue($"DatabaseData_{id}") : answer.Error($"Error fetching data from database for ID {id}");
     }
 
+}
+
+public partial class HttpTierClass(RandomService randomService) : IAnswerable
+{
     public async Task<Answer> GetDataFromWebApi(int id, CancellationToken ct)
     {
-        using (var answer = Answer.Prepare($"GetDataFromWebApi({id})"))
-        {
-            // Simulate work
-            await Task.Delay(2000, ct);
-            return _randomService.NextBool() ? answer.WithValue($"WebApiData_{id}") : answer.Error($"Error fetching data from Web API for ID {id}");
-        }
+        var answer = Answer.Prepare($"[HttpTierClass] GetDataFromWebApi({id})");
+        // Simulate work
+        await Task.Delay(2000, ct);
+        return randomService.NextBool() ? answer.WithValue($"WebApiData_{id}") : answer.Error($"Error fetching data from Web API for ID {id}");
     }
 }
 
 
-//public partial class ServiceTierClass : IAnswerable
+
+//public partial class DatabaseTierClass : IAnswerable
 //{
 //    private RandomService _randomService;
-//    public ServiceTierClass(RandomService randomService)
+//    public DatabaseTierClass(RandomService randomService)
 //    {
 //        _randomService = randomService;
 //    }
@@ -531,11 +514,11 @@ public partial class ServiceTierClass:IAnswerable
 
 //}
 
-//public partial class UtilityLayerClass : IAnswerable
+//public partial class BusinessLogicClass : IAnswerable
 //{
-//    private ServiceTierClass _serviceTier;
+//    private DatabaseTierClass _serviceTier;
 
-//    public UtilityLayerClass(ServiceTierClass serviceTier)
+//    public BusinessLogicClass(DatabaseTierClass serviceTier)
 //    {
 //        this._serviceTier = serviceTier;
 //    }

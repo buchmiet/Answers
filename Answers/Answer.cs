@@ -27,10 +27,10 @@ namespace Answers
         bool Out<T>(out T value);
     }
 
-    public class Answer : IAnswer,IDisposable
+    public class Answer : IAnswer
     {
 
-        private IAnswerValue _answerValue;
+        protected IAnswerValue _answerValue;
         private static readonly ActivitySource ActivitySource = new("Answers");
         public Activity CurrentActivity { get; }
 
@@ -90,6 +90,21 @@ namespace Answers
             Messages.AddActions(answer.Messages.Actions);
             State.IsSuccess &= answer.IsSuccess;
             State.DialogConcluded |= answer.DialogConcluded;
+            if (HasValue && !answer.IsSuccess)
+            {
+                throw new InvalidOperationException(
+                    $"This object already has value ({_answerValue.GetValue()}) of type {_answerValue.GetType().FullName}, terefore it can not be merged with another object in an error state");
+            }
+
+            if (HasValue && answer.HasValue)
+            {
+                throw new InvalidOperationException($"There is already value ({_answerValue.GetValue()}) of type {_answerValue.GetType().FullName} assigned to this Answer object. You can not merge value {answer._answerValue.GetValue()} of Type {answer._answerValue.GetType()} from {answer.Message} with it.");
+            }
+            if (answer.HasValue)
+            {
+                _answerValue = answer._answerValue;
+                State.HasValueSet = true;
+            }
             return this;
         }
 
@@ -134,9 +149,6 @@ namespace Answers
             throw new InvalidOperationException("Value not set.");
         }
 
-        public void Dispose()
-        {
-            CurrentActivity?.Stop();
-        }
+   
     }
 }
