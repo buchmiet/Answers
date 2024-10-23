@@ -426,7 +426,7 @@ public partial class PresentationLayer//:IAnswerable
     public PresentationLayer(BusinessLogicClass utilityLayer, Answers.IAnswerService answerService)
     {
         _answerService = answerService;
-       _answerService.AddDialog(new UserDialogStub([true]));
+       _answerService.AddDialog(new UserDialogStub([true,false]));
         _utilityLayer = utilityLayer;
      //   LogDetailedInfo();
     }
@@ -452,6 +452,7 @@ public partial class PresentationLayer//:IAnswerable
         AnsiConsole.MarkupLine("[cyan]public[/] [green]async Task[/][cyan]<Answer>[/] [green]ExecuteConcurrentOperations[/][white]([cyan]CancellationToken[/] [white]ct[/])[/]");
         AnsiConsole.WriteLine("level 1");
         //LogDetailedInfo();
+        _answerService.SetTimeout(TimeSpan.FromSeconds(1));
         Task<Answer> task1 = FetchDatabaseData(1, ct);
      //   Task<Answer> task2 = FetchWebApiData(2, ct);
 
