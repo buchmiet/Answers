@@ -36,12 +36,16 @@ namespace AnswerConsole
 
         public Task<bool> YesNoAsync(string errorMessage, CancellationToken ct)
         {
-            return Task.FromResult(GetNextResponse());
+            var response = GetNextResponse();
+            Console.WriteLine($"{errorMessage}: continue - True or false?{response}");
+            return Task.FromResult(response);
         }
 
         public Task<bool> ContinueTimedOutYesNoAsync(string errorMessage, CancellationToken ct)
         {
-            return Task.FromResult(GetNextResponse());
+            var response = GetNextResponse();
+            Console.WriteLine($"{errorMessage}: continue - True or false?{response}");
+            return Task.FromResult(response);
         }
 
         public bool YesNo(string errorMessage)

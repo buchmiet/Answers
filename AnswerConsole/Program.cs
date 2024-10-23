@@ -314,21 +314,17 @@ public partial class PresentationLayer//:IAnswerable
     {
         System.TimeSpan timeoutValue;
 
+        timeoutValue = this._answerService.HasTimeout ? _answerService.GetTimeout() : TimeSpan.Zero; // Pobiera i resetuje timeout
+        System.Threading.Tasks.Task<Answers.Answer> methodTask = method();
+        
+        Answers.Answer answer;
         while (true)
         {
-            timeoutValue = this._answerService.HasTimeout ? _answerService.GetTimeout() : TimeSpan.Zero; // Pobiera i resetuje timeout
-            System.Threading.Tasks.Task<Answers.Answer> methodTask = method();
-            System.Threading.Tasks.Task timeoutTask = null;
-            Answers.Answer answer;
-
+            
+            //  if (timeoutTask != null)
             if (timeoutValue != System.TimeSpan.Zero)
             {
-                timeoutTask = System.Threading.Tasks.Task.Delay(timeoutValue, ct);
-            }
-
-            if (timeoutTask != null)
-            {
-                System.Threading.Tasks.Task completedTask = await System.Threading.Tasks.Task.WhenAny(methodTask, timeoutTask);
+                System.Threading.Tasks.Task completedTask = await System.Threading.Tasks.Task.WhenAny(methodTask, System.Threading.Tasks.Task.Delay(timeoutValue, ct));
 
                 if (completedTask == methodTask)
                 {
@@ -362,7 +358,7 @@ public partial class PresentationLayer//:IAnswerable
 
                 // Wystąpił timeout
                 System.String action = $"{callerName} at {System.IO.Path.GetFileName(callerFilePath)}:{callerLineNumber}";
-                System.Boolean timeoutResponse = false;
+              
 
                 if (this._answerService.HasTimeOutDialog)
                 {
@@ -370,21 +366,20 @@ public partial class PresentationLayer//:IAnswerable
 
                     if (this._answerService.HasTimeOutAsyncDialog)
                     {
-                        timeoutResponse = await this._answerService.AskYesNoToWaitAsync(timeoutMessage, ct);
+                        using CancellationTokenSource dialogCts = new CancellationTokenSource();
+                        System.Threading.Tasks.Task dialogTask = this._answerService.AskYesNoToWaitAsync(timeoutMessage,dialogCts.Token, ct);
+                        System.Threading.Tasks.Task dialogOutcomeTask = await System.Threading.Tasks.Task.WhenAny(methodTask, dialogTask);
+                        if (dialogOutcomeTask== methodTask)
+                        {
+                            await dialogCts.CancelAsync();
+                            answer = await methodTask;
+                            return answer;
+                        }
+                        continue;
                     }
-                    else
-                    {
-                        timeoutResponse = this._answerService.AskYesNoToWait(timeoutMessage);
-                    }
-
                 }
 
-                if (timeoutResponse)
-                {
-                    // Użytkownik wybrał "Yes", ustawiamy timeout ponownie
-                    this._answerService.SetTimeout(timeoutValue);
-                    continue; // Ponawiamy operację
-                }
+
 
                 // Użytkownik wybrał "No" lub brak dostępnych dialogów
                 answer = Answers.Answer.Prepare("Time out");
@@ -399,7 +394,7 @@ public partial class PresentationLayer//:IAnswerable
                 return answer;
             }
 
-            System.Boolean userResponse = false;
+            System.Boolean userResponse;
 
             if (this._answerService.HasYesNoAsyncDialog)
             {
@@ -412,6 +407,7 @@ public partial class PresentationLayer//:IAnswerable
 
             if (userResponse)
             {
+                methodTask = method();
                 continue; // Użytkownik wybrał "Yes", ponawiamy operację
             }
 

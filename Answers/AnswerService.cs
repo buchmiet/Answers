@@ -20,7 +20,7 @@ namespace Answers
         TimeSpan GetTimeout();
         void AddDialog(IUserDialog dialog1);
         Task<bool> AskYesNoAsync(string message, CancellationToken ct);
-        Task<bool> AskYesNoToWaitAsync(string message, CancellationToken ct);
+        Task<bool> AskYesNoToWaitAsync(string message, CancellationToken localCancellationToken, CancellationToken ct);
         bool AskYesNo(string message);
         bool AskYesNoToWait(string message);
         void SetTimeout(TimeSpan timeout);
@@ -69,11 +69,11 @@ namespace Answers
             throw new InvalidOperationException("Dialog is not set.");
         }
 
-        public Task<bool> AskYesNoToWaitAsync(string message, CancellationToken ct)
+        public Task<bool> AskYesNoToWaitAsync(string message, CancellationToken localCancellationToken, CancellationToken ct)
         {
             if (dialog is not null)
             {
-                return dialog.ContinueTimedOutYesNoAsync(message, ct);
+                return dialog.ContinueTimedOutYesNoAsync(message, localCancellationToken, ct);
             }
             throw new InvalidOperationException("Dialog is not set.");
         }

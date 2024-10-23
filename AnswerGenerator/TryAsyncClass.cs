@@ -10,20 +10,21 @@ namespace AnswerGenerator
     public class TryAsyncClass
     {
         private async System.Threading.Tasks.Task<Answers.Answer> TryAsync(
-            System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
-            System.Threading.CancellationToken ct,
-            [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
-            [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
-            [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
+     System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
+     System.Threading.CancellationToken ct,
+     [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
+     [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
+     [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
         {
             System.TimeSpan timeoutValue;
 
+            timeoutValue = this._answerService.HasTimeout ? _answerService.GetTimeout() : TimeSpan.Zero; // Pobiera i resetuje timeout
+            System.Threading.Tasks.Task<Answers.Answer> methodTask = method();
+
+            Answers.Answer answer;
             while (true)
             {
-                timeoutValue = this._answerService.HasTimeout ? _answerService.GetTimeout() : TimeSpan.Zero; // Pobiera i resetuje timeout
-                System.Threading.Tasks.Task<Answers.Answer> methodTask = method();
                 System.Threading.Tasks.Task timeoutTask = null;
-                Answers.Answer answer;
 
                 if (timeoutValue != System.TimeSpan.Zero)
                 {
@@ -85,8 +86,9 @@ namespace AnswerGenerator
 
                     if (timeoutResponse)
                     {
-                        // Użytkownik wybrał "Yes", ustawiamy timeout ponownie
-                        this._answerService.SetTimeout(timeoutValue);
+                        // User chose to wait longer; create a new timeoutTask
+                        timeoutTask = Task.Delay(timeoutValue, ct);
+                        // Continue to wait without restarting methodTask
                         continue; // Ponawiamy operację
                     }
 
@@ -103,7 +105,7 @@ namespace AnswerGenerator
                     return answer;
                 }
 
-                System.Boolean userResponse = false;
+                System.Boolean userResponse;
 
                 if (this._answerService.HasYesNoAsyncDialog)
                 {
@@ -116,6 +118,7 @@ namespace AnswerGenerator
 
                 if (userResponse)
                 {
+                    methodTask = method();
                     continue; // Użytkownik wybrał "Yes", ponawiamy operację
                 }
 
