@@ -9,32 +9,50 @@ namespace AnswerConsole
 {
     public class UserDialogStub : IUserDialog
     {
-        private readonly bool _response;
+        private readonly List<bool> _responses;
+        private int _currentResponseIndex = 0;
 
-        // Konstruktor pozwala określić, czy odpowiedź ma być true, czy false
-        public UserDialogStub(bool response)
+        // Konstruktor przyjmujący listę odpowiedzi
+        public UserDialogStub(IEnumerable<bool> responses)
         {
-            _response = response;
+            _responses = responses.ToList();
+            if (_responses.Count == 0)
+            {
+                throw new ArgumentException("List of responses cannot be empty");
+            }
+        }
+
+        // Właściwości sprawdzające dostępność wersji async i sync
+        public bool IsAsyncAvailable => true;
+        public bool IsSyncAvailable => true;
+
+        // Metoda pomocnicza do uzyskania kolejnej odpowiedzi
+        private bool GetNextResponse()
+        {
+            var response = _responses[_currentResponseIndex];
+            _currentResponseIndex = (_currentResponseIndex + 1) % _responses.Count; // Powtarzanie cyklicznie
+            return response;
         }
 
         public Task<bool> YesNoAsync(string errorMessage, CancellationToken ct)
         {
-            return Task.FromResult(_response);
+            return Task.FromResult(GetNextResponse());
         }
 
         public Task<bool> ContinueTimedOutYesNoAsync(string errorMessage, CancellationToken ct)
         {
-            return Task.FromResult(_response);
+            return Task.FromResult(GetNextResponse());
         }
 
         public bool YesNo(string errorMessage)
         {
-            return _response;
+            return GetNextResponse();
         }
 
         public bool ContinueTimedOutYesNo(string errorMessage)
         {
-            return _response;
+            return GetNextResponse();
         }
     }
+
 }

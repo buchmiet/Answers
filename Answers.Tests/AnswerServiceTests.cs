@@ -66,7 +66,7 @@ namespace Answers.Tests
         public void HasDialog_ShouldReturnTrue_WhenDialogIsSet()
         {
             // Arrange
-            _answerService.AddYesNoDialog(_mockUserDialog.Object);
+            _answerService.AddDialog(_mockUserDialog.Object);
 
             // Act
             var result = _answerService.HasDialog;
@@ -165,7 +165,7 @@ namespace Answers.Tests
             var newDialog = new Mock<IUserDialog>().Object;
 
             // Act
-            _answerService.AddYesNoDialog(newDialog);
+            _answerService.AddDialog(newDialog);
 
             // Assert
             Assert.True(_answerService.HasDialog);
@@ -206,7 +206,7 @@ namespace Answers.Tests
             var expectedResult = true;
 
             _mockUserDialog.Setup(d => d.YesNoAsync(message, ct)).ReturnsAsync(expectedResult);
-            _answerService.AddYesNoDialog(_mockUserDialog.Object);
+            _answerService.AddDialog(_mockUserDialog.Object);
 
             // Act
             var result = await _answerService.AskYesNoAsync(message, ct);
@@ -237,7 +237,7 @@ namespace Answers.Tests
             var expectedResult = false;
 
             _mockUserDialog.Setup(d => d.ContinueTimedOutYesNoAsync(message, ct)).ReturnsAsync(expectedResult);
-            _answerService.AddYesNoDialog(_mockUserDialog.Object);
+            _answerService.AddDialog(_mockUserDialog.Object);
 
             // Act
             var result = await _answerService.AskYesNoToWaitAsync(message, ct);
@@ -339,8 +339,8 @@ namespace Answers.Tests
 
             // Act
             Parallel.Invoke(
-                () => _answerService.AddYesNoDialog(dialog1),
-                () => _answerService.AddYesNoDialog(dialog2)
+                () => _answerService.AddDialog(dialog1),
+                () => _answerService.AddDialog(dialog2)
             );
 
             // Assert

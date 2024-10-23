@@ -10,25 +10,22 @@ namespace AnswerGenerator
     public class TryAsyncClass
     {
         private async System.Threading.Tasks.Task<Answers.Answer> TryAsync(
-   System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
-   System.Threading.CancellationToken ct, [System.Runtime.CompilerServices.CallerMemberName] string callerName = "",
-   [System.Runtime.CompilerServices.CallerFilePath] string callerFilePath = "",
-   [System.Runtime.CompilerServices.CallerLineNumber] int callerLineNumber = 0)
+            System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
+            System.Threading.CancellationToken ct,
+            [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
+            [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
+            [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
         {
-            System.TimeSpan timeoutValue = System.TimeSpan.Zero;
-            if (_answerService.HasTimeout)
-            {
-                timeoutValue = _answerService.GetTimeout();
-            }
+            System.TimeSpan timeoutValue;
+
             while (true)
             {
-
+                timeoutValue = this._answerService.HasTimeout ? _answerService.GetTimeout() : TimeSpan.Zero; // Pobiera i resetuje timeout
                 System.Threading.Tasks.Task<Answers.Answer> methodTask = method();
                 System.Threading.Tasks.Task timeoutTask = null;
                 Answers.Answer answer;
 
-
-                if (timeoutValue != TimeSpan.Zero)
+                if (timeoutValue != System.TimeSpan.Zero)
                 {
                     timeoutTask = System.Threading.Tasks.Task.Delay(timeoutValue, ct);
                 }
@@ -41,61 +38,103 @@ namespace AnswerGenerator
                     {
                         answer = await methodTask;
 
-                        if (answer.IsSuccess || answer.DialogConcluded || !_answerService.HasDialog)
+                        if (answer.IsSuccess || answer.DialogConcluded || !(this._answerService.HasYesNoDialog || _answerService.HasYesNoAsyncDialog))
                         {
                             return answer;
                         }
 
-                        if (await _answerService.AskYesNoAsync(answer.Message, ct))
+                        bool yesNoResponse;
+
+                        if (this._answerService.HasYesNoAsyncDialog)
                         {
-                            continue;
+                            yesNoResponse = await this._answerService.AskYesNoAsync(answer.Message, ct);
+                        }
+                        else
+                        {
+                            yesNoResponse = this._answerService.AskYesNo(answer.Message);
+                        }
+
+
+                        if (yesNoResponse)
+                        {
+                            continue; // Użytkownik wybrał "Yes", ponawiamy operację
                         }
 
                         answer.ConcludeDialog();
-                        return answer;
+                        return answer; // Użytkownik wybrał "No", kończymy
                     }
 
-                    // Timeout occurred
-                    string action = $"{callerName} at {System.IO.Path.GetFileName(callerFilePath)}:{callerLineNumber}";
-                    if (!_answerService.HasTimeOutDialog || !await _answerService.AskYesNoToWaitAsync(
-                            $"The operation '{action}' timed out. Do you want to retry?", ct))
+                    // Wystąpił timeout
+                    System.String action = $"{callerName} at {System.IO.Path.GetFileName(callerFilePath)}:{callerLineNumber}";
+                    System.Boolean timeoutResponse = false;
+
+                    if (this._answerService.HasTimeOutDialog)
                     {
-                        answer = Answers.Answer.Prepare("Time out");
-                        return answer.Error($"{timeoutValue.TotalSeconds} seconds elapsed");
+                        System.String timeoutMessage = $"The operation '{action}' timed out. Do you want to retry?";
+
+                        if (this._answerService.HasTimeOutAsyncDialog)
+                        {
+                            timeoutResponse = await this._answerService.AskYesNoToWaitAsync(timeoutMessage, ct);
+                        }
+                        else
+                        {
+                            timeoutResponse = this._answerService.AskYesNoToWait(timeoutMessage);
+                        }
+
                     }
-                    _answerService.SetTimeout(timeoutValue);
-                    continue;
+
+                    if (timeoutResponse)
+                    {
+                        // Użytkownik wybrał "Yes", ustawiamy timeout ponownie
+                        this._answerService.SetTimeout(timeoutValue);
+                        continue; // Ponawiamy operację
+                    }
+
+                    // Użytkownik wybrał "No" lub brak dostępnych dialogów
+                    answer = Answers.Answer.Prepare("Time out");
+                    return answer.Error($"{timeoutValue.TotalSeconds} seconds elapsed");
                 }
 
-                // No timeout specified
+                // Brak określonego timeoutu
                 answer = await methodTask;
 
-                if (answer.IsSuccess || answer.DialogConcluded || !_answerService.HasDialog)
+                if (answer.IsSuccess || answer.DialogConcluded || !(this._answerService.HasYesNoDialog || _answerService.HasYesNoAsyncDialog))
                 {
                     return answer;
                 }
 
-                if (await _answerService.AskYesNoAsync(answer.Message, ct))
+                System.Boolean userResponse = false;
+
+                if (this._answerService.HasYesNoAsyncDialog)
                 {
-                    continue;
+                    userResponse = await this._answerService.AskYesNoAsync(answer.Message, ct);
+                }
+                else
+                {
+                    userResponse = this._answerService.AskYesNo(answer.Message);
+                }
+
+                if (userResponse)
+                {
+                    continue; // Użytkownik wybrał "Yes", ponawiamy operację
                 }
 
                 answer.ConcludeDialog();
-                return answer;
+                return answer; // Użytkownik wybrał "No", kończymy
             }
         }
 
-        public void LogDetailedInfo(
-            [System.Runtime.CompilerServices.CallerMemberName] string callerName = "",
-            [System.Runtime.CompilerServices.CallerFilePath] string callerFilePath = "",
-            [System.Runtime.CompilerServices.CallerLineNumber] int callerLineNumber = 0,
-            [System.Runtime.CompilerServices.CallerArgumentExpression("callerName")] string callerExpression = "")
-        {
-            Console.WriteLine("Metoda została wywołana przez:");
-            Console.WriteLine($"- Nazwa metody: {callerName}");
-            Console.WriteLine($"- Ścieżka pliku: {callerFilePath}");
-            Console.WriteLine($"- Numer linii: {callerLineNumber}");
-            Console.WriteLine($"- Wyrażenie argumentu: {callerExpression}");
-        }
+        //public void LogDetailedInfo(
+        //    [System.Runtime.CompilerServices.CallerMemberName] string callerName = "",
+        //    [System.Runtime.CompilerServices.CallerFilePath] string callerFilePath = "",
+        //    [System.Runtime.CompilerServices.CallerLineNumber] int callerLineNumber = 0,
+        //    [System.Runtime.CompilerServices.CallerArgumentExpression("callerName")] string callerExpression = "")
+        //{
+        //    Console.WriteLine("Metoda została wywołana przez:");
+        //    Console.WriteLine($"- Nazwa metody: {callerName}");
+        //    Console.WriteLine($"- Ścieżka pliku: {callerFilePath}");
+        //    Console.WriteLine($"- Numer linii: {callerLineNumber}");
+        //    Console.WriteLine($"- Wyrażenie argumentu: {callerExpression}");
+        //}
     }
 

@@ -199,7 +199,7 @@ namespace Answers.Tests
         //        .ReturnsAsync(false); // User chooses not to retry
 
         //    var userDialogStub = new UserDialogStub(false);
-        //    _answerServiceMock.Object.AddYesNoDialog(userDialogStub);
+        //    _answerServiceMock.Object.AddDialog(userDialogStub);
 
         //    // Simulate a long-running task
         //    Func<Task<Answer>> longRunningTask = async () =>
@@ -236,7 +236,7 @@ namespace Answers.Tests
         //        .ReturnsAsync(true); // User chooses to retry
 
         //    var userDialogStub = new UserDialogStub(true);
-        //    _answerServiceMock.Object.AddYesNoDialog(userDialogStub);
+        //    _answerServiceMock.Object.AddDialog(userDialogStub);
 
         //    int attempt = 0;
         //    Func<Task<Answer>> failingTaskWithRetrySuccess = async () =>
@@ -282,7 +282,7 @@ namespace Answers.Tests
         //        .ReturnsAsync(false); // User chooses not to retry
 
         //    var userDialogStub = new UserDialogStub(false);
-        //    _answerServiceMock.Object.AddYesNoDialog(userDialogStub);
+        //    _answerServiceMock.Object.AddDialog(userDialogStub);
 
         //    Func<Task<Answer>> failingTask = async () =>
         //    {
@@ -405,7 +405,7 @@ namespace Answers.Tests
         //        .ReturnsAsync(false); // User chooses not to retry
 
         //    var userDialogStub = new UserDialogStub(false);
-        //    _answerServiceMock.Object.AddYesNoDialog(userDialogStub);
+        //    _answerServiceMock.Object.AddDialog(userDialogStub);
 
         //    Func<Task<Answer>> borderlineTask = async () =>
         //    {
@@ -441,7 +441,7 @@ namespace Answers.Tests
         //        .ReturnsAsync(false); // User chooses not to retry
 
         //    var userDialogStub = new UserDialogStub(false);
-        //    _answerServiceMock.Object.AddYesNoDialog(userDialogStub);
+        //    _answerServiceMock.Object.AddDialog(userDialogStub);
 
         //    // Create two tasks with different messages
         //    Func<Task<Answer>> task1 = async () =>

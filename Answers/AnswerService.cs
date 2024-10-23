@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -10,23 +11,23 @@ namespace Answers
 {
     public interface IAnswerService
     {
-        bool HasDialog { get; }
+        ILogger Logger { get; }
+        bool HasYesNoDialog { get; }
+        bool HasYesNoAsyncDialog { get; }
         bool HasTimeOutDialog { get; }
+        bool HasTimeOutAsyncDialog { get; }
         bool HasTimeout { get; }
-        void AddYesNoDialog(IUserDialog dialog);
+        TimeSpan GetTimeout();
+        void AddDialog(IUserDialog dialog1);
         Task<bool> AskYesNoAsync(string message, CancellationToken ct);
         Task<bool> AskYesNoToWaitAsync(string message, CancellationToken ct);
-        void SetTimeout(TimeSpan timeout);
-        
         bool AskYesNo(string message);
         bool AskYesNoToWait(string message);
-        TimeSpan GetTimeout();
+        void SetTimeout(TimeSpan timeout);
     }
-
 
     public class AnswerService(IUserDialog dialog, ILogger logger) : IAnswerService
     {
-        private IUserDialog _timeOutDialog;
         public ILogger Logger { get; } = logger;
         private readonly object _syncRoot = new();
         private TimeSpan Timeout { get; set; }
@@ -40,19 +41,23 @@ namespace Answers
             }
         }
 
-        public bool HasDialog => dialog != null;
-        public bool HasTimeout => Timeout != TimeSpan.Zero;
-        public bool HasTimeOutDialog => _timeOutDialog != null;
+        public bool HasYesNoDialog => dialog is { IsSyncAvailable: true };
+        public bool HasYesNoAsyncDialog => dialog is { IsSyncAvailable: true };
+        public bool HasTimeOutDialog => dialog is { IsAsyncAvailable: true };
+        public bool HasTimeOutAsyncDialog => dialog is { IsAsyncAvailable: true };
 
-        public void AddYesNoDialog(IUserDialog dialog1)
+        public bool HasTimeout => Timeout != TimeSpan.Zero;
+       
+
+        public void AddDialog(IUserDialog dialog1)
         {
             Interlocked.Exchange(ref dialog, dialog1);
         }
 
-        public void AddTimeoutDialog(IUserDialog dialog)
-        {
-            Interlocked.Exchange(ref _timeOutDialog, dialog);
-        }
+        //public void AddTimeoutDialog(IUserDialog dialog)
+        //{
+        //    Interlocked.Exchange(ref _timeOutDialog, dialog);
+        //}
 
         // Metody asynchroniczne
         public Task<bool> AskYesNoAsync(string message, CancellationToken ct)

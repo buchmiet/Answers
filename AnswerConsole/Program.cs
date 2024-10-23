@@ -52,7 +52,7 @@ await presentationLayer.ExecuteConcurrentOperations(new CancellationToken());
 //    //public PresentationLayer(Answers.IAnswerService answerService, BusinessLogicClass utilityLayer)
 //    //{
 //    //    _answerService = answerService;
-//    //    _answerService.AddYesNoDialog(new ConsoleUserDialog());
+//    //    _answerService.AddDialog(new ConsoleUserDialog());
 //    //    this._utilityLayer = utilityLayer;
 //    //}
 
@@ -84,7 +84,7 @@ await presentationLayer.ExecuteConcurrentOperations(new CancellationToken());
 //    public PresentationLayer(Answers.IAnswerService answerService, BusinessLogicClass utilityLayer, BusinessLogicClass anotherUtilityLayer)
 //    {
 //        _answerService = answerService;
-//        _answerService.AddYesNoDialog(new ConsoleUserDialog());
+//        _answerService.AddDialog(new ConsoleUserDialog());
 //        this._utilityLayer = utilityLayer;
 //        this._anotherUtilityLayer = anotherUtilityLayer;
 //    }
@@ -303,87 +303,130 @@ await presentationLayer.ExecuteConcurrentOperations(new CancellationToken());
 //    }
 //}
 
-public partial class PresentationLayer:IAnswerable
+public partial class PresentationLayer//:IAnswerable
 {
-    //private async System.Threading.Tasks.Task<Answers.Answer> TryAsync(
-    //System.Func<System.Threading.Tasks. Task<Answers. Answer>> method,
-    //System.Threading. CancellationToken ct)
-    //{
-    //    System.TimeSpan timeoutValue =System.TimeSpan.Zero;
-    //    if (_answerService.HasTimeout)
-    //    {
-    //        timeoutValue = _answerService.GetTimeout();
-    //    } 
-    //    while (true)
-    //    {
+    private async System.Threading.Tasks.Task<Answers.Answer> TryAsync(
+      System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
+      System.Threading.CancellationToken ct,
+      [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
+      [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
+      [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
+    {
+        System.TimeSpan timeoutValue;
 
-    //        System.Threading.Tasks. Task<Answers. Answer> methodTask = method();
-    //        System.Threading.Tasks.Task timeoutTask = null;
-    //        Answers.Answer answer;
+        while (true)
+        {
+            timeoutValue = this._answerService.HasTimeout ? _answerService.GetTimeout() : TimeSpan.Zero; // Pobiera i resetuje timeout
+            System.Threading.Tasks.Task<Answers.Answer> methodTask = method();
+            System.Threading.Tasks.Task timeoutTask = null;
+            Answers.Answer answer;
 
-            
-    //        if (timeoutValue!=TimeSpan.Zero)
-    //        {
-    //            timeoutTask = System.Threading.Tasks.Task.Delay(timeoutValue, ct);
-    //        }
+            if (timeoutValue != System.TimeSpan.Zero)
+            {
+                timeoutTask = System.Threading.Tasks.Task.Delay(timeoutValue, ct);
+            }
 
-    //        if (timeoutTask != null)
-    //        {
-    //            System.Threading.Tasks.Task completedTask = await System.Threading.Tasks.Task.WhenAny(methodTask, timeoutTask);
+            if (timeoutTask != null)
+            {
+                System.Threading.Tasks.Task completedTask = await System.Threading.Tasks.Task.WhenAny(methodTask, timeoutTask);
 
-    //            if (completedTask == methodTask)
-    //            {
-    //                answer = await methodTask;
+                if (completedTask == methodTask)
+                {
+                    answer = await methodTask;
 
-    //                if (answer.IsSuccess || answer.DialogConcluded || !_answerService.HasDialog)
-    //                {
-    //                    return answer;
-    //                }
+                    if (answer.IsSuccess || answer.DialogConcluded || !(this._answerService.HasYesNoDialog || _answerService.HasYesNoAsyncDialog))
+                    {
+                        return answer;
+                    }
 
-    //                if (await _answerService.AskYesNoAsync(answer.Message, ct))
-    //                {
-    //                    continue;
-    //                }
+                    bool yesNoResponse;
 
-    //                answer.ConcludeDialog();
-    //                return answer;
-    //            }
+                    if (this._answerService.HasYesNoAsyncDialog)
+                    {
+                        yesNoResponse = await this._answerService.AskYesNoAsync(answer.Message, ct);
+                    }
+                    else
+                    {
+                        yesNoResponse = this._answerService.AskYesNo(answer.Message);
+                    }
 
-    //            // Timeout occurred
-    //            if (!_answerService.HasTimeOutDialog || !await _answerService.AskYesNoToWaitAsync(
-    //                    $"The operation timed out. Do you want to retry?", ct))
-    //            {
-    //                answer =Answers.Answer.Prepare("Time out");
-    //                return answer.Error($"{timeoutValue.TotalSeconds} seconds elapsed");
-    //            }
-    //            _answerService.SetTimeout(timeoutValue);
-    //            continue;
-    //        }
 
-    //        // No timeout specified
-    //        answer = await methodTask;
+                    if (yesNoResponse)
+                    {
+                        continue; // Użytkownik wybrał "Yes", ponawiamy operację
+                    }
 
-    //        if (answer.IsSuccess || answer.DialogConcluded || !_answerService.HasDialog)
-    //        {
-    //            return answer;
-    //        }
+                    answer.ConcludeDialog();
+                    return answer; // Użytkownik wybrał "No", kończymy
+                }
 
-    //        if (await _answerService.AskYesNoAsync(answer.Message, ct))
-    //        {
-    //            continue;
-    //        }
+                // Wystąpił timeout
+                System.String action = $"{callerName} at {System.IO.Path.GetFileName(callerFilePath)}:{callerLineNumber}";
+                System.Boolean timeoutResponse = false;
 
-    //        answer.ConcludeDialog();
-    //        return answer;
-    //    }
-    //}
+                if (this._answerService.HasTimeOutDialog)
+                {
+                    System.String timeoutMessage = $"The operation '{action}' timed out. Do you want to retry?";
+
+                    if (this._answerService.HasTimeOutAsyncDialog)
+                    {
+                        timeoutResponse = await this._answerService.AskYesNoToWaitAsync(timeoutMessage, ct);
+                    }
+                    else
+                    {
+                        timeoutResponse = this._answerService.AskYesNoToWait(timeoutMessage);
+                    }
+
+                }
+
+                if (timeoutResponse)
+                {
+                    // Użytkownik wybrał "Yes", ustawiamy timeout ponownie
+                    this._answerService.SetTimeout(timeoutValue);
+                    continue; // Ponawiamy operację
+                }
+
+                // Użytkownik wybrał "No" lub brak dostępnych dialogów
+                answer = Answers.Answer.Prepare("Time out");
+                return answer.Error($"{timeoutValue.TotalSeconds} seconds elapsed");
+            }
+
+            // Brak określonego timeoutu
+            answer = await methodTask;
+
+            if (answer.IsSuccess || answer.DialogConcluded || !(this._answerService.HasYesNoDialog || _answerService.HasYesNoAsyncDialog))
+            {
+                return answer;
+            }
+
+            System.Boolean userResponse = false;
+
+            if (this._answerService.HasYesNoAsyncDialog)
+            {
+                userResponse = await this._answerService.AskYesNoAsync(answer.Message, ct);
+            }
+            else
+            {
+                userResponse = this._answerService.AskYesNo(answer.Message);
+            }
+
+            if (userResponse)
+            {
+                continue; // Użytkownik wybrał "Yes", ponawiamy operację
+            }
+
+            answer.ConcludeDialog();
+            return answer; // Użytkownik wybrał "No", kończymy
+        }
+    }
+
 
     private IAnswerService _answerService;
     private BusinessLogicClass _utilityLayer;
     public PresentationLayer(BusinessLogicClass utilityLayer, Answers.IAnswerService answerService)
     {
         _answerService = answerService;
-     //   _answerService.AddYesNoDialog(new UserDialogStub(true));
+       _answerService.AddDialog(new UserDialogStub([true]));
         _utilityLayer = utilityLayer;
      //   LogDetailedInfo();
     }
@@ -407,6 +450,7 @@ public partial class PresentationLayer:IAnswerable
     public async Task ExecuteConcurrentOperations(CancellationToken ct)
     {
         AnsiConsole.MarkupLine("[cyan]public[/] [green]async Task[/][cyan]<Answer>[/] [green]ExecuteConcurrentOperations[/][white]([cyan]CancellationToken[/] [white]ct[/])[/]");
+        AnsiConsole.WriteLine("level 1");
         //LogDetailedInfo();
         Task<Answer> task1 = FetchDatabaseData(1, ct);
      //   Task<Answer> task2 = FetchWebApiData(2, ct);
@@ -442,7 +486,8 @@ public partial class PresentationLayer:IAnswerable
     private async Task<Answer> FetchDatabaseData(int id, CancellationToken ct)
     {
         AnsiConsole.MarkupLine("[cyan]public[/] [green]async Task[/][cyan]<Answer>[/] [green]FetchDatabaseData[/][white]([cyan]int[/] [white]id[/], [cyan]CancellationToken[/] [white]ct[/])[/]");
-     //   _answerService.SetTimeout(TimeSpan.FromSeconds(2));
+        AnsiConsole.WriteLine("level 2");
+ //       _answerService.SetTimeout(TimeSpan.FromSeconds(2));
         Answer answer = Answer.Prepare("[PresentationLayer] Fetching data from database");
         var response= await TryAsync(() => _utilityLayer.GetDatabaseData(id, ct), ct);
         return answer.Attach(response);
@@ -464,6 +509,7 @@ public partial class BusinessLogicClass(DatabaseTierClass databaseTier, HttpTier
     public async Task<Answer> GetDatabaseData(int id, CancellationToken ct)
     {
         AnsiConsole.MarkupLine("[cyan]public[/] [green]async Task[/][cyan]<Answer>[/] [green]GetDatabaseData[/][white]([cyan]int[/] [white]id[/], [cyan]CancellationToken[/] [white]ct[/])[/]");
+        AnsiConsole.WriteLine("level 3");
         var answer = Answer.Prepare($"[BusinessLogicClass] GetDatabaseData({id})");
         Answer result = await TryAsync(() => databaseTier.GetDataFromDatabase(id, ct), ct);
         return answer.Attach(result);
@@ -483,6 +529,7 @@ public partial class DatabaseTierClass(RandomService randomService) : IAnswerabl
     public async Task<Answer> GetDataFromDatabase(int id, CancellationToken ct)
     {
         AnsiConsole.MarkupLine("[cyan]private[/] [green]async Task[/][cyan]<Answer>[/] [green]GetDataFromDatabase[/][white]([cyan]int[/] {id}, [cyan]CancellationToken[/] [white]ct[/])[/]");
+        AnsiConsole.WriteLine("level 4");
         var answer = Answer.Prepare($"[DatabaseTierClass] GetDataFromDatabase({id})");
         // Simulate work
         await Task.Delay(2000, ct);
