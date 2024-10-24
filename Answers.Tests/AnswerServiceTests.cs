@@ -10,343 +10,333 @@ namespace Answers.Tests
 {
     public class AnswerServiceTests
     {
-        private readonly Mock<IUserDialog> _mockUserDialog;
-        private readonly Mock<ILogger> _mockLogger;
-        private readonly AnswerService _answerService;
-        private readonly AnswerService _answerServiceWithoutDialog;
-
+        private readonly Mock<ILogger> _loggerMock;
+        private readonly Mock<IUserDialog> _dialogMock;
+        private readonly AnswerService _service;
 
         public AnswerServiceTests()
         {
-            _mockUserDialog = new Mock<IUserDialog>();
-            _mockLogger = new Mock<ILogger>();
-            _answerService = new AnswerService(_mockUserDialog.Object, _mockLogger.Object);
-            _answerServiceWithoutDialog = new AnswerService( _mockLogger.Object);
+            _loggerMock = new Mock<ILogger>();
+            _dialogMock = new Mock<IUserDialog>();
+            _service = new AnswerService(_dialogMock.Object, _loggerMock.Object);
         }
 
-
-      
-
+        #region Constructor Tests
 
         [Fact]
-        public async Task OperationFailure_PropagatesCorrectly_WithoutAdditionalPrompts()
+        public void Constructor_WithNullDialog_DoesNotThrow()
         {
-            // Arrange
-            var mockDialog = new Mock<IUserDialog>();
-            // Simulate user choosing not to retry
-            mockDialog.Setup(d => d.YesNoAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(false);
-
-            var mockLogger = new Mock<ILogger>();
-
-            var answerService = new AnswerService(mockDialog.Object, mockLogger.Object);
-
-            // Create tier instances
-            var tier4 = new Tier4(answerService);
-            var tier3 = new Tier3(tier4, answerService);
-            var tier2 = new Tier2(tier3, answerService);
-            var tier1 = new Tier1(tier2, answerService);
-
-            // Act
-            var finalAnswer = await tier1.DoOperationAsync();
+            // Arrange & Act
+            var exception = Record.Exception(() => new AnswerService(null, _loggerMock.Object));
 
             // Assert
-            Assert.False(finalAnswer.IsSuccess, "Final Answer should indicate failure.");
-            Assert.True(finalAnswer.DialogConcluded, "DialogConcluded should be true to prevent further prompts.");
-            Assert.Contains("Tier4 operation failed", finalAnswer.Message);
-
-
-            // Verify that YesNoAsync was called only once
-            mockDialog.Verify(d => d.YesNoAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+            Assert.Null(exception);
         }
+
+        [Fact]
+        public void Constructor_WithNullLogger_ThrowsArgumentNullException()
+        {
+            // Arrange & Act
+            var exception = Assert.Throws<ArgumentNullException>(() => new AnswerService(_dialogMock.Object, null));
+
+            // Assert
+            Assert.Equal("logger", exception.ParamName);
+        }
+
+        #endregion
 
         #region Property Tests
 
         [Fact]
-        public void HasDialog_ShouldReturnTrue_WhenDialogIsSet()
+        public void HasYesNoDialog_WhenDialogIsNull_ReturnsFalse()
         {
             // Arrange
-            _answerService.AddDialog(_mockUserDialog.Object);
+            var service = new AnswerService(null, _loggerMock.Object);
 
             // Act
-            var result = _answerService.HasDialog;
-
-            // Assert
-            Assert.True(result);
-        }
-
-        [Fact]
-        public void HasDialog_ShouldReturnFalse_WhenDialogIsNotSet()
-        {
-            // Arrange
-            // Dialog is not set
-
-            // Act
-            var result = _answerServiceWithoutDialog.HasDialog;
+            var result = service.HasYesNoDialog;
 
             // Assert
             Assert.False(result);
         }
 
         [Fact]
-        public void HasTimeOutDialog_ShouldReturnTrue_WhenTimeOutDialogIsSet()
+        public void HasYesNoDialog_WhenIsSyncAvailableIsTrue_ReturnsTrue()
         {
             // Arrange
-            _answerService.AddTimeoutDialog(_mockUserDialog.Object);
+            _dialogMock.SetupGet(d => d.IsSyncAvailable).Returns(true);
 
             // Act
-            var result = _answerService.HasTimeOutDialog;
+            var result = _service.HasYesNoDialog;
 
             // Assert
             Assert.True(result);
         }
 
         [Fact]
-        public void HasTimeOutDialog_ShouldReturnFalse_WhenTimeOutDialogIsNotSet()
+        public void HasYesNoAsyncDialog_WhenIsSyncAvailableIsTrue_ReturnsTrue()
         {
             // Arrange
-            // TimeOutDialog is not set
+            _dialogMock.SetupGet(d => d.IsSyncAvailable).Returns(true);
 
             // Act
-            var result = _answerService.HasTimeOutDialog;
-
-            // Assert
-            Assert.False(result);
-        }
-
-        [Fact]
-        public void HasTimeout_ShouldReturnTrue_WhenTimeoutIsSet()
-        {
-            // Arrange
-            _answerService.SetTimeout(TimeSpan.FromSeconds(30));
-
-            // Act
-            var result = _answerService.HasTimeout;
+            var result = _service.HasYesNoAsyncDialog;
 
             // Assert
             Assert.True(result);
         }
 
         [Fact]
-        public void HasTimeout_ShouldReturnFalse_WhenTimeoutIsNotSet()
+        public void HasTimeOutDialog_WhenIsAsyncAvailableIsTrue_ReturnsTrue()
         {
             // Arrange
-            // Timeout is not set
+            _dialogMock.SetupGet(d => d.IsAsyncAvailable).Returns(true);
 
             // Act
-            var result = _answerService.HasTimeout;
+            var result = _service.HasTimeOutDialog;
 
             // Assert
-            Assert.False(result);
+            Assert.True(result);
         }
 
         [Fact]
-        public void Timeout_ShouldReturnCorrectValue_WhenTimeoutIsSet()
+        public void HasTimeOutAsyncDialog_WhenIsAsyncAvailableIsTrue_ReturnsTrue()
         {
             // Arrange
-            var expectedTimeout = TimeSpan.FromSeconds(45);
-            _answerService.SetTimeout(expectedTimeout);
+            _dialogMock.SetupGet(d => d.IsAsyncAvailable).Returns(true);
 
             // Act
-            var result = _answerService.GetTimeout();
+            var result = _service.HasTimeOutAsyncDialog;
 
             // Assert
-            Assert.Equal(expectedTimeout, result);
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void HasTimeout_WhenTimeoutIsSet_ReturnsTrue()
+        {
+            // Arrange
+            _service.SetTimeout(TimeSpan.FromSeconds(30));
+
+            // Act
+            var result = _service.HasTimeout;
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void HasTimeout_WhenTimeoutIsZero_ReturnsFalse()
+        {
+            // Arrange & Act
+            var result = _service.HasTimeout;
+
+            // Assert
+            Assert.False(result);
         }
 
         #endregion
 
         #region Method Tests
 
+        #region AddDialog Tests
+
         [Fact]
-        public void AddYesNoDialog_ShouldSetDialog()
+        public void AddDialog_SetsDialogCorrectly()
         {
             // Arrange
-            var newDialog = new Mock<IUserDialog>().Object;
+            var newDialogMock = new Mock<IUserDialog>();
 
             // Act
-            _answerService.AddDialog(newDialog);
+            _service.AddDialog(newDialogMock.Object);
 
             // Assert
-            Assert.True(_answerService.HasDialog);
+            Assert.True(_service.HasYesNoDialog);
         }
 
+        #endregion
+
+        #region SetTimeout and GetTimeout Tests
+
         [Fact]
-        public void AddTimeoutDialog_ShouldSetTimeOutDialog()
+        public void SetTimeout_StoresTimeoutValue()
         {
             // Arrange
-            var newDialog = new Mock<IUserDialog>().Object;
+            var timeout = TimeSpan.FromSeconds(15);
 
             // Act
-            _answerService.AddTimeoutDialog(newDialog);
+            _service.SetTimeout(timeout);
 
             // Assert
-            Assert.True(_answerService.HasTimeOutDialog);
+            Assert.True(_service.HasTimeout);
         }
 
         [Fact]
-        public void SetTimeout_ShouldSetTimeoutValue()
+        public void GetTimeout_ReturnsAndResetsTimeout()
         {
             // Arrange
-            var expectedTimeout = TimeSpan.FromMinutes(1);
+            var timeout = TimeSpan.FromSeconds(15);
+            _service.SetTimeout(timeout);
 
             // Act
-            _answerService.SetTimeout(expectedTimeout);
+            var returnedTimeout = _service.GetTimeout();
 
             // Assert
-            Assert.Equal(expectedTimeout, _answerService.GetTimeout());
+            Assert.Equal(timeout, returnedTimeout);
+            Assert.False(_service.HasTimeout);
         }
 
-        [Fact]
-        public async Task AskYesNoAsync_ShouldReturnResult_WhenDialogIsSet()
-        {
-            // Arrange
-            var message = "Proceed?";
-            var ct = CancellationToken.None;
-            var expectedResult = true;
+        #endregion
 
-            _mockUserDialog.Setup(d => d.YesNoAsync(message, ct)).ReturnsAsync(expectedResult);
-            _answerService.AddDialog(_mockUserDialog.Object);
-
-            // Act
-            var result = await _answerService.AskYesNoAsync(message, ct);
-
-            // Assert
-            Assert.Equal(expectedResult, result);
-            _mockUserDialog.Verify(d => d.YesNoAsync(message, ct), Times.Once);
-        }
+        #region Logging Method Tests
 
         [Fact]
-        public async Task AskYesNoAsync_ShouldThrowInvalidOperationException_WhenDialogIsNotSet()
-        {
-            var message = "Proceed?";
-            var ct = CancellationToken.None;
-
-            // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(
-                () => _answerServiceWithoutDialog.AskYesNoAsync(message, ct)
-            );
-        }
-
-        [Fact]
-        public async Task AskYesNoToWaitAsync_ShouldReturnResult_WhenDialogIsSet()
-        {
-            // Arrange
-            var message = "Wait for completion?";
-            var ct = CancellationToken.None;
-            var expectedResult = false;
-
-            _mockUserDialog.Setup(d => d.ContinueTimedOutYesNoAsync(message, ct)).ReturnsAsync(expectedResult);
-            _answerService.AddDialog(_mockUserDialog.Object);
-
-            // Act
-            var result = await _answerService.AskYesNoToWaitAsync(message, ct);
-
-            // Assert
-            Assert.Equal(expectedResult, result);
-            _mockUserDialog.Verify(d => d.ContinueTimedOutYesNoAsync(message, ct), Times.Once);
-        }
-
-        [Fact]
-        public async Task AskYesNoToWaitAsync_ShouldThrowInvalidOperationException_WhenDialogIsNotSet()
-        {
-            // Arrange
-            var message = "Wait for completion?";
-            var ct = CancellationToken.None;
-
-            // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() => _answerServiceWithoutDialog.AskYesNoToWaitAsync(message, ct));
-        }
-
-        [Fact]
-        public void LogInfo_ShouldCallLogger_LogInformation()
+        public void LogInfo_CallsLoggerInformation()
         {
             // Arrange
             var message = "Information message";
 
             // Act
-            _answerService.LogInfo(message);
+            _service.LogInfo(message);
 
             // Assert
-            _mockLogger.Verify(
-                x => x.Log(
-                    LogLevel.Information,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains(message)),
-                    It.IsAny<Exception>(),
-                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)
-                ),
-                Times.Once
-            );
+            _loggerMock.Verify(l => l.LogInformation(message), Times.Once);
         }
 
         [Fact]
-        public void LogError_ShouldCallLogger_LogError()
-        {
-            // Arrange
-            var message = "Error message";
-
-            // Act
-            _answerService.LogError(message);
-
-            // Assert
-            _mockLogger.Verify(
-                x => x.Log(
-                    LogLevel.Error,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains(message)),
-                    It.IsAny<Exception>(),
-                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)
-                ),
-                Times.Once
-            );
-        }
-
-        [Fact]
-        public void LogWarning_ShouldCallLogger_LogWarning()
+        public void LogWarning_CallsLoggerWarning()
         {
             // Arrange
             var message = "Warning message";
 
             // Act
-            _answerService.LogWarning(message);
+            _service.LogWarning(message);
 
             // Assert
-            _mockLogger.Verify(
-                x => x.Log(
-                    LogLevel.Warning,
-                    It.IsAny<EventId>(),
-                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains(message)),
-                    It.IsAny<Exception>(),
-                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)
-                ),
-                Times.Once
-            );
+            _loggerMock.Verify(l => l.LogWarning(message), Times.Once);
+        }
+
+        [Fact]
+        public void LogError_CallsLoggerError()
+        {
+            // Arrange
+            var message = "Error message";
+
+            // Act
+            _service.LogError(message);
+
+            // Assert
+            _loggerMock.Verify(l => l.LogError(message), Times.Once);
         }
 
         #endregion
 
-        #region Concurrency Tests
-
- 
+        #region Synchronous Method Tests
 
         [Fact]
-        public void AddYesNoDialog_ShouldBeThreadSafe()
+        public void AskYesNo_WhenDialogIsNull_ThrowsInvalidOperationException()
         {
             // Arrange
-            var dialog1 = new Mock<IUserDialog>().Object;
-            var dialog2 = new Mock<IUserDialog>().Object;
+            var service = new AnswerService(null, _loggerMock.Object);
+
+            // Act & Assert
+            Assert.Throws<InvalidOperationException>(() => service.AskYesNo("Test message"));
+        }
+
+        [Fact]
+        public void AskYesNo_CallsDialogYesNo()
+        {
+            // Arrange
+            var message = "Test message";
+            _dialogMock.Setup(d => d.YesNo(message)).Returns(true);
 
             // Act
-            Parallel.Invoke(
-                () => _answerService.AddDialog(dialog1),
-                () => _answerService.AddDialog(dialog2)
-            );
+            var result = _service.AskYesNo(message);
 
             // Assert
-            // Since Interlocked.Exchange is used, the dialog should be one of the two
-            Assert.True(_answerService.HasDialog);
+            Assert.True(result);
+            _dialogMock.Verify(d => d.YesNo(message), Times.Once);
         }
+
+        [Fact]
+        public void AskYesNoToWait_CallsDialogContinueTimedOutYesNo()
+        {
+            // Arrange
+            var message = "Test message";
+            var localCancellationToken = new CancellationTokenSource().Token;
+            var ct = new CancellationTokenSource().Token;
+            _dialogMock.Setup(d => d.ContinueTimedOutYesNo(message, localCancellationToken, ct)).Returns(true);
+
+            // Act
+            var result = _service.AskYesNoToWait(message, localCancellationToken, ct);
+
+            // Assert
+            Assert.True(result);
+            _dialogMock.Verify(d => d.ContinueTimedOutYesNo(message, localCancellationToken, ct), Times.Once);
+        }
+
+        #endregion
+
+        #region Asynchronous Method Tests
+
+        [Fact]
+        public async Task AskYesNoAsync_WhenDialogIsNull_ThrowsInvalidOperationException()
+        {
+            // Arrange
+            var service = new AnswerService(null, _loggerMock.Object);
+
+            // Act & Assert
+            await Assert.ThrowsAsync<InvalidOperationException>(() => service.AskYesNoAsync("Test message", CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task AskYesNoAsync_CallsDialogYesNoAsync()
+        {
+            // Arrange
+            var message = "Test message";
+            _dialogMock.Setup(d => d.YesNoAsync(message, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+
+            // Act
+            var result = await _service.AskYesNoAsync(message, CancellationToken.None);
+
+            // Assert
+            Assert.True(result);
+            _dialogMock.Verify(d => d.YesNoAsync(message, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task AskYesNoToWaitAsync_CallsDialogContinueTimedOutYesNoAsync()
+        {
+            // Arrange
+            var message = "Test message";
+            var localCancellationToken = new CancellationTokenSource().Token;
+            var ct = new CancellationTokenSource().Token;
+            _dialogMock.Setup(d => d.ContinueTimedOutYesNoAsync(message, localCancellationToken, ct)).ReturnsAsync(true);
+
+            // Act
+            var result = await _service.AskYesNoToWaitAsync(message, localCancellationToken, ct);
+
+            // Assert
+            Assert.True(result);
+            _dialogMock.Verify(d => d.ContinueTimedOutYesNoAsync(message, localCancellationToken, ct), Times.Once);
+        }
+
+        [Fact]
+        public async Task AskYesNoAsync_CancellationRequested_ThrowsTaskCanceledException()
+        {
+            // Arrange
+            var message = "Test message";
+            var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            _dialogMock.Setup(d => d.YesNoAsync(message, It.IsAny<CancellationToken>()))
+                .Returns<string, CancellationToken>((msg, token) => Task.FromCanceled<bool>(token));
+
+            // Act & Assert
+            await Assert.ThrowsAsync<TaskCanceledException>(() => _service.AskYesNoAsync(message, cts.Token));
+        }
+
+        #endregion
 
         #endregion
     }

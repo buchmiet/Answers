@@ -21,7 +21,7 @@ namespace Answers
         Task<bool> AskYesNoAsync(string message, CancellationToken ct);
         Task<bool> AskYesNoToWaitAsync(string message, CancellationToken localCancellationToken, CancellationToken ct);
         bool AskYesNo(string message);
-        bool AskYesNoToWait(string message);
+        bool AskYesNoToWait(string message, CancellationToken localCancellationToken, CancellationToken ct);
         void SetTimeout(TimeSpan timeout);
         void LogWarning(string message);
         void LogError(string message);
@@ -69,11 +69,6 @@ namespace Answers
             Interlocked.Exchange(ref dialog, dialog1);
         }
 
-        //public void AddTimeoutDialog(IUserDialog dialog)
-        //{
-        //    Interlocked.Exchange(ref _timeOutDialog, dialog);
-        //}
-
         // Metody asynchroniczne
         public Task<bool> AskYesNoAsync(string message, CancellationToken ct)
         {
@@ -105,12 +100,12 @@ namespace Answers
             throw new InvalidOperationException("Dialog is not set.");
         }
 
-        public bool AskYesNoToWait(string message)
+        public bool AskYesNoToWait(string message, CancellationToken localCancellationToken, CancellationToken ct)
         {
             var dialog1 = dialog;
             if (dialog1 is not null)
             {
-                return dialog1.ContinueTimedOutYesNo(message);
+                return dialog1.ContinueTimedOutYesNo(message, localCancellationToken,ct);
             }
 
             throw new InvalidOperationException("Dialog is not set.");
