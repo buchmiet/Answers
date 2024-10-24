@@ -99,6 +99,7 @@ namespace Answers
             {
                 throw new InvalidOperationException("Answer is in Error state, no values can be added");
             }
+            State.HasValueSet = true;
             AnswerValue = new AnswerValue<T>(value);
         }
 

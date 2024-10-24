@@ -11,8 +11,6 @@
 
   <ItemGroup>
     <Compile Remove="AnswerServiceTests.cs" />
-    <Compile Remove="AnswerTests.cs" />
-    <Compile Remove="MessageAggregatorTests.cs" />
     <Compile Remove="TestClassesForAnswerServiceTests.cs" />
     <Compile Remove="TestClassForTryAsync.cs" />
     <Compile Remove="TryAsyncTests.cs" />
@@ -21,8 +19,6 @@
 
   <ItemGroup>
     <None Include="AnswerServiceTests.cs" />
-    <None Include="AnswerTests.cs" />
-    <None Include="MessageAggregatorTests.cs" />
     <None Include="TestClassesForAnswerServiceTests.cs" />
     <None Include="TestClassForTryAsync.cs" />
     <None Include="TryAsyncTests.cs" />
