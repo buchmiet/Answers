@@ -56,10 +56,10 @@ namespace Answers
             }
         }
 
-        public bool HasYesNoDialog => dialog is { IsSyncAvailable: true };
-        public bool HasYesNoAsyncDialog => dialog is { IsSyncAvailable: true };
-        public bool HasTimeOutDialog => dialog is { IsAsyncAvailable: true };
-        public bool HasTimeOutAsyncDialog => dialog is { IsAsyncAvailable: true };
+        public bool HasYesNoDialog => dialog is { HasYesNo: true };
+        public bool HasYesNoAsyncDialog => dialog is { HasAsyncYesNo: true };
+        public bool HasTimeOutDialog => dialog is { HasTimeoutDialog: true };
+        public bool HasTimeOutAsyncDialog => dialog is { HasAsyncTimeoutDialog: true };
 
         public bool HasTimeout => Timeout != TimeSpan.Zero;
        

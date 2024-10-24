@@ -47,24 +47,13 @@ namespace Answers.Tests
 
         #region Property Tests
 
-        [Fact]
-        public void HasYesNoDialog_WhenDialogIsNull_ReturnsFalse()
-        {
-            // Arrange
-            var service = new AnswerService(null, _loggerMock.Object);
 
-            // Act
-            var result = service.HasYesNoDialog;
-
-            // Assert
-            Assert.False(result);
-        }
 
         [Fact]
         public void HasYesNoDialog_WhenIsSyncAvailableIsTrue_ReturnsTrue()
         {
             // Arrange
-            _dialogMock.SetupGet(d => d.IsSyncAvailable).Returns(true);
+            _dialogMock.SetupGet(d => d.HasYesNo).Returns(true);
 
             // Act
             var result = _service.HasYesNoDialog;
@@ -77,7 +66,7 @@ namespace Answers.Tests
         public void HasYesNoAsyncDialog_WhenIsSyncAvailableIsTrue_ReturnsTrue()
         {
             // Arrange
-            _dialogMock.SetupGet(d => d.IsSyncAvailable).Returns(true);
+            _dialogMock.SetupGet(d => d.HasYesNo).Returns(true);
 
             // Act
             var result = _service.HasYesNoAsyncDialog;
@@ -90,7 +79,7 @@ namespace Answers.Tests
         public void HasTimeOutDialog_WhenIsAsyncAvailableIsTrue_ReturnsTrue()
         {
             // Arrange
-            _dialogMock.SetupGet(d => d.IsAsyncAvailable).Returns(true);
+            _dialogMock.SetupGet(d => d.HasAsyncYesNo).Returns(true);
 
             // Act
             var result = _service.HasTimeOutDialog;
@@ -103,7 +92,7 @@ namespace Answers.Tests
         public void HasTimeOutAsyncDialog_WhenIsAsyncAvailableIsTrue_ReturnsTrue()
         {
             // Arrange
-            _dialogMock.SetupGet(d => d.IsAsyncAvailable).Returns(true);
+            _dialogMock.SetupGet(d => d.HasAsyncYesNo).Returns(true);
 
             // Act
             var result = _service.HasTimeOutAsyncDialog;
@@ -139,19 +128,277 @@ namespace Answers.Tests
 
         #region Method Tests
 
-        #region AddDialog Tests
-
         [Fact]
-        public void AddDialog_SetsDialogCorrectly()
+        public void AddDialog_WithHasYesNoTrue_SetsHasYesNoDialogToTrue()
         {
             // Arrange
             var newDialogMock = new Mock<IUserDialog>();
+            newDialogMock.SetupGet(d => d.HasYesNo).Returns(true);
 
             // Act
             _service.AddDialog(newDialogMock.Object);
 
             // Assert
             Assert.True(_service.HasYesNoDialog);
+        }
+
+        [Fact]
+        public void AddDialog_WithHasYesNoFalse_SetsHasYesNoDialogToFalse()
+        {
+            // Arrange
+            var newDialogMock = new Mock<IUserDialog>();
+            newDialogMock.SetupGet(d => d.HasYesNo).Returns(false);
+
+            // Act
+            _service.AddDialog(newDialogMock.Object);
+
+            // Assert
+            Assert.False(_service.HasYesNoDialog);
+        }
+
+        [Fact]
+        public void AddDialog_WithHasAsyncYesNoTrue_SetsHasYesNoAsyncDialogToTrue()
+        {
+            // Arrange
+            var newDialogMock = new Mock<IUserDialog>();
+            newDialogMock.SetupGet(d => d.HasAsyncYesNo).Returns(true);
+
+            // Act
+            _service.AddDialog(newDialogMock.Object);
+
+            // Assert
+            Assert.True(_service.HasYesNoAsyncDialog);
+        }
+
+        [Fact]
+        public void AddDialog_WithHasAsyncYesNoFalse_SetsHasYesNoAsyncDialogToFalse()
+        {
+            // Arrange
+            var newDialogMock = new Mock<IUserDialog>();
+            newDialogMock.SetupGet(d => d.HasAsyncYesNo).Returns(false);
+
+            // Act
+            _service.AddDialog(newDialogMock.Object);
+
+            // Assert
+            Assert.False(_service.HasYesNoAsyncDialog);
+        }
+
+        [Fact]
+        public void AddDialog_WithHasTimeoutDialogTrue_SetsHasTimeOutDialogToTrue()
+        {
+            // Arrange
+            var newDialogMock = new Mock<IUserDialog>();
+            newDialogMock.SetupGet(d => d.HasTimeoutDialog).Returns(true);
+
+            // Act
+            _service.AddDialog(newDialogMock.Object);
+
+            // Assert
+            Assert.True(_service.HasTimeOutDialog);
+        }
+
+        [Fact]
+        public void AddDialog_WithHasTimeoutDialogFalse_SetsHasTimeOutDialogToFalse()
+        {
+            // Arrange
+            var newDialogMock = new Mock<IUserDialog>();
+            newDialogMock.SetupGet(d => d.HasTimeoutDialog).Returns(false);
+
+            // Act
+            _service.AddDialog(newDialogMock.Object);
+
+            // Assert
+            Assert.False(_service.HasTimeOutDialog);
+        }
+
+        [Fact]
+        public void AddDialog_WithHasAsyncTimeoutDialogTrue_SetsHasTimeOutAsyncDialogToTrue()
+        {
+            // Arrange
+            var newDialogMock = new Mock<IUserDialog>();
+            newDialogMock.SetupGet(d => d.HasAsyncTimeoutDialog).Returns(true);
+
+            // Act
+            _service.AddDialog(newDialogMock.Object);
+
+            // Assert
+            Assert.True(_service.HasTimeOutAsyncDialog);
+        }
+
+        [Fact]
+        public void AddDialog_WithHasAsyncTimeoutDialogFalse_SetsHasTimeOutAsyncDialogToFalse()
+        {
+            // Arrange
+            var newDialogMock = new Mock<IUserDialog>();
+            newDialogMock.SetupGet(d => d.HasAsyncTimeoutDialog).Returns(false);
+
+            // Act
+            _service.AddDialog(newDialogMock.Object);
+
+            // Assert
+            Assert.False(_service.HasTimeOutAsyncDialog);
+        }
+
+        [Fact]
+        public void AddDialog_WithAllFlagsSet_SetsAllHasDialogPropertiesToTrue()
+        {
+            // Arrange
+            var newDialogMock = new Mock<IUserDialog>();
+            newDialogMock.SetupGet(d => d.HasYesNo).Returns(true);
+            newDialogMock.SetupGet(d => d.HasAsyncYesNo).Returns(true);
+            newDialogMock.SetupGet(d => d.HasTimeoutDialog).Returns(true);
+            newDialogMock.SetupGet(d => d.HasAsyncTimeoutDialog).Returns(true);
+
+            // Act
+            _service.AddDialog(newDialogMock.Object);
+
+            // Assert
+            Assert.True(_service.HasYesNoDialog);
+            Assert.True(_service.HasYesNoAsyncDialog);
+            Assert.True(_service.HasTimeOutDialog);
+            Assert.True(_service.HasTimeOutAsyncDialog);
+        }
+
+        [Fact]
+        public void AddDialog_WithNoFlagsSet_SetsAllHasDialogPropertiesToFalse()
+        {
+            // Arrange
+            var newDialogMock = new Mock<IUserDialog>();
+            newDialogMock.SetupGet(d => d.HasYesNo).Returns(false);
+            newDialogMock.SetupGet(d => d.HasAsyncYesNo).Returns(false);
+            newDialogMock.SetupGet(d => d.HasTimeoutDialog).Returns(false);
+            newDialogMock.SetupGet(d => d.HasAsyncTimeoutDialog).Returns(false);
+
+            // Act
+            _service.AddDialog(newDialogMock.Object);
+
+            // Assert
+            Assert.False(_service.HasYesNoDialog);
+            Assert.False(_service.HasYesNoAsyncDialog);
+            Assert.False(_service.HasTimeOutDialog);
+            Assert.False(_service.HasTimeOutAsyncDialog);
+        }
+
+        #endregion
+
+        #region Property Tests
+
+        [Fact]
+        public void HasYesNoDialog_WhenDialogIsNull_ReturnsFalse()
+        {
+            // Arrange
+            var service = new AnswerService(null, _loggerMock.Object);
+
+            // Act
+            var result = service.HasYesNoDialog;
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void HasYesNoDialog_WhenDialogHasYesNoIsTrue_ReturnsTrue()
+        {
+            // Arrange
+            _dialogMock.SetupGet(d => d.HasYesNo).Returns(true);
+
+            // Act
+            var result = _service.HasYesNoDialog;
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void HasYesNoDialog_WhenDialogHasYesNoIsFalse_ReturnsFalse()
+        {
+            // Arrange
+            _dialogMock.SetupGet(d => d.HasYesNo).Returns(false);
+
+            // Act
+            var result = _service.HasYesNoDialog;
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void HasYesNoAsyncDialog_WhenDialogHasAsyncYesNoIsTrue_ReturnsTrue()
+        {
+            // Arrange
+            _dialogMock.SetupGet(d => d.HasAsyncYesNo).Returns(true);
+
+            // Act
+            var result = _service.HasYesNoAsyncDialog;
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void HasYesNoAsyncDialog_WhenDialogHasAsyncYesNoIsFalse_ReturnsFalse()
+        {
+            // Arrange
+            _dialogMock.SetupGet(d => d.HasAsyncYesNo).Returns(false);
+
+            // Act
+            var result = _service.HasYesNoAsyncDialog;
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void HasTimeOutDialog_WhenDialogHasTimeoutDialogIsTrue_ReturnsTrue()
+        {
+            // Arrange
+            _dialogMock.SetupGet(d => d.HasTimeoutDialog).Returns(true);
+
+            // Act
+            var result = _service.HasTimeOutDialog;
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void HasTimeOutDialog_WhenDialogHasTimeoutDialogIsFalse_ReturnsFalse()
+        {
+            // Arrange
+            _dialogMock.SetupGet(d => d.HasTimeoutDialog).Returns(false);
+
+            // Act
+            var result = _service.HasTimeOutDialog;
+
+            // Assert
+            Assert.False(result);
+        }
+
+        [Fact]
+        public void HasTimeOutAsyncDialog_WhenDialogHasAsyncTimeoutDialogIsTrue_ReturnsTrue()
+        {
+            // Arrange
+            _dialogMock.SetupGet(d => d.HasAsyncTimeoutDialog).Returns(true);
+
+            // Act
+            var result = _service.HasTimeOutAsyncDialog;
+
+            // Assert
+            Assert.True(result);
+        }
+
+        [Fact]
+        public void HasTimeOutAsyncDialog_WhenDialogHasAsyncTimeoutDialogIsFalse_ReturnsFalse()
+        {
+            // Arrange
+            _dialogMock.SetupGet(d => d.HasAsyncTimeoutDialog).Returns(false);
+
+            // Act
+            var result = _service.HasTimeOutAsyncDialog;
+
+            // Assert
+            Assert.False(result);
         }
 
         #endregion
@@ -338,6 +585,6 @@ namespace Answers.Tests
 
         #endregion
 
-        #endregion
+
     }
 }

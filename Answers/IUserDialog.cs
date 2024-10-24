@@ -12,8 +12,10 @@ namespace Answers
         bool YesNo(string errorMessage);
         bool ContinueTimedOutYesNo(string errorMessage, CancellationToken localCancellationToken, CancellationToken ct);
 
-        bool IsAsyncAvailable { get; }
-        bool IsSyncAvailable { get; }
+        bool HasAsyncYesNo { get; }
+        bool HasAsyncTimeoutDialog { get; }
+        bool HasYesNo { get; }
+        bool HasTimeoutDialog { get; }
     }
 
 }

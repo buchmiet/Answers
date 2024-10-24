@@ -10,11 +10,11 @@ namespace AnswerGenerator
     public class TryAsyncClass
     {
         private async System.Threading.Tasks.Task<Answers.Answer> TryAsync(
-   System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
-   System.Threading.CancellationToken ct,
-   [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
-   [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
-   [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
+      System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
+      System.Threading.CancellationToken ct,
+      [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
+      [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
+      [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
         {
             System.TimeSpan timeoutValue;
 
@@ -64,10 +64,10 @@ namespace AnswerGenerator
                     System.String action = $"{callerName} at {System.IO.Path.GetFileName(callerFilePath)}:{callerLineNumber}";
 
 
-                    if (this._answerService.HasTimeOutDialog)
+                    if (this._answerService.HasTimeOutDialog || _answerService.HasTimeOutAsyncDialog)
                     {
                         System.String timeoutMessage = $"The operation '{action}' timed out. Do you want to retry?";
-
+                        // async dialog has priority
                         if (this._answerService.HasTimeOutAsyncDialog)
                         {
                             using CancellationTokenSource dialogCts = new CancellationTokenSource();
@@ -79,6 +79,27 @@ namespace AnswerGenerator
                                 answer = await methodTask;
                                 return answer;
                             }
+                            continue;
+                        }
+                        else
+                        {
+                            using CancellationTokenSource dialogCts = new CancellationTokenSource();
+
+                            // Uruchomienie synchronicznego dialogu w osobnym wątku
+                            System.Threading.Tasks.Task<bool> dialogTask = System.Threading.Tasks.Task.Run(() =>
+                                this._answerService.AskYesNoToWait(timeoutMessage, dialogCts.Token, ct), dialogCts.Token);
+
+                            System.Threading.Tasks.Task dialogOutcomeTask = await System.Threading.Tasks.Task.WhenAny(methodTask, dialogTask);
+
+                            if (dialogOutcomeTask == methodTask)
+                            {
+                                // Anulowanie dialogu, jeśli operacja została zakończona
+                                await dialogCts.CancelAsync();
+                                answer = await methodTask;
+                                return answer;
+                            }
+
+                            // Kontynuowanie pętli lub operacji w przypadku, gdy dialog oczekuje na użytkownika
                             continue;
                         }
                     }

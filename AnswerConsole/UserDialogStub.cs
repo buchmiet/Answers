@@ -23,8 +23,15 @@ namespace AnswerConsole
         }
 
         // Właściwości sprawdzające dostępność wersji async i sync
-        public bool IsAsyncAvailable => true;
-        public bool IsSyncAvailable => true;
+        public bool ContinueTimedOutYesNo(string errorMessage, CancellationToken localCancellationToken, CancellationToken ct)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool HasAsyncYesNo => true;
+        public bool HasAsyncTimeoutDialog => true;
+        public bool HasYesNo => true;
+        public bool HasTimeoutDialog => true;
 
         // Metoda pomocnicza do uzyskania kolejnej odpowiedzi
         private bool GetNextResponse()

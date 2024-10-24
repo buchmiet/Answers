@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="AnswerServiceTests.cs" />
     <Compile Remove="TestClassesForAnswerServiceTests.cs" />
     <Compile Remove="TestClassForTryAsync.cs" />
     <Compile Remove="TryAsyncTests.cs" />
@@ -17,6 +18,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="AnswerServiceTests.cs" />
     <None Include="TestClassesForAnswerServiceTests.cs" />
     <None Include="TestClassForTryAsync.cs" />
     <None Include="TryAsyncTests.cs" />
