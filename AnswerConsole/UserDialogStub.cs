@@ -37,16 +37,17 @@ namespace AnswerConsole
         public Task<bool> YesNoAsync(string errorMessage, CancellationToken ct)
         {
             var response = GetNextResponse();
-            Console.WriteLine($"{errorMessage}: continue - True or false?{response}");
+            Console.WriteLine($"{errorMessage}: Do you want to retry - True or false?{response}");
             return Task.FromResult(response);
         }
 
-        public Task<bool> ContinueTimedOutYesNoAsync(string errorMessage, CancellationToken ct)
+        public Task<bool> ContinueTimedOutYesNoAsync(string errorMessage, CancellationToken localCancellationToken, CancellationToken ct)
         {
             var response = GetNextResponse();
             Console.WriteLine($"{errorMessage}: continue - True or false?{response}");
             return Task.FromResult(response);
         }
+
 
         public bool YesNo(string errorMessage)
         {

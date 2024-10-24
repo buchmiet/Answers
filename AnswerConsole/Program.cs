@@ -534,12 +534,12 @@ public partial class DatabaseTierClass(RandomService randomService) : IAnswerabl
         AnsiConsole.MarkupLine($"Next random value is [green]{randomValue}[/]");
         if (randomValue)
         {
-            AnsiConsole.MarkupLine($"I am returning answer with [green]IsSuccess=true[/] and value='[yellow]DatabaseData_{id}[/]'");
+      //      AnsiConsole.MarkupLine($"I am returning answer with [green]IsSuccess=true[/] and value='[yellow]DatabaseData_{id}[/]'");
             return answer.WithValue($"[yellow]DatabaseData_{id}[/]");
         }
 
-        AnsiConsole.MarkupLine(
-            $"I am returning answer with [red]IsSuccess=false[/] and message='[red]Error fetching data from database for ID {id}[/]'");
+        //AnsiConsole.MarkupLine(
+        //    $"I am returning answer with [red]IsSuccess=false[/] and message='[red]Error fetching data from database for ID {id}[/]'");
         return answer.Error($"[red]Error fetching data from database for ID {id}[/]");
     }
 

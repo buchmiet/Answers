@@ -10,11 +10,11 @@ namespace AnswerGenerator
     public class TryAsyncClass
     {
         private async System.Threading.Tasks.Task<Answers.Answer> TryAsync(
-     System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
-     System.Threading.CancellationToken ct,
-     [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
-     [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
-     [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
+   System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
+   System.Threading.CancellationToken ct,
+   [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
+   [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
+   [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
         {
             System.TimeSpan timeoutValue;
 
@@ -24,16 +24,11 @@ namespace AnswerGenerator
             Answers.Answer answer;
             while (true)
             {
-                System.Threading.Tasks.Task timeoutTask = null;
 
+                //  if (timeoutTask != null)
                 if (timeoutValue != System.TimeSpan.Zero)
                 {
-                    timeoutTask = System.Threading.Tasks.Task.Delay(timeoutValue, ct);
-                }
-
-                if (timeoutTask != null)
-                {
-                    System.Threading.Tasks.Task completedTask = await System.Threading.Tasks.Task.WhenAny(methodTask, timeoutTask);
+                    System.Threading.Tasks.Task completedTask = await System.Threading.Tasks.Task.WhenAny(methodTask, System.Threading.Tasks.Task.Delay(timeoutValue, ct));
 
                     if (completedTask == methodTask)
                     {
@@ -67,7 +62,7 @@ namespace AnswerGenerator
 
                     // Wystąpił timeout
                     System.String action = $"{callerName} at {System.IO.Path.GetFileName(callerFilePath)}:{callerLineNumber}";
-                    System.Boolean timeoutResponse = false;
+
 
                     if (this._answerService.HasTimeOutDialog)
                     {
@@ -75,22 +70,20 @@ namespace AnswerGenerator
 
                         if (this._answerService.HasTimeOutAsyncDialog)
                         {
-                            timeoutResponse = await this._answerService.AskYesNoToWaitAsync(timeoutMessage, ct);
+                            using CancellationTokenSource dialogCts = new CancellationTokenSource();
+                            System.Threading.Tasks.Task dialogTask = this._answerService.AskYesNoToWaitAsync(timeoutMessage, dialogCts.Token, ct);
+                            System.Threading.Tasks.Task dialogOutcomeTask = await System.Threading.Tasks.Task.WhenAny(methodTask, dialogTask);
+                            if (dialogOutcomeTask == methodTask)
+                            {
+                                await dialogCts.CancelAsync();
+                                answer = await methodTask;
+                                return answer;
+                            }
+                            continue;
                         }
-                        else
-                        {
-                            timeoutResponse = this._answerService.AskYesNoToWait(timeoutMessage);
-                        }
-
                     }
 
-                    if (timeoutResponse)
-                    {
-                        // User chose to wait longer; create a new timeoutTask
-                        timeoutTask = Task.Delay(timeoutValue, ct);
-                        // Continue to wait without restarting methodTask
-                        continue; // Ponawiamy operację
-                    }
+
 
                     // Użytkownik wybrał "No" lub brak dostępnych dialogów
                     answer = Answers.Answer.Prepare("Time out");
