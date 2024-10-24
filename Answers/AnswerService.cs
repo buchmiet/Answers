@@ -11,7 +11,6 @@ namespace Answers
 {
     public interface IAnswerService
     {
-        ILogger Logger { get; }
         bool HasYesNoDialog { get; }
         bool HasYesNoAsyncDialog { get; }
         bool HasTimeOutDialog { get; }
@@ -24,13 +23,29 @@ namespace Answers
         bool AskYesNo(string message);
         bool AskYesNoToWait(string message);
         void SetTimeout(TimeSpan timeout);
+        void LogWarning(string message);
+        void LogError(string message);
+        void LogInfo(string message);
     }
 
     public class AnswerService(IUserDialog dialog, ILogger logger) : IAnswerService
     {
-        public ILogger Logger { get; } = logger;
         private readonly object _syncRoot = new();
         private TimeSpan Timeout { get; set; }
+        public void LogWarning(string message)
+        {
+            logger.LogWarning(message);
+        }
+
+        public void LogError(string message)
+        {
+            logger.LogError(message);
+        }
+
+        public void LogInfo(string message)
+        {
+            logger.LogInformation(message);
+        }
         public TimeSpan GetTimeout()
         {
             lock (_syncRoot)
