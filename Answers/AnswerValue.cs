@@ -1,10 +1,15 @@
 ﻿namespace Answers;
 
-public record AnswerAnswerValue<T> : IAnswerValue
+public interface IAnswerValue
+{
+    object GetValue();
+}
+
+public record AnswerValue<T> : IAnswerValue
 {
     private readonly T _value;
 
-    public AnswerAnswerValue(T value)
+    public AnswerValue(T value)
     {
         _value = value;
     }

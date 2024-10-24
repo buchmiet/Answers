@@ -3,114 +3,147 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Xunit;
 
 namespace Answers.Tests
 {
 
-    public class AnswerAnswerValueTests
+public class AnswerValueTests
     {
         [Fact]
-        public void ValueRecord_ShouldStoreIntValue()
+        public void Constructor_WhenValueIsNull_ShouldCreateInstance()
         {
-            // Arrange
-            var valueRecord = new AnswerAnswerValue<int>(42);
-
-            // Act
-            var value = valueRecord.GetValue();
+            // Arrange & Act
+            var answer = new AnswerValue<string>(null);
 
             // Assert
-            Assert.Equal(42, value);
+            Assert.NotNull(answer);
         }
 
         [Fact]
-        public void ValueRecord_ShouldStoreStringValue()
+        public void GetValue_WhenStringValue_ShouldReturnCorrectValue()
         {
             // Arrange
-            var valueRecord = new AnswerAnswerValue<string>("TestValue");
+            const string expectedValue = "test";
+            var answer = new AnswerValue<string>(expectedValue);
 
             // Act
-            var value = valueRecord.GetValue();
+            var result = answer.GetValue();
 
             // Assert
-            Assert.Equal("TestValue", value);
+            Assert.Equal(expectedValue, result);
         }
 
         [Fact]
-        public void ValueRecord_ShouldStoreCustomObjectValue()
+        public void GetValue_WhenIntValue_ShouldReturnCorrectValue()
         {
             // Arrange
-            var customObject = new CustomType { Id = 1, Name = "TestName" };
-            var valueRecord = new AnswerAnswerValue<CustomType>(customObject);
+            const int expectedValue = 42;
+            var answer = new AnswerValue<int>(expectedValue);
 
             // Act
-            var value = valueRecord.GetValue();
+            var result = answer.GetValue();
 
             // Assert
-            Assert.Equal(customObject, value);
+            Assert.Equal(expectedValue, result);
         }
 
         [Fact]
-        public void ValueRecord_GetValueFromInterface_ShouldReturnSameValue()
+        public void GetValue_WhenCustomObjectValue_ShouldReturnCorrectValue()
         {
             // Arrange
-            var valueRecord = new AnswerAnswerValue<int>(100);
+            var expectedValue = new TestObject { Id = 1, Name = "Test" };
+            var answer = new AnswerValue<TestObject>(expectedValue);
 
             // Act
-            var interfaceValueRecord = (IAnswerValue)valueRecord;
-            var value = interfaceValueRecord.GetValue();
+            var result = answer.GetValue();
 
             // Assert
-            Assert.Equal(100, value);
+            Assert.Equal(expectedValue, result);
         }
 
         [Fact]
-        public void ValueRecord_GetValueFromInterface_ShouldReturnSameStringValue()
+        public void Interface_GetValue_ShouldReturnSameValueAsGenericMethod()
         {
             // Arrange
-            var valueRecord = new AnswerAnswerValue<string>("InterfaceValue");
+            const int expectedValue = 42;
+            var answer = new AnswerValue<int>(expectedValue);
 
             // Act
-            var interfaceValueRecord = (IAnswerValue)valueRecord;
-            var value = interfaceValueRecord.GetValue();
+            var genericResult = answer.GetValue();
+            var interfaceResult = ((IAnswerValue)answer).GetValue();
 
             // Assert
-            Assert.Equal("InterfaceValue", value);
+            Assert.Equal(genericResult, interfaceResult);
         }
 
         [Fact]
-        public void ValueRecord_GetValueFromInterface_ShouldReturnCustomObjectValue()
+        public void Record_ShouldImplementValueEquality()
         {
             // Arrange
-            var customObject = new CustomType { Id = 2, Name = "CustomObject" };
-            var valueRecord = new AnswerAnswerValue<CustomType>(customObject);
-
-            // Act
-            var interfaceValueRecord = (IAnswerValue)valueRecord;
-            var value = interfaceValueRecord.GetValue();
+            var answer1 = new AnswerValue<int>(42);
+            var answer2 = new AnswerValue<int>(42);
+            var answer3 = new AnswerValue<int>(43);
 
             // Assert
-            Assert.Equal(customObject, value);
+            Assert.Equal(answer1, answer2); // Same value should be equal
+            Assert.NotEqual(answer1, answer3); // Different values should not be equal
+        }
+
+        [Fact]
+        public void Record_ShouldImplementValueHashCode()
+        {
+            // Arrange
+            var answer1 = new AnswerValue<int>(42);
+            var answer2 = new AnswerValue<int>(42);
+
+            // Assert
+            Assert.Equal(answer1.GetHashCode(), answer2.GetHashCode());
+        }
+
+        [Fact]
+        public void DifferentTypes_ShouldNotBeEqual()
+        {
+            // Arrange
+            var intAnswer = new AnswerValue<int>(42);
+            var stringAnswer = new AnswerValue<string>("42");
+
+            // Assert
+            Assert.NotEqual(intAnswer.GetHashCode(), stringAnswer.GetHashCode());
+        }
+
+        [Fact]
+        public void Interface_ShouldWorkWithDifferentTypes()
+        {
+            // Arrange
+            IAnswerValue intAnswer = new AnswerValue<int>(42);
+            IAnswerValue stringAnswer = new AnswerValue<string>("test");
+            IAnswerValue boolAnswer = new AnswerValue<bool>(true);
+
+            // Act & Assert
+            Assert.IsType<int>(intAnswer.GetValue());
+            Assert.IsType<string>(stringAnswer.GetValue());
+            Assert.IsType<bool>(boolAnswer.GetValue());
+        }
+
+        [Fact]
+        public void GetValue_WithComplexType_ShouldMaintainReferenceEquality()
+        {
+            // Arrange
+            var complexObject = new TestObject { Id = 1, Name = "Test" };
+            var answer = new AnswerValue<TestObject>(complexObject);
+
+            // Act
+            var result = answer.GetValue();
+
+            // Assert
+            Assert.Same(complexObject, result); // Verifies reference equality
+        }
+
+        private class TestObject
+        {
+            public int Id { get; set; }
+            public string Name { get; set; }
         }
     }
-
-    public class CustomType
-    {
-        public int Id { get; set; }
-        public string Name { get; set; }
-
-        public override bool Equals(object obj)
-        {
-            return obj is CustomType other &&
-                   Id == other.Id &&
-                   Name == other.Name;
-        }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(Id, Name);
-        }
-    }
-
-
-
 }

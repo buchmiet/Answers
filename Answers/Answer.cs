@@ -6,10 +6,7 @@ using System.Threading;
 namespace Answers
 {
 
-    public interface IAnswerValue
-    {
-        object GetValue();
-    }
+   
 
     public interface IAnswer
     {
@@ -92,7 +89,7 @@ namespace Answers
 
         public Answer WithValue<T>(T value)
         {
-            AnswerValue = new AnswerAnswerValue<T>(value);
+            AnswerValue = new AnswerValue<T>(value);
             State.HasValueSet = true;
             return this;
         }
@@ -102,13 +99,13 @@ namespace Answers
             {
                 throw new InvalidOperationException("Answer is in Error state, no values can be added");
             }
-            AnswerValue = new AnswerAnswerValue<T>(value);
+            AnswerValue = new AnswerValue<T>(value);
         }
 
         public T GetValue<T>()
         {
             if (!State.HasValueSet) throw new InvalidOperationException("Value was not set.");
-            if (AnswerValue is AnswerAnswerValue<T> record)
+            if (AnswerValue is AnswerValue<T> record)
             {
                 return record.GetValue();
             }
@@ -118,7 +115,7 @@ namespace Answers
 
         public bool Out<T>(out T value)
         {
-            if (State.HasValueSet && AnswerValue is AnswerAnswerValue<T> record)
+            if (State.HasValueSet && AnswerValue is AnswerValue<T> record)
             {
                 value = record.GetValue();
                 return true;
