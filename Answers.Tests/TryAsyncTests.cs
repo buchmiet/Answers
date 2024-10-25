@@ -225,32 +225,33 @@ namespace Answers.Tests
             Assert.Contains("Time out", result.Message, StringComparison.OrdinalIgnoreCase);
         }
 
-        //[Fact]
-        //public async Task TryAsync_ExecutionTimesOut_NoTimeoutDialog_ReturnsTimeoutError()
-        //{
-        //    // Arrange
-        //    var cts = new CancellationTokenSource();
-        //    var ct = cts.Token;
+        [Fact]
+        public async Task TryAsync_ExecutionTimesOut_NoTimeoutDialog_ReturnsTimeoutError()
+        {
+            // Arrange
+            var cts = new CancellationTokenSource();
+            var ct = cts.Token;
 
-        //    var mockAnswerService = new Mock<IAnswerService>();
-        //    mockAnswerService.Setup(x => x.GetTimeout()).Returns(TimeSpan.FromSeconds(1));
-        //    mockAnswerService.Setup(x => x.HasTimeOutAsyncDialog).Returns(false);
+            var mockAnswerService = new Mock<IAnswerService>();
+            mockAnswerService.Setup(x => x.GetTimeout()).Returns(TimeSpan.FromSeconds(1));
+            mockAnswerService.Setup(x => x.HasTimeout).Returns(true);
+            mockAnswerService.Setup(x => x.HasTimeOutAsyncDialog).Returns(false);
 
-        //    var testClass = new TestAnswerableClass(mockAnswerService.Object);
+            var testClass = new TestAnswerableClass(mockAnswerService.Object);
 
-        //    Func<Task<Answer>> method = async () =>
-        //    {
-        //        await Task.Delay(5000, ct); // Won't complete before timeout
-        //        return Answer.IsSuccess("IsSuccess after waiting");
-        //    };
+            Func<Task<Answer>> method = async () =>
+            {
+                await Task.Delay(5000, ct); // Won't complete before timeout
+                return Answer.Prepare("IsSuccess after waiting");
+            };
 
-        //    // Act
-        //    var result = await testClass.TryAsync(method, ct);
+            // Act
+            Answer result = await testClass.TryAsync(method, ct);
 
-        //    // Assert
-        //    Assert.False(result.IsIsSuccess);
-        //    Assert.Contains("timed out", result.Message, StringComparison.OrdinalIgnoreCase);
-        //}
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Time out", result.Message, StringComparison.OrdinalIgnoreCase);
+        }
 
         //[Fact]
         //public async Task TryAsync_UserCancelsOperation_CancellationRequested_ReturnsCancellation()
@@ -260,21 +261,21 @@ namespace Answers.Tests
         //    var ct = cts.Token;
 
         //    var mockAnswerService = new Mock<IAnswerService>();
-        //    mockAnswerService.Setup(x => x.GetTimeout()).Returns(TimeSpan.Zero);
-
+        //    mockAnswerService.Setup(x => x.GetTimeout()).Returns(TimeSpan.FromSeconds(1));
+        //    mockAnswerService.Setup(x => x.HasTimeout).Returns(true);
         //    var testClass = new TestAnswerableClass(mockAnswerService.Object);
 
         //    Func<Task<Answer>> method = async () =>
         //    {
         //        await Task.Delay(5000, ct); // Long-running task
-        //        return Answer.IsSuccess("Should not reach here");
+        //        return Answer.Prepare("Should not reach here");
         //    };
 
         //    // Act
-        //    var result = await testClass.TryAsync(method, ct);
+        //    Answer result = await testClass.TryAsync(method, ct);
 
         //    // Assert
-        //    Assert.False(result.IsIsSuccess);
+        //    Assert.False(result.IsSuccess);
         //    Assert.Contains("canceled", result.Message, StringComparison.OrdinalIgnoreCase);
         //}
 
