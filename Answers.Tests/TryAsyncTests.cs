@@ -105,64 +105,64 @@ namespace Answers.Tests
             Assert.Equal(2, attempt);
         }
 
-        //[Fact]
-        //public async Task TryAsync_FailedExecution_NoTimeout_WithYesNoDialog_UserDoesNotRetry_ReturnsFailure()
-        //{
-        //    // Arrange
-        //    var cts = new CancellationTokenSource();
-        //    var ct = cts.Token;
+        [Fact]
+        public async Task TryAsync_FailedExecution_NoTimeout_WithYesNoDialog_UserDoesNotRetry_ReturnsFailure()
+        {
+            // Arrange
+            var cts = new CancellationTokenSource();
+            var ct = cts.Token;
 
-        //    var mockAnswerService = new Mock<IAnswerService>();
-        //    mockAnswerService.Setup(x => x.GetTimeout()).Returns(TimeSpan.Zero);
-        //    mockAnswerService.Setup(x => x.HasYesNoDialog).Returns(true);
-        //    mockAnswerService.Setup(x => x.AskYesNoAsync(It.IsAny<string>(), ct))
-        //        .ReturnsAsync(false); // User chooses not to retry
+            var mockAnswerService = new Mock<IAnswerService>();
+            mockAnswerService.Setup(x => x.GetTimeout()).Returns(TimeSpan.Zero);
+            mockAnswerService.Setup(x => x.HasYesNoAsyncDialog).Returns(true);
+            mockAnswerService.Setup(x => x.AskYesNoAsync(It.IsAny<string>(), ct))
+                .ReturnsAsync(false); // User chooses not to retry
 
-        //    var testClass = new TestAnswerableClass(mockAnswerService.Object);
+            var testClass = new TestAnswerableClass(mockAnswerService.Object);
 
-        //    int attempt = 0;
-        //    Func<Task<Answer>> method = async () =>
-        //    {
-        //        await Task.Delay(100, ct);
-        //        attempt++;
-        //        return Answer.Failure("Error occurred");
-        //    };
+            int attempt = 0;
+            Func<Task<Answer>> method = async () =>
+            {
+                await Task.Delay(100, ct);
+                attempt++;
+                return Answer.Prepare("Test").Error("Error occurred");
+            };
 
-        //    // Act
-        //    var result = await testClass.TryAsync(method, ct);
+            // Act
+            Answer result = await testClass.TryAsync(method, ct);
 
-        //    // Assert
-        //    Assert.False(result.IsIsSuccess);
-        //    Assert.Equal("Error occurred", result.Message);
-        //    Assert.Equal(1, attempt);
-        //}
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Error occurred", result.Message);
+            Assert.Equal(1, attempt);
+        }
 
-        //[Fact]
-        //public async Task TryAsync_IsSuccessfulExecution_WithTimeout_CompletesBeforeTimeout_ReturnsIsSuccess()
-        //{
-        //    // Arrange
-        //    var cts = new CancellationTokenSource();
-        //    var ct = cts.Token;
+        [Fact]
+        public async Task TryAsync_IsSuccessfulExecution_WithTimeout_CompletesBeforeTimeout_ReturnsIsSuccess()
+        {
+            // Arrange
+            var cts = new CancellationTokenSource();
+            var ct = cts.Token;
 
-        //    var mockAnswerService = new Mock<IAnswerService>();
-        //    mockAnswerService.Setup(x => x.GetTimeout()).Returns(TimeSpan.FromSeconds(1));
-        //    mockAnswerService.Setup(x => x.HasYesNoDialog).Returns(false);
+            var mockAnswerService = new Mock<IAnswerService>();
+            mockAnswerService.Setup(x => x.GetTimeout()).Returns(TimeSpan.FromSeconds(1));
+            mockAnswerService.Setup(x => x.HasYesNoDialog).Returns(false);
 
-        //    var testClass = new TestAnswerableClass(mockAnswerService.Object);
+            var testClass = new TestAnswerableClass(mockAnswerService.Object);
 
-        //    Func<Task<Answer>> method = async () =>
-        //    {
-        //        await Task.Delay(500, ct); // Completes before timeout
-        //        return Answer.IsSuccess("IsSuccess");
-        //    };
+            Func<Task<Answer>> method = async () =>
+            {
+                await Task.Delay(500, ct); // Completes before timeout
+                return Answer.Prepare("IsSuccess");
+            };
 
-        //    // Act
-        //    var result = await testClass.TryAsync(method, ct);
+            // Act
+            Answer result = await testClass.TryAsync(method, ct);
 
-        //    // Assert
-        //    Assert.True(result.IsIsSuccess);
-        //    Assert.Equal("IsSuccess", result.Message);
-        //}
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.Equal("IsSuccess", result.Message);
+        }
 
         //[Fact]
         //public async Task TryAsync_ExecutionTimesOut_WithTimeoutDialog_UserContinuesWaiting_Succeeds()
