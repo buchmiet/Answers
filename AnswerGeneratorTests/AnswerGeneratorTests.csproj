@@ -12,16 +12,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="AnswerGeneratorTests.cs" />
-    <Compile Remove="TestSourcesProvider.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="AnswerGeneratorTests.cs" />
-    <None Include="TestSourcesProvider.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

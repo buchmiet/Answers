@@ -23,15 +23,6 @@ namespace Answers.Tests
 
         #region Constructor Tests
 
-        [Fact]
-        public void Constructor_WithNullDialog_DoesNotThrow()
-        {
-            // Arrange & Act
-            var exception = Record.Exception(() => new AnswerService(null, _loggerMock.Object));
-
-            // Assert
-            Assert.Null(exception);
-        }
 
         [Fact]
         public void Constructor_WithNullLogger_ThrowsArgumentNullException()
@@ -272,18 +263,6 @@ namespace Answers.Tests
 
         #region Property Tests
 
-        [Fact]
-        public void HasYesNoDialog_WhenDialogIsNull_ReturnsFalse()
-        {
-            // Arrange
-            var service = new AnswerService(null, _loggerMock.Object);
-
-            // Act
-            var result = service.HasYesNoDialog;
-
-            // Assert
-            Assert.False(result);
-        }
 
         [Fact]
         public void HasYesNoDialog_WhenDialogHasYesNoIsTrue_ReturnsTrue()
@@ -499,13 +478,13 @@ namespace Answers.Tests
         #region Synchronous Method Tests
 
         [Fact]
-        public void AskYesNo_WhenDialogIsNull_ThrowsInvalidOperationException()
+        public void AddDialogNull_ThrowsArgumetNullException()
         {
             // Arrange
-            var service = new AnswerService(null, _loggerMock.Object);
+            AnswerService service;
 
             // Act & Assert
-            Assert.Throws<InvalidOperationException>(() => service.AskYesNo("Test message"));
+            Assert.Throws<ArgumentNullException>(() => service = new AnswerService(null, _loggerMock.Object));
         }
 
         [Fact]
@@ -544,15 +523,7 @@ namespace Answers.Tests
 
         #region Asynchronous Method Tests
 
-        [Fact]
-        public async Task AskYesNoAsync_WhenDialogIsNull_ThrowsInvalidOperationException()
-        {
-            // Arrange
-            var service = new AnswerService(null, _loggerMock.Object);
 
-            // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(() => service.AskYesNoAsync("Test message", CancellationToken.None));
-        }
 
         [Fact]
         public async Task AskYesNoAsync_CallsDialogYesNoAsync()

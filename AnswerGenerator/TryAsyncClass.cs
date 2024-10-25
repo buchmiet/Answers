@@ -18,7 +18,7 @@ namespace AnswerGenerator
         {
             System.TimeSpan timeoutValue;
 
-            timeoutValue = this._answerService.HasTimeout ? _answerService.GetTimeout() : TimeSpan.Zero; // Pobiera i resetuje timeout
+            timeoutValue = this._answerService.HasTimeout ? _answerService.GetTimeout() : System.TimeSpan.Zero; // Pobiera i resetuje timeout
             System.Threading.Tasks.Task<Answers.Answer> methodTask = method();
 
             Answers.Answer answer;
@@ -70,7 +70,7 @@ namespace AnswerGenerator
                         // async dialog has priority
                         if (this._answerService.HasTimeOutAsyncDialog)
                         {
-                            using CancellationTokenSource dialogCts = new CancellationTokenSource();
+                            using System.Threading.CancellationTokenSource dialogCts = new System.Threading.CancellationTokenSource();
                             System.Threading.Tasks.Task dialogTask = this._answerService.AskYesNoToWaitAsync(timeoutMessage, dialogCts.Token, ct);
                             System.Threading.Tasks.Task dialogOutcomeTask = await System.Threading.Tasks.Task.WhenAny(methodTask, dialogTask);
                             if (dialogOutcomeTask == methodTask)
@@ -83,7 +83,7 @@ namespace AnswerGenerator
                         }
                         else
                         {
-                            using CancellationTokenSource dialogCts = new CancellationTokenSource();
+                            using System.Threading.CancellationTokenSource dialogCts = new System.Threading.CancellationTokenSource();
 
                             // Uruchomienie synchronicznego dialogu w osobnym wątku
                             System.Threading.Tasks.Task<bool> dialogTask = System.Threading.Tasks.Task.Run(() =>
