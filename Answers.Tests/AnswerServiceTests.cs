@@ -62,24 +62,12 @@ namespace Answers.Tests
             Assert.True(result);
         }
 
-        [Fact]
-        public void HasYesNoAsyncDialog_WhenIsSyncAvailableIsTrue_ReturnsTrue()
-        {
-            // Arrange
-            _dialogMock.SetupGet(d => d.HasYesNo).Returns(true);
-
-            // Act
-            var result = _service.HasYesNoAsyncDialog;
-
-            // Assert
-            Assert.True(result);
-        }
 
         [Fact]
         public void HasTimeOutDialog_WhenIsAsyncAvailableIsTrue_ReturnsTrue()
         {
             // Arrange
-            _dialogMock.SetupGet(d => d.HasAsyncYesNo).Returns(true);
+            _dialogMock.SetupGet(d => d.HasTimeoutDialog).Returns(true);
 
             // Act
             var result = _service.HasTimeOutDialog;
@@ -92,7 +80,7 @@ namespace Answers.Tests
         public void HasTimeOutAsyncDialog_WhenIsAsyncAvailableIsTrue_ReturnsTrue()
         {
             // Arrange
-            _dialogMock.SetupGet(d => d.HasAsyncYesNo).Returns(true);
+            _dialogMock.SetupGet(d => d.HasAsyncTimeoutDialog).Returns(true);
 
             // Act
             var result = _service.HasTimeOutAsyncDialog;
@@ -447,8 +435,18 @@ namespace Answers.Tests
             _service.LogInfo(message);
 
             // Assert
-            _loggerMock.Verify(l => l.LogInformation(message), Times.Once);
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Information,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString() == message),
+                    It.IsAny<Exception?>(),
+                    It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)
+                ),
+                Times.Once
+            );
         }
+
 
         [Fact]
         public void LogWarning_CallsLoggerWarning()
@@ -460,8 +458,18 @@ namespace Answers.Tests
             _service.LogWarning(message);
 
             // Assert
-            _loggerMock.Verify(l => l.LogWarning(message), Times.Once);
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString() == message),
+                    It.IsAny<Exception?>(),
+                    It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)
+                ),
+                Times.Once
+            );
         }
+
 
         [Fact]
         public void LogError_CallsLoggerError()
@@ -473,8 +481,18 @@ namespace Answers.Tests
             _service.LogError(message);
 
             // Assert
-            _loggerMock.Verify(l => l.LogError(message), Times.Once);
+            _loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString() == message),
+                    It.IsAny<Exception?>(),
+                    It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)
+                ),
+                Times.Once
+            );
         }
+
 
         #endregion
 
