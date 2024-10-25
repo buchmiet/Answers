@@ -367,7 +367,7 @@ public partial class PresentationLayer//:IAnswerable
                     if (this._answerService.HasTimeOutAsyncDialog)
                     {
                         using System.Threading.CancellationTokenSource dialogCts = new System.Threading.CancellationTokenSource();
-                        System.Threading.Tasks.Task dialogTask = this._answerService.AskYesNoToWaitAsync(timeoutMessage,dialogCts.Token, ct);
+                        System.Threading.Tasks.Task<bool> dialogTask = this._answerService.AskYesNoToWaitAsync(timeoutMessage,dialogCts.Token, ct);
                         System.Threading.Tasks.Task dialogOutcomeTask = await System.Threading.Tasks.Task.WhenAny(methodTask, dialogTask);
                         if (dialogOutcomeTask== methodTask)
                         {
@@ -375,7 +375,12 @@ public partial class PresentationLayer//:IAnswerable
                             answer = await methodTask;
                             return answer;
                         }
-                        continue;
+                        //user decided to wait
+                        if (await dialogTask)
+                        {
+                            continue;
+                        }
+
                     }
                     else
                     {
@@ -394,9 +399,11 @@ public partial class PresentationLayer//:IAnswerable
                             answer = await methodTask;
                             return answer;
                         }
+                        if (await dialogTask)
+                        {
+                            continue;
+                        }
 
-                        // Kontynuowanie pętli lub operacji w przypadku, gdy dialog oczekuje na użytkownika
-                        continue;
                     }
                 }
 
@@ -443,7 +450,7 @@ public partial class PresentationLayer//:IAnswerable
     public PresentationLayer(BusinessLogicClass utilityLayer, Answers.IAnswerService answerService)
     {
         _answerService = answerService;
-       _answerService.AddDialog(new UserDialogStub([true,false]));
+       _answerService.AddDialog(new UserDialogStub([true,false],null));
         _utilityLayer = utilityLayer;
      //   LogDetailedInfo();
     }

@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
@@ -12,15 +11,11 @@
   <ItemGroup>
     <Compile Remove="TestClassesForAnswerServiceTests.cs" />
     <Compile Remove="TestClassForTryAsync.cs" />
-    <Compile Remove="TryAsyncTests.cs" />
-    <Compile Remove="UserDialogStub.cs" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="TestClassesForAnswerServiceTests.cs" />
     <None Include="TestClassForTryAsync.cs" />
-    <None Include="TryAsyncTests.cs" />
-    <None Include="UserDialogStub.cs" />
   </ItemGroup>
 
   <ItemGroup>

@@ -9,7 +9,7 @@ namespace AnswerGenerator
 {
     public class TryAsyncClass
     {
-        private async System.Threading.Tasks.Task<Answers.Answer> TryAsync(
+        public async System.Threading.Tasks.Task<Answers.Answer> TryAsync(
       System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
       System.Threading.CancellationToken ct,
       [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
@@ -63,7 +63,6 @@ namespace AnswerGenerator
                     // Wystąpił timeout
                     System.String action = $"{callerName} at {System.IO.Path.GetFileName(callerFilePath)}:{callerLineNumber}";
 
-
                     if (this._answerService.HasTimeOutDialog || _answerService.HasTimeOutAsyncDialog)
                     {
                         System.String timeoutMessage = $"The operation '{action}' timed out. Do you want to retry?";
@@ -79,6 +78,8 @@ namespace AnswerGenerator
                                 answer = await methodTask;
                                 return answer;
                             }
+
+
                             continue;
                         }
                         else

@@ -61,10 +61,6 @@ namespace AnswerConsole
             return GetNextResponse();
         }
 
-        public bool ContinueTimedOutYesNo(string errorMessage)
-        {
-            return GetNextResponse();
-        }
     }
 
 }
