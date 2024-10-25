@@ -164,65 +164,66 @@ namespace Answers.Tests
             Assert.Equal("IsSuccess", result.Message);
         }
 
-        //[Fact]
-        //public async Task TryAsync_ExecutionTimesOut_WithTimeoutDialog_UserContinuesWaiting_Succeeds()
-        //{
-        //    // Arrange
-        //    var cts = new CancellationTokenSource();
-        //    var ct = cts.Token;
+        [Fact]
+        public async Task TryAsync_ExecutionTimesOut_WithTimeoutDialog_UserContinuesWaiting_Succeeds()
+        {
+            // Arrange
+            var cts = new CancellationTokenSource();
+            var ct = cts.Token;
 
-        //    var mockAnswerService = new Mock<IAnswerService>();
-        //    mockAnswerService.SetupSequence(x => x.GetTimeout())
-        //        .Returns(TimeSpan.FromSeconds(1))
-        //        .Returns(TimeSpan.FromSeconds(2)); // New timeout after user chooses to wait
-        //    mockAnswerService.Setup(x => x.HasTimeOutAsyncDialog).Returns(true);
-        //    mockAnswerService.Setup(x => x.AskYesNoToWaitAsync(It.IsAny<string>(), ct, ct))
-        //        .ReturnsAsync(true); // User chooses to continue waiting
+            var mockAnswerService = new Mock<IAnswerService>();
+            mockAnswerService.SetupSequence(x => x.GetTimeout())
+                .Returns(TimeSpan.FromSeconds(1))
+                .Returns(TimeSpan.FromSeconds(2)); // New timeout after user chooses to wait
+            mockAnswerService.Setup(x => x.HasTimeOutAsyncDialog).Returns(true);
+            mockAnswerService.Setup(x => x.AskYesNoToWaitAsync(It.IsAny<string>(), ct, ct))
+                .ReturnsAsync(true); // User chooses to continue waiting
 
-        //    var testClass = new TestAnswerableClass(mockAnswerService.Object);
+            var testClass = new TestAnswerableClass(mockAnswerService.Object);
 
-        //    Func<Task<Answer>> method = async () =>
-        //    {
-        //        await Task.Delay(1500, ct); // Longer than initial timeout but less than total time
-        //        return Answer.IsSuccess("IsSuccess after waiting");
-        //    };
+            Func<Task<Answer>> method = async () =>
+            {
+                await Task.Delay(1500, ct); // Longer than initial timeout but less than total time
+                return Answer.Prepare("IsSuccess after waiting");
+            };
 
-        //    // Act
-        //    var result = await testClass.TryAsync(method, ct);
+            // Act
+            Answer result = await testClass.TryAsync(method, ct);
 
-        //    // Assert
-        //    Assert.True(result.IsIsSuccess);
-        //    Assert.Equal("IsSuccess after waiting", result.Message);
-        //}
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.Equal("IsSuccess after waiting", result.Message);
+        }
 
-        //[Fact]
-        //public async Task TryAsync_ExecutionTimesOut_WithTimeoutDialog_UserDoesNotContinue_ReturnsTimeoutError()
-        //{
-        //    // Arrange
-        //    var cts = new CancellationTokenSource();
-        //    var ct = cts.Token;
+        [Fact]
+        public async Task TryAsync_ExecutionTimesOut_WithTimeoutDialog_UserDoesNotContinue_ReturnsTimeoutError()
+        {
+            // Arrange
+            var cts = new CancellationTokenSource();
+            var ct = cts.Token;
 
-        //    var mockAnswerService = new Mock<IAnswerService>();
-        //    mockAnswerService.Setup(x => x.GetTimeout()).Returns(TimeSpan.FromSeconds(1));
-        //    mockAnswerService.Setup(x => x.HasTimeOutAsyncDialog).Returns(true);
-        //    mockAnswerService.Setup(x => x.AskYesNoToWaitAsync(It.IsAny<string>(), ct, ct))
-        //        .ReturnsAsync(false); // User chooses not to continue waiting
+            var mockAnswerService = new Mock<IAnswerService>();
+            mockAnswerService.Setup(x => x.GetTimeout()).Returns(TimeSpan.FromSeconds(1));
+            mockAnswerService.Setup(x => x.HasTimeout).Returns(true);
+            mockAnswerService.Setup(x => x.HasTimeOutAsyncDialog).Returns(true);
+            mockAnswerService.Setup(x => x.AskYesNoToWaitAsync(It.IsAny<string>(), ct, ct))
+                .ReturnsAsync(false); // User chooses not to continue waiting
 
-        //    var testClass = new TestAnswerableClass(mockAnswerService.Object);
+            var testClass = new TestAnswerableClass(mockAnswerService.Object);
 
-        //    Func<Task<Answer>> method = async () =>
-        //    {
-        //        await Task.Delay(5000, ct); // Won't complete before timeout
-        //        return Answer.IsSuccess("IsSuccess after waiting");
-        //    };
+            Func<Task<Answer>> method = async () =>
+            {
+                await Task.Delay(5000, ct); // Won't complete before timeout
+                return Answer.Prepare("IsSuccess after waiting");
+            };
 
-        //    // Act
-        //    var result = await testClass.TryAsync(method, ct);
+            // Act
+            Answer result = await testClass.TryAsync(method, ct);
 
-        //    // Assert
-        //    Assert.False(result.IsIsSuccess);
-        //    Assert.Contains("timed out", result.Message, StringComparison.OrdinalIgnoreCase);
-        //}
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("Time out", result.Message, StringComparison.OrdinalIgnoreCase);
+        }
 
         //[Fact]
         //public async Task TryAsync_ExecutionTimesOut_NoTimeoutDialog_ReturnsTimeoutError()

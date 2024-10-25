@@ -10,11 +10,11 @@ namespace AnswerGenerator
     public class TryAsyncClass
     {
         public async System.Threading.Tasks.Task<Answers.Answer> TryAsync(
-      System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
-      System.Threading.CancellationToken ct,
-      [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
-      [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
-      [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
+       System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
+       System.Threading.CancellationToken ct,
+       [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
+       [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
+       [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
         {
             System.TimeSpan timeoutValue;
 
@@ -63,6 +63,7 @@ namespace AnswerGenerator
                     // Wystąpił timeout
                     System.String action = $"{callerName} at {System.IO.Path.GetFileName(callerFilePath)}:{callerLineNumber}";
 
+
                     if (this._answerService.HasTimeOutDialog || _answerService.HasTimeOutAsyncDialog)
                     {
                         System.String timeoutMessage = $"The operation '{action}' timed out. Do you want to retry?";
@@ -70,7 +71,7 @@ namespace AnswerGenerator
                         if (this._answerService.HasTimeOutAsyncDialog)
                         {
                             using System.Threading.CancellationTokenSource dialogCts = new System.Threading.CancellationTokenSource();
-                            System.Threading.Tasks.Task dialogTask = this._answerService.AskYesNoToWaitAsync(timeoutMessage, dialogCts.Token, ct);
+                            System.Threading.Tasks.Task<bool> dialogTask = this._answerService.AskYesNoToWaitAsync(timeoutMessage, dialogCts.Token, ct);
                             System.Threading.Tasks.Task dialogOutcomeTask = await System.Threading.Tasks.Task.WhenAny(methodTask, dialogTask);
                             if (dialogOutcomeTask == methodTask)
                             {
@@ -78,9 +79,12 @@ namespace AnswerGenerator
                                 answer = await methodTask;
                                 return answer;
                             }
+                            //user decided to wait
+                            if (await dialogTask)
+                            {
+                                continue;
+                            }
 
-
-                            continue;
                         }
                         else
                         {
@@ -99,9 +103,11 @@ namespace AnswerGenerator
                                 answer = await methodTask;
                                 return answer;
                             }
+                            if (await dialogTask)
+                            {
+                                continue;
+                            }
 
-                            // Kontynuowanie pętli lub operacji w przypadku, gdy dialog oczekuje na użytkownika
-                            continue;
                         }
                     }
 
