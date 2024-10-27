@@ -324,10 +324,22 @@ public partial class PresentationLayer//:IAnswerable
             //  if (timeoutTask != null)
             if (timeoutValue != System.TimeSpan.Zero)
             {
-                System.Threading.Tasks.Task completedTask = await System.Threading.Tasks.Task.WhenAny(methodTask, System.Threading.Tasks.Task.Delay(timeoutValue, ct));
+                System.Threading.Tasks.Task completedTask;
+                try
+                {
+                    completedTask = await System.Threading.Tasks.Task.WhenAny(methodTask,
+                        System.Threading.Tasks.Task.Delay(timeoutValue, ct));
+                }
+                catch (OperationCanceledException ex)
+                {
+                    return Answers.Answer.Prepare("Cancelled").Error(ex.Message);
+                }
 
                 if (completedTask == methodTask)
                 {
+
+                    // 1:
+
                     answer = await methodTask;
 
                     if (answer.IsSuccess || answer.DialogConcluded || !(this._answerService.HasYesNoDialog || _answerService.HasYesNoAsyncDialog))
@@ -346,6 +358,10 @@ public partial class PresentationLayer//:IAnswerable
                         yesNoResponse = this._answerService.AskYesNo(answer.Message);
                     }
 
+                    if (ct.IsCancellationRequested)
+                    {
+                        return Answers.Answer.Prepare("Cancelled").Error("Cancellation requested");
+                    }
 
                     if (yesNoResponse)
                     {
@@ -354,6 +370,8 @@ public partial class PresentationLayer//:IAnswerable
 
                     answer.ConcludeDialog();
                     return answer; // Użytkownik wybrał "No", kończymy
+
+                    // 2:
                 }
 
                 // Wystąpił timeout
@@ -368,7 +386,18 @@ public partial class PresentationLayer//:IAnswerable
                     {
                         using System.Threading.CancellationTokenSource dialogCts = new System.Threading.CancellationTokenSource();
                         System.Threading.Tasks.Task<bool> dialogTask = this._answerService.AskYesNoToWaitAsync(timeoutMessage,dialogCts.Token, ct);
-                        System.Threading.Tasks.Task dialogOutcomeTask = await System.Threading.Tasks.Task.WhenAny(methodTask, dialogTask);
+                        System.Threading.Tasks.Task dialogOutcomeTask;
+                        try
+                        {
+                            dialogOutcomeTask = await System.Threading.Tasks.Task.WhenAny(methodTask, dialogTask);
+                        }
+                        catch (OperationCanceledException ex)
+                        {
+                            return Answers.Answer.Prepare("Cancelled").Error(ex.Message);
+                        }
+
+
+                            
                         if (dialogOutcomeTask== methodTask)
                         {
                             await dialogCts.CancelAsync();
@@ -384,24 +413,47 @@ public partial class PresentationLayer//:IAnswerable
                     }
                     else
                     {
-                        using System.Threading.CancellationTokenSource dialogCts = new System.Threading.CancellationTokenSource();
+                        System.Threading.CancellationTokenSource dialogCts = new System.Threading.CancellationTokenSource();
 
-                        // Uruchomienie synchronicznego dialogu w osobnym wątku
-                        System.Threading.Tasks.Task<bool> dialogTask = System.Threading.Tasks.Task.Run(() =>
-                            this._answerService.AskYesNoToWait(timeoutMessage, dialogCts.Token, ct), dialogCts.Token);
+                      
+                        CancellationToken dialogToken = dialogCts.Token; // Przechwyć token przed wyrażeniem lambda
 
-                        System.Threading.Tasks.Task dialogOutcomeTask = await System.Threading.Tasks.Task.WhenAny(methodTask, dialogTask);
-
-                        if (dialogOutcomeTask == methodTask)
+                        try
                         {
-                            // Anulowanie dialogu, jeśli operacja została zakończona
-                            await dialogCts.CancelAsync();
-                            answer = await methodTask;
-                            return answer;
+                            // Uruchomienie dialogu w osobnym zadaniu
+                            System.Threading.Tasks.Task<bool> dialogTask = System.Threading.Tasks.Task.Run(() =>
+                                this._answerService.AskYesNoToWait(timeoutMessage, dialogToken, ct), ct);
+
+                            System.Threading.Tasks.Task dialogOutcomeTask;
+                            try
+                            {
+                                dialogOutcomeTask = await System.Threading.Tasks.Task.WhenAny(methodTask, dialogTask);
+                            }
+                            catch (OperationCanceledException ex)
+                            {
+                                return Answers.Answer.Prepare("Cancelled").Error(ex.Message);
+                            }
+
+                            if (dialogOutcomeTask == methodTask)
+                            {
+                                // Anulowanie dialogu, jeśli operacja została zakończona
+                                await dialogCts.CancelAsync();
+
+                                answer = await methodTask;
+                                await dialogCts.CancelAsync();
+                                
+                                return answer;
+                            }
+                            else if (dialogOutcomeTask == dialogTask)
+                            {
+                                continue;
+                            }
+
+                            
                         }
-                        if (await dialogTask)
+                        finally
                         {
-                            continue;
+                            dialogCts.Dispose();
                         }
 
                     }
@@ -415,6 +467,14 @@ public partial class PresentationLayer//:IAnswerable
             }
 
             // Brak określonego timeoutu
+
+            // 3:
+
+            var response = await ProcessAnswerAsync();
+            if (!response.IsSuccess)
+            {
+                continue;
+            }
             answer = await methodTask;
 
             if (answer.IsSuccess || answer.DialogConcluded || !(this._answerService.HasYesNoDialog || _answerService.HasYesNoAsyncDialog))
@@ -441,7 +501,42 @@ public partial class PresentationLayer//:IAnswerable
 
             answer.ConcludeDialog();
             return answer; // Użytkownik wybrał "No", kończymy
+
+            //4 :
         }
+
+        async System.Threading.Tasks.Task<Answers.Answer> ProcessAnswerAsync()
+        {
+            Answers.Answer returnAnswer=Answers.Answer.Prepare("ProcessAnswerAsync");
+            answer = await methodTask;
+
+            if (answer.IsSuccess || answer.DialogConcluded || !(this._answerService.HasYesNoDialog || _answerService.HasYesNoAsyncDialog))
+            {
+                return answer;
+            }
+
+            System.Boolean userResponse;
+
+            if (this._answerService.HasYesNoAsyncDialog)
+            {
+                userResponse = await this._answerService.AskYesNoAsync(answer.Message, ct);
+            }
+            else
+            {
+                userResponse = this._answerService.AskYesNo(answer.Message);
+            }
+
+            if (userResponse)
+            {
+                methodTask = method();
+                returnAnswer.Error("Yes pressed"); // Użytkownik wybrał "Yes", ponawiamy operację
+            }
+
+            answer.ConcludeDialog();
+            return answer; // Użytkownik wybrał "No", kończymy
+        }
+
+
     }
 
 
