@@ -16,7 +16,7 @@ namespace Answers
         bool DialogConcluded { get; set; }
         string Message { get; }
         bool HasValue { get; }
-        void ConcludeDialog();
+        Answer ConcludeDialog();
         Answer Attach(Answer answer);
         Answer Error(string message);
         string ToString();
@@ -40,7 +40,11 @@ namespace Answers
         }
 
         
-        public void ConcludeDialog() => State.ConcludeDialog();
+        public Answer ConcludeDialog()
+        {
+            State.ConcludeDialog();
+            return this;
+        }
         public Answer(string action)=> Messages.AddAction(action);
         public static Answer Prepare(string action)=>new(action);
         

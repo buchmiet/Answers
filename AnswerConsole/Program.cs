@@ -337,126 +337,44 @@ public partial class PresentationLayer//:IAnswerable
 
                 if (completedTask == methodTask)
                 {
-
-                    // 1:
-
-                    answer = await methodTask;
-
-                    if (answer.IsSuccess || answer.DialogConcluded || !(this._answerService.HasYesNoDialog || _answerService.HasYesNoAsyncDialog))
+                    var response = await ProcessAnswerAsync();
+                    if (!response.IsSuccess)
                     {
-                        return answer;
+                        // response from Task<Answer> was not successful
+                        // try again
+                        continue;
                     }
-
-                    bool yesNoResponse;
-
-                    if (this._answerService.HasYesNoAsyncDialog)
-                    {
-                        yesNoResponse = await this._answerService.AskYesNoAsync(answer.Message, ct);
-                    }
-                    else
-                    {
-                        yesNoResponse = this._answerService.AskYesNo(answer.Message);
-                    }
-
-                    if (ct.IsCancellationRequested)
-                    {
-                        return Answers.Answer.Prepare("Cancelled").Error("Cancellation requested");
-                    }
-
-                    if (yesNoResponse)
-                    {
-                        continue; // Użytkownik wybrał "Yes", ponawiamy operację
-                    }
-
-                    answer.ConcludeDialog();
-                    return answer; // Użytkownik wybrał "No", kończymy
-
-                    // 2:
+                    // response from Task<Answer> was successful
+                    // return the value
+                    return response.GetValue<Answers.Answer>();
                 }
 
                 // Wystąpił timeout
                 System.String action = $"{callerName} at {System.IO.Path.GetFileName(callerFilePath)}:{callerLineNumber}";
-              
-
+                
+                // timeout dialogs are implemented
                 if (this._answerService.HasTimeOutDialog||_answerService.HasTimeOutAsyncDialog)
                 {
                     System.String timeoutMessage = $"The operation '{action}' timed out. Do you want to retry?";
-                    // async dialog has priority
-                    if (this._answerService.HasTimeOutAsyncDialog)
+                    // async dialog has priority, but sync will run if async is not available
+                    using System.Threading.CancellationTokenSource dialogCts = new System.Threading.CancellationTokenSource();
+                    System.Threading.Tasks.Task<bool> dialogTask=
+                        _answerService.HasTimeOutAsyncDialog? this._answerService.AskYesNoToWaitAsync(timeoutMessage, dialogCts.Token, ct):
+                            System.Threading.Tasks.Task.Run(() =>
+                                this._answerService.AskYesNoToWait(timeoutMessage, dialogCts.Token, ct), ct);
+
+                    var response= await ProcessTimeOutDialog(dialogTask, timeoutMessage, dialogCts);
+                    if (!response.IsSuccess)
                     {
-                        using System.Threading.CancellationTokenSource dialogCts = new System.Threading.CancellationTokenSource();
-                        System.Threading.Tasks.Task<bool> dialogTask = this._answerService.AskYesNoToWaitAsync(timeoutMessage,dialogCts.Token, ct);
-                        System.Threading.Tasks.Task dialogOutcomeTask;
-                        try
-                        {
-                            dialogOutcomeTask = await System.Threading.Tasks.Task.WhenAny(methodTask, dialogTask);
-                        }
-                        catch (OperationCanceledException ex)
-                        {
-                            return Answers.Answer.Prepare("Cancelled").Error(ex.Message);
-                        }
-
-
-                            
-                        if (dialogOutcomeTask== methodTask)
-                        {
-                            await dialogCts.CancelAsync();
-                            answer = await methodTask;
-                            return answer;
-                        }
-                        //user decided to wait
-                        if (await dialogTask)
-                        {
-                            continue;
-                        }
-
+                        // response from Task<bool> was not successful
+                        continue;
                     }
-                    else
+
+                    if (response.GetValue<Answers.Answer>() is Answers.Answer{IsSuccess:false} dialogAnswer)
                     {
-                        System.Threading.CancellationTokenSource dialogCts = new System.Threading.CancellationTokenSource();
-
-                      
-                        CancellationToken dialogToken = dialogCts.Token; // Przechwyć token przed wyrażeniem lambda
-
-                        try
-                        {
-                            // Uruchomienie dialogu w osobnym zadaniu
-                            System.Threading.Tasks.Task<bool> dialogTask = System.Threading.Tasks.Task.Run(() =>
-                                this._answerService.AskYesNoToWait(timeoutMessage, dialogToken, ct), ct);
-
-                            System.Threading.Tasks.Task dialogOutcomeTask;
-                            try
-                            {
-                                dialogOutcomeTask = await System.Threading.Tasks.Task.WhenAny(methodTask, dialogTask);
-                            }
-                            catch (OperationCanceledException ex)
-                            {
-                                return Answers.Answer.Prepare("Cancelled").Error(ex.Message);
-                            }
-
-                            if (dialogOutcomeTask == methodTask)
-                            {
-                                // Anulowanie dialogu, jeśli operacja została zakończona
-                                await dialogCts.CancelAsync();
-
-                                answer = await methodTask;
-                                await dialogCts.CancelAsync();
-                                
-                                return answer;
-                            }
-                            else if (dialogOutcomeTask == dialogTask)
-                            {
-                                continue;
-                            }
-
-                            
-                        }
-                        finally
-                        {
-                            dialogCts.Dispose();
-                        }
-
+                        return dialogAnswer;
                     }
+                  
                 }
 
 
@@ -468,41 +386,14 @@ public partial class PresentationLayer//:IAnswerable
 
             // Brak określonego timeoutu
 
-            // 3:
 
-            var response = await ProcessAnswerAsync();
-            if (!response.IsSuccess)
+            var response2 = await ProcessAnswerAsync();
+            if (!response2.IsSuccess)
             {
                 continue;
             }
-            answer = await methodTask;
+            return response2.GetValue<Answers.Answer>();
 
-            if (answer.IsSuccess || answer.DialogConcluded || !(this._answerService.HasYesNoDialog || _answerService.HasYesNoAsyncDialog))
-            {
-                return answer;
-            }
-
-            System.Boolean userResponse;
-
-            if (this._answerService.HasYesNoAsyncDialog)
-            {
-                userResponse = await this._answerService.AskYesNoAsync(answer.Message, ct);
-            }
-            else
-            {
-                userResponse = this._answerService.AskYesNo(answer.Message);
-            }
-
-            if (userResponse)
-            {
-                methodTask = method();
-                continue; // Użytkownik wybrał "Yes", ponawiamy operację
-            }
-
-            answer.ConcludeDialog();
-            return answer; // Użytkownik wybrał "No", kończymy
-
-            //4 :
         }
 
         async System.Threading.Tasks.Task<Answers.Answer> ProcessAnswerAsync()
@@ -512,7 +403,7 @@ public partial class PresentationLayer//:IAnswerable
 
             if (answer.IsSuccess || answer.DialogConcluded || !(this._answerService.HasYesNoDialog || _answerService.HasYesNoAsyncDialog))
             {
-                return answer;
+                return returnAnswer.WithValue(answer);
             }
 
             System.Boolean userResponse;
@@ -533,10 +424,36 @@ public partial class PresentationLayer//:IAnswerable
             }
 
             answer.ConcludeDialog();
-            return answer; // Użytkownik wybrał "No", kończymy
+            return returnAnswer.WithValue(answer); // Użytkownik wybrał "No", kończymy
         }
 
+        async System.Threading.Tasks.Task<Answers.Answer> ProcessTimeOutDialog(
+            
+            System.Threading.Tasks.Task<bool> dialogTask, System.String timeoutMessage,System.Threading.CancellationTokenSource dialogCts)
+        {
+            Answers.Answer response = Answers.Answer.Prepare("ProcessAnswerAsync");
+            System.Threading.Tasks.Task dialogOutcomeTask;
+            try
+            {
+                dialogOutcomeTask = await System.Threading.Tasks.Task.WhenAny(methodTask, dialogTask);
+            }
+            catch (OperationCanceledException ex)
+            {
+                return Answers.Answer.Prepare("Cancelled").Error(ex.Message);
+            }
 
+            if (dialogOutcomeTask == methodTask)
+            {
+                answer = await methodTask;
+                await dialogCts.CancelAsync();
+                return response.WithValue(answer);
+            }
+            if (await dialogTask)
+            {
+                return response.Error("User wishes to continue");
+            }
+            return response.WithValue(Answers.Answer.Prepare("Timeout").Error("User wishes not to wait").ConcludeDialog());
+        }
     }
 
 
