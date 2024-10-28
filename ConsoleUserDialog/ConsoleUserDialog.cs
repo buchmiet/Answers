@@ -1,11 +1,11 @@
-﻿using Answers;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Answers;
 
-namespace AnswerConsole
+namespace ConsoleUserDialog
 {
     public class ConsoleUserDialog : IUserDialog
     {
@@ -14,29 +14,37 @@ namespace AnswerConsole
         public bool HasYesNo => true;
         public bool HasTimeoutDialog => true;
 
+        private static List<string> _confirmations = ["yes", "y"];
+        private static List<string> _negations = ["no", "n"];
+        private const string ConfirmationQuery = "Please enter '(y)es' or '(n)o':";
+        private const string InalidInputMessage = "Invalid input. Please try again.";
+        private const string CancelationMessage = "\nOperation canceled.";
+
         public bool YesNo(string errorMessage)
         {
             Console.WriteLine(errorMessage);
             while (true)
             {
-                Console.Write("Please enter 'yes' or 'no': ");
+                Console.Write(ConfirmationQuery);
                 var input = Console.ReadLine();
                 if (input == null)
                     continue;
-
-                if (input.Equals("yes", StringComparison.OrdinalIgnoreCase))
+                if (_confirmations.Contains(input, StringComparer.OrdinalIgnoreCase))
+                {
                     return true;
-                else if (input.Equals("no", StringComparison.OrdinalIgnoreCase))
+                }
+                if (_negations.Contains(input, StringComparer.OrdinalIgnoreCase))
+                {
                     return false;
-                else
-                    Console.WriteLine("Invalid input. Please try again.");
+                }
+                Console.WriteLine(InalidInputMessage);
             }
         }
 
         public bool ContinueTimedOutYesNo(string errorMessage, CancellationToken localCancellationToken, CancellationToken ct)
         {
             Console.WriteLine(errorMessage);
-            Console.Write("Please enter 'yes' or 'no': ");
+            Console.Write(ConfirmationQuery);
 
             var input = new StringBuilder();
 
@@ -44,7 +52,7 @@ namespace AnswerConsole
             {
                 if (localCancellationToken.IsCancellationRequested || ct.IsCancellationRequested)
                 {
-                    Console.WriteLine("\nOperation canceled.");
+                    Console.WriteLine(CancelationMessage);
                     return false;
                 }
 
@@ -57,16 +65,18 @@ namespace AnswerConsole
                         Console.WriteLine();
 
                         var inputStr = input.ToString();
-                        if (inputStr.Equals("yes", StringComparison.OrdinalIgnoreCase))
-                            return true;
-                        else if (inputStr.Equals("no", StringComparison.OrdinalIgnoreCase))
-                            return false;
-                        else
+                        if (_confirmations.Contains(inputStr, StringComparer.OrdinalIgnoreCase))
                         {
-                            Console.WriteLine("Invalid input. Please try again.");
-                            input.Clear();
-                            Console.Write("Please enter 'yes' or 'no': ");
+                            return true;
                         }
+                        if (_negations.Contains(inputStr, StringComparer.OrdinalIgnoreCase))
+                        {
+                            return false;
+                        }
+
+                        Console.WriteLine(InalidInputMessage);
+                        input.Clear();
+                        Console.Write(ConfirmationQuery);
                     }
                     else if (key.Key == ConsoleKey.Backspace)
                     {
@@ -92,7 +102,7 @@ namespace AnswerConsole
             Console.WriteLine(errorMessage);
             while (true)
             {
-                Console.Write("Please enter 'yes' or 'no': ");
+                Console.Write(ConfirmationQuery);
                 var inputTask = ReadLineAsync(ct);
 
                 try
@@ -102,20 +112,26 @@ namespace AnswerConsole
                     if (input == null)
                     {
                         // Cancellation requested
-                        Console.WriteLine("\nOperation canceled.");
+                        Console.WriteLine(CancelationMessage);
                         return false;
                     }
 
-                    if (input.Equals("yes", StringComparison.OrdinalIgnoreCase))
+
+                    if (_confirmations.Contains(input, StringComparer.OrdinalIgnoreCase))
+                    {
                         return true;
-                    else if (input.Equals("no", StringComparison.OrdinalIgnoreCase))
+                    }
+                    if (_negations.Contains(input, StringComparer.OrdinalIgnoreCase))
+                    {
                         return false;
-                    else
-                        Console.WriteLine("Invalid input. Please try again.");
+                    }
+
+                    Console.WriteLine(InalidInputMessage);
+
                 }
                 catch (OperationCanceledException)
                 {
-                    Console.WriteLine("\nOperation canceled.");
+                    Console.WriteLine(CancelationMessage);
                     return false;
                 }
             }
@@ -124,7 +140,7 @@ namespace AnswerConsole
         public async Task<bool> ContinueTimedOutYesNoAsync(string errorMessage, CancellationToken localCancellationToken, CancellationToken ct)
         {
             Console.WriteLine(errorMessage);
-            Console.Write("Please enter 'yes' or 'no': ");
+            Console.Write(ConfirmationQuery);
 
             var cts = CancellationTokenSource.CreateLinkedTokenSource(localCancellationToken, ct);
 
@@ -137,23 +153,26 @@ namespace AnswerConsole
                     if (input == null)
                     {
                         // Cancellation requested
-                        Console.WriteLine("\nOperation canceled.");
+                        Console.WriteLine(CancelationMessage);
                         return false;
                     }
 
-                    if (input.Equals("yes", StringComparison.OrdinalIgnoreCase))
-                        return true;
-                    else if (input.Equals("no", StringComparison.OrdinalIgnoreCase))
-                        return false;
-                    else
+                    if (_confirmations.Contains(input, StringComparer.OrdinalIgnoreCase))
                     {
-                        Console.WriteLine("Invalid input. Please try again.");
-                        Console.Write("Please enter 'yes' or 'no': ");
+                        return true;
                     }
+                    if (_negations.Contains(input, StringComparer.OrdinalIgnoreCase))
+                    {
+                        return false;
+                    }
+
+                    Console.WriteLine(InalidInputMessage);
+                    Console.Write(ConfirmationQuery);
+
                 }
                 catch (OperationCanceledException)
                 {
-                    Console.WriteLine("\nOperation canceled.");
+                    Console.WriteLine(CancelationMessage);
                     return false;
                 }
             }
