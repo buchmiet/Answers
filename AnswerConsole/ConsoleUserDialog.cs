@@ -7,61 +7,205 @@ using System.Threading.Tasks;
 
 namespace AnswerConsole
 {
-    //public class ConsoleUserDialog : IUserDialog
-    //{
-    //    public bool ContinueTimedOutYesNo(string errorMessage)
-    //    {
-    //        throw new NotImplementedException();
-    //    }
+    public class ConsoleUserDialog : IUserDialog
+    {
+        public bool HasAsyncYesNo => true;
+        public bool HasAsyncTimeoutDialog => true;
+        public bool HasYesNo => true;
+        public bool HasTimeoutDialog => true;
 
-    //    public Task<bool> ContinueTimedOutYesNoAsync(string errorMessage, CancellationToken ct)
-    //    {
-    //        Console.WriteLine(errorMessage);
-    //        return Task.FromResult(false);
-    //    }
+        public bool YesNo(string errorMessage)
+        {
+            Console.WriteLine(errorMessage);
+            while (true)
+            {
+                Console.Write("Please enter 'yes' or 'no': ");
+                var input = Console.ReadLine();
+                if (input == null)
+                    continue;
 
-    //    public bool YesNo(string errorMessage)
-    //    {
-    //        throw new NotImplementedException();
-    //    }
+                if (input.Equals("yes", StringComparison.OrdinalIgnoreCase))
+                    return true;
+                else if (input.Equals("no", StringComparison.OrdinalIgnoreCase))
+                    return false;
+                else
+                    Console.WriteLine("Invalid input. Please try again.");
+            }
+        }
 
-    //    public async Task<bool> YesNoAsync(string errorMessage, CancellationToken ct)
-    //    {
-    //        Console.WriteLine(errorMessage);
+        public bool ContinueTimedOutYesNo(string errorMessage, CancellationToken localCancellationToken, CancellationToken ct)
+        {
+            Console.WriteLine(errorMessage);
+            Console.Write("Please enter 'yes' or 'no': ");
 
-    //        while (true)
-    //        {
-    //            if (ct.IsCancellationRequested)
-    //            {
-    //                Console.WriteLine("Operation cancelled.");
-    //                return false; // Zwróć false w przypadku anulowania
-    //            }
+            var input = new StringBuilder();
 
-    //            // Odczyt z konsoli powinien być uruchomiony w osobnym zadaniu
-    //            Task<string> inputTask = Task.Run(Console.ReadLine, ct);
+            while (true)
+            {
+                if (localCancellationToken.IsCancellationRequested || ct.IsCancellationRequested)
+                {
+                    Console.WriteLine("\nOperation canceled.");
+                    return false;
+                }
 
-    //            try
-    //            {
-    //                string input = await inputTask;
+                if (Console.KeyAvailable)
+                {
+                    var key = Console.ReadKey(intercept: true);
 
-    //                if (string.Equals(input, "y", StringComparison.OrdinalIgnoreCase))
-    //                {
-    //                    return true;
-    //                }
+                    if (key.Key == ConsoleKey.Enter)
+                    {
+                        Console.WriteLine();
 
-    //                if (string.Equals(input, "n", StringComparison.OrdinalIgnoreCase))
-    //                {
-    //                    return false;
-    //                }
+                        var inputStr = input.ToString();
+                        if (inputStr.Equals("yes", StringComparison.OrdinalIgnoreCase))
+                            return true;
+                        else if (inputStr.Equals("no", StringComparison.OrdinalIgnoreCase))
+                            return false;
+                        else
+                        {
+                            Console.WriteLine("Invalid input. Please try again.");
+                            input.Clear();
+                            Console.Write("Please enter 'yes' or 'no': ");
+                        }
+                    }
+                    else if (key.Key == ConsoleKey.Backspace)
+                    {
+                        if (input.Length > 0)
+                        {
+                            input.Length--;
+                            Console.Write("\b \b"); // Erase character from console
+                        }
+                    }
+                    else if (key.KeyChar != '\u0000') // Non-control character
+                    {
+                        input.Append(key.KeyChar);
+                        Console.Write(key.KeyChar);
+                    }
+                }
 
-    //                Console.WriteLine("Invalid input. Please type 'y' or 'n'.");
-    //            }
-    //            catch (OperationCanceledException)
-    //            {
-    //                Console.WriteLine("Operation cancelled.");
-    //                return false; // Zwróć false w przypadku anulowania
-    //            }
-    //        }
-    //    }
-    //}
+                Thread.Sleep(50); // Sleep for a short period to avoid busy waiting
+            }
+        }
+
+        public async Task<bool> YesNoAsync(string errorMessage, CancellationToken ct)
+        {
+            Console.WriteLine(errorMessage);
+            while (true)
+            {
+                Console.Write("Please enter 'yes' or 'no': ");
+                var inputTask = ReadLineAsync(ct);
+
+                try
+                {
+                    var input = await inputTask;
+
+                    if (input == null)
+                    {
+                        // Cancellation requested
+                        Console.WriteLine("\nOperation canceled.");
+                        return false;
+                    }
+
+                    if (input.Equals("yes", StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    else if (input.Equals("no", StringComparison.OrdinalIgnoreCase))
+                        return false;
+                    else
+                        Console.WriteLine("Invalid input. Please try again.");
+                }
+                catch (OperationCanceledException)
+                {
+                    Console.WriteLine("\nOperation canceled.");
+                    return false;
+                }
+            }
+        }
+
+        public async Task<bool> ContinueTimedOutYesNoAsync(string errorMessage, CancellationToken localCancellationToken, CancellationToken ct)
+        {
+            Console.WriteLine(errorMessage);
+            Console.Write("Please enter 'yes' or 'no': ");
+
+            var cts = CancellationTokenSource.CreateLinkedTokenSource(localCancellationToken, ct);
+
+            while (true)
+            {
+                try
+                {
+                    var input = await ReadLineAsync(cts.Token);
+
+                    if (input == null)
+                    {
+                        // Cancellation requested
+                        Console.WriteLine("\nOperation canceled.");
+                        return false;
+                    }
+
+                    if (input.Equals("yes", StringComparison.OrdinalIgnoreCase))
+                        return true;
+                    else if (input.Equals("no", StringComparison.OrdinalIgnoreCase))
+                        return false;
+                    else
+                    {
+                        Console.WriteLine("Invalid input. Please try again.");
+                        Console.Write("Please enter 'yes' or 'no': ");
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    Console.WriteLine("\nOperation canceled.");
+                    return false;
+                }
+            }
+        }
+
+        private Task<string> ReadLineAsync(CancellationToken cancellationToken)
+        {
+            var tcs = new TaskCompletionSource<string>();
+
+            ThreadPool.QueueUserWorkItem(_ =>
+            {
+                var input = new StringBuilder();
+                while (true)
+                {
+                    if (cancellationToken.IsCancellationRequested)
+                    {
+                        tcs.TrySetResult(null);
+                        return;
+                    }
+
+                    if (Console.KeyAvailable)
+                    {
+                        var key = Console.ReadKey(intercept: true);
+
+                        if (key.Key == ConsoleKey.Enter)
+                        {
+                            Console.WriteLine();
+                            tcs.TrySetResult(input.ToString());
+                            return;
+                        }
+                        else if (key.Key == ConsoleKey.Backspace)
+                        {
+                            if (input.Length > 0)
+                            {
+                                input.Length--;
+                                Console.Write("\b \b"); // Erase character from console
+                            }
+                        }
+                        else if (key.KeyChar != '\u0000') // Non-control character
+                        {
+                            input.Append(key.KeyChar);
+                            Console.Write(key.KeyChar);
+                        }
+                    }
+
+                    Thread.Sleep(50);
+                }
+            }, null);
+
+            cancellationToken.Register(() => tcs.TrySetCanceled());
+
+            return tcs.Task;
+        }
+    }
 }
