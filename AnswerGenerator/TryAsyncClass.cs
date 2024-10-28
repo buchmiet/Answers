@@ -11,11 +11,11 @@ namespace AnswerGenerator
     public class TryAsyncClass
     {
         private async System.Threading.Tasks.Task<Answers.Answer> TryAsync(
-    System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
-    System.Threading.CancellationToken ct,
-    [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
-    [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
-    [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
+          System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
+          System.Threading.CancellationToken ct,
+          [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
+          [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
+          [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
         {
             System.TimeSpan timeoutValue;
 
@@ -32,7 +32,7 @@ namespace AnswerGenerator
                     Answers.Answer answer;
                     try
                     {
-                        answer = await method().WaitAsync(timeoutValue, ct);
+                        answer = await methodTask.WaitAsync(timeoutValue, ct);
                     }
                     catch (System.TimeoutException)
                     {
@@ -67,7 +67,7 @@ namespace AnswerGenerator
                         return Answers.Answer.Prepare("Cancelled").Error("Operation canceled by user");
                     }
 
-                    var responseReceivedWithinTimeout = await ProcessAnswerAsync();
+                    var responseReceivedWithinTimeout = await ProcessAnswerAsync(answer);
                     if (!responseReceivedWithinTimeout.IsSuccess)
                     {
                         // response from Task<Answer> was not successful
@@ -80,7 +80,7 @@ namespace AnswerGenerator
                     return responseReceivedWithinTimeout.GetValue<Answers.Answer>();
                 }
                 // Brak określonego timeoutu
-                var noTimeoutSetResponse = await ProcessAnswerAsync();
+                var noTimeoutSetResponse = await ProcessAnswerAsync(await methodTask);
                 if (!noTimeoutSetResponse.IsSuccess)
                 {
                     continue;
@@ -99,23 +99,22 @@ namespace AnswerGenerator
                         this._answerService.AskYesNoToWait(s, cancellationTokenSource.Token, ct), ct);
             }
 
-            async System.Threading.Tasks.Task<Answers.Answer> ProcessAnswerAsync()
+            async System.Threading.Tasks.Task<Answers.Answer> ProcessAnswerAsync(Answers.Answer localAnswer)
             {
                 Answers.Answer returnAnswer = Answers.Answer.Prepare("ProcessAnswerAsync");
-                var answer = await methodTask;
-                if (answer.IsSuccess || answer.DialogConcluded || !(this._answerService.HasYesNoDialog || _answerService.HasYesNoAsyncDialog))
+                if (localAnswer.IsSuccess || localAnswer.DialogConcluded || !(this._answerService.HasYesNoDialog || _answerService.HasYesNoAsyncDialog))
                 {
-                    return returnAnswer.WithValue(answer);
+                    return returnAnswer.WithValue(localAnswer);
                 }
 
                 System.Boolean userResponse;
                 if (this._answerService.HasYesNoAsyncDialog)
                 {
-                    userResponse = await this._answerService.AskYesNoAsync(answer.Message, ct);
+                    userResponse = await this._answerService.AskYesNoAsync(localAnswer.Message, ct);
                 }
                 else
                 {
-                    userResponse = this._answerService.AskYesNo(answer.Message);
+                    userResponse = this._answerService.AskYesNo(localAnswer.Message);
                 }
 
                 if (userResponse)
@@ -124,8 +123,8 @@ namespace AnswerGenerator
                     returnAnswer.Error("Yes pressed"); // Użytkownik wybrał "Yes", ponawiamy operację
                 }
 
-                answer.ConcludeDialog();
-                return returnAnswer.WithValue(answer); // Użytkownik wybrał "No", kończymy
+                localAnswer.ConcludeDialog();
+                return returnAnswer.WithValue(localAnswer); // Użytkownik wybrał "No", kończymy
             }
 
             async System.Threading.Tasks.Task<Answers.Answer> ProcessTimeOutDialog(
@@ -145,9 +144,9 @@ namespace AnswerGenerator
 
                 if (dialogOutcomeTask == methodTask)
                 {
-                    var answer = await methodTask;
+                    var localAnswer = await methodTask;
                     await dialogCts.CancelAsync();
-                    return response.WithValue(answer);
+                    return response.WithValue(localAnswer);
                 }
                 if (await dialogTask)
                 {
