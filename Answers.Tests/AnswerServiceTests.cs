@@ -419,8 +419,8 @@ namespace Answers.Tests
                     LogLevel.Information,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((v, t) => v.ToString() == message),
-                    It.IsAny<Exception?>(),
-                    It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)
+                    It.IsAny<Exception>(),
+                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)
                 ),
                 Times.Once
             );
@@ -442,8 +442,8 @@ namespace Answers.Tests
                     LogLevel.Warning,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((v, t) => v.ToString() == message),
-                    It.IsAny<Exception?>(),
-                    It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)
+                    It.IsAny<Exception>(),
+                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)
                 ),
                 Times.Once
             );
@@ -465,8 +465,8 @@ namespace Answers.Tests
                     LogLevel.Error,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((v, t) => v.ToString() == message),
-                    It.IsAny<Exception?>(),
-                    It.Is<Func<It.IsAnyType, Exception?, string>>((v, t) => true)
+                    It.IsAny<Exception>(),
+                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)
                 ),
                 Times.Once
             );

@@ -390,5 +390,239 @@ namespace Answers.Tests
             Assert.Equal(3, promptCount);
         }
 
+        [Fact]
+        public async System.Threading.Tasks.Task TryAsync_MethodFailsTwiceBeforeSuccess_UserRetriesEachTime_ReturnsSuccess()
+        {
+            // Arrange
+            using var cts = new System.Threading.CancellationTokenSource();
+            var ct = cts.Token;
+
+            var mockAnswerService = new Moq.Mock<IAnswerService>();
+
+            // No timeout for this test
+            mockAnswerService.Setup(x => x.HasTimeout).Returns(false);
+
+            // Simulate the Yes/No dialog
+            mockAnswerService.Setup(x => x.HasYesNoAsyncDialog).Returns(true);
+            mockAnswerService
+                .Setup(x => x.AskYesNoAsync(
+                    Moq.It.IsAny<string>(),
+                    Moq.It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(true); // User chooses to retry
+
+            int attemptCount = 0;
+
+            // Simulate the method failing twice before succeeding
+            System.Func<System.Threading.Tasks.Task<Answer>> method = async () =>
+            {
+                attemptCount++;
+                await System.Threading.Tasks.Task.Delay(100, ct); // Simulate some work
+
+                if (attemptCount < 3)
+                {
+                    return Answer.Prepare("Failure").Error($"Method failed on attempt {attemptCount}");
+                }
+                else
+                {
+                    return Answer.Prepare("Success");
+                }
+            };
+
+            var testClass = new TestAnswerableClass(mockAnswerService.Object);
+
+            // Act
+            Answer result = await testClass.DoSomething(method, ct);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.Equal("Success", result.Message);
+            Assert.Equal(3, attemptCount); // Method was called three times
+        }
+
+        [Fact]
+        public async System.Threading.Tasks.Task TryAsync_GlobalCancellationTokenCanceled_ReturnsCanceledResponse()
+        {
+            // Arrange
+            var timeout = System.TimeSpan.FromSeconds(5);
+            using var cts = new System.Threading.CancellationTokenSource();
+            var ct = cts.Token;
+
+            var mockAnswerService = new Moq.Mock<IAnswerService>();
+
+            // Set up the timeout
+            mockAnswerService.Setup(x => x.GetTimeout()).Returns(timeout);
+            mockAnswerService.Setup(x => x.HasTimeout).Returns(true);
+
+            // Simulate the method that takes a long time
+            System.Func<System.Threading.Tasks.Task<Answer>> method = async () =>
+            {
+                await System.Threading.Tasks.Task.Delay(10000, ct); // Simulate long-running operation
+                return Answer.Prepare("Success");
+            };
+
+            var testClass = new TestAnswerableClass(mockAnswerService.Object);
+
+            // Act
+            var task = testClass.DoSomething(method, ct);
+
+            // Cancel the global cancellation token after 1 second
+            await System.Threading.Tasks.Task.Delay(1000);
+            cts.Cancel();
+
+            Answer result = await task;
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("canceled", result.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public async System.Threading.Tasks.Task TryAsync_MethodFailsTwice_UserRetries_MethodSucceeds()
+        {
+            // Arrange
+            using var cts = new System.Threading.CancellationTokenSource();
+            var ct = cts.Token;
+
+            var mockAnswerService = new Moq.Mock<IAnswerService>();
+
+            // No timeout
+            mockAnswerService.Setup(x => x.HasTimeout).Returns(false);
+
+            // Simulate Yes/No dialog
+            mockAnswerService.Setup(x => x.HasYesNoAsyncDialog).Returns(true);
+            mockAnswerService
+                .Setup(x => x.AskYesNoAsync(
+                    Moq.It.IsAny<string>(),
+                    Moq.It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(true); // User chooses to retry
+
+            int attemptCount = 0;
+
+            System.Func<System.Threading.Tasks.Task<Answer>> method = async () =>
+            {
+                attemptCount++;
+                await System.Threading.Tasks.Task.Delay(100, ct);
+
+                if (attemptCount < 3)
+                {
+                    return Answer.Prepare("Failure").Error($"Attempt {attemptCount} failed");
+                }
+                else
+                {
+                    return Answer.Prepare("Success");
+                }
+            };
+
+            var testClass = new TestAnswerableClass(mockAnswerService.Object);
+
+            // Act
+            Answer result = await testClass.DoSomething(method, ct);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.Equal("Success", result.Message);
+            Assert.Equal(3, attemptCount); // Method was attempted three times
+        }
+
+        [Fact]
+        public async System.Threading.Tasks.Task TryAsync_MethodFailsWithTimeouts_UserWaits_MethodEventuallySucceeds()
+        {
+            // Arrange
+            var timeout = System.TimeSpan.FromSeconds(1);
+            using var cts = new System.Threading.CancellationTokenSource();
+            var ct = cts.Token;
+
+            var mockAnswerService = new Moq.Mock<IAnswerService>();
+
+            // Setup timeout
+            mockAnswerService.Setup(x => x.HasTimeout).Returns(true);
+            mockAnswerService.Setup(x => x.GetTimeout()).Returns(timeout);
+
+            // Simulate timeout dialog
+            mockAnswerService.Setup(x => x.HasTimeOutAsyncDialog).Returns(true);
+            mockAnswerService
+                .Setup(x => x.AskYesNoToWaitAsync(
+                    Moq.It.IsAny<string>(),
+                    Moq.It.IsAny<System.Threading.CancellationToken>(),
+                    Moq.It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(true); // User chooses to wait
+
+            int attemptCount = 0;
+
+            System.Func<System.Threading.Tasks.Task<Answer>> method = async () =>
+            {
+                attemptCount++;
+                if (attemptCount < 3)
+                {
+                    await System.Threading.Tasks.Task.Delay(3000, ct); // Exceeds timeout
+                    return Answer.Prepare("Success"); // Won't reach here before timeout
+                }
+                else
+                {
+                    await System.Threading.Tasks.Task.Delay(500, ct); // Completes within timeout
+                    return Answer.Prepare("Success");
+                }
+            };
+
+            var testClass = new TestAnswerableClass(mockAnswerService.Object);
+
+            // Act
+            Answer result = await testClass.DoSomething(method, ct);
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.Equal("Success", result.Message);
+        }
+
+        //[Fact]
+        //public async System.Threading.Tasks.Task TryAsync_GlobalCancellationDuringUserPrompt_ReturnsCanceledResponse()
+        //{
+        //    // Arrange
+        //    var timeout = System.TimeSpan.FromSeconds(2);
+        //    using var cts = new System.Threading.CancellationTokenSource();
+        //    var ct = cts.Token;
+
+        //    var mockAnswerService = new Moq.Mock<IAnswerService>();
+
+        //    // Setup timeout
+        //    mockAnswerService.Setup(x => x.HasTimeout).Returns(true);
+        //    mockAnswerService.Setup(x => x.GetTimeout()).Returns(timeout);
+
+        //    // Simulate method that will time out
+        //    System.Func<System.Threading.Tasks.Task<Answer>> method = async () =>
+        //    {
+        //        await System.Threading.Tasks.Task.Delay(5000, ct); // Simulate long-running operation
+        //        return Answer.Prepare("Success");
+        //    };
+
+        //    // Simulate timeout dialog
+        //    mockAnswerService.Setup(x => x.HasTimeOutAsyncDialog).Returns(true);
+        //    mockAnswerService
+        //        .Setup(x => x.AskYesNoToWaitAsync(
+        //            Moq.It.IsAny<string>(),
+        //            Moq.It.IsAny<System.Threading.CancellationToken>(),
+        //            Moq.It.IsAny<System.Threading.CancellationToken>()))
+        //        .Returns<string, System.Threading.CancellationToken, System.Threading.CancellationToken>(async (message, dialogCt, globalCt) =>
+        //        {
+        //            // Cancel the global cancellation token after 1 second
+        //            await System.Threading.Tasks.Task.Delay(1000);
+        //            cts.Cancel();
+
+        //            // Simulate user taking time to respond
+        //            await System.Threading.Tasks.Task.Delay(2000, dialogCt);
+        //            return true;
+        //        });
+
+        //    var testClass = new TestAnswerableClass(mockAnswerService.Object);
+
+        //    // Act
+        //    Answer result = await testClass.DoSomething(method, ct);
+
+        //    // Assert
+        //    Assert.False(result.IsSuccess);
+        //    Assert.Contains("canceled", result.Message, StringComparison.OrdinalIgnoreCase);
+        //}
+
+
     }
 }
