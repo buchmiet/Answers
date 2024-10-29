@@ -68,7 +68,7 @@ namespace Answers
         /// <param name="errorMessage">Wiadomość do wyświetlenia w dialogu (symulowana).</param>
         /// <returns>Wartość odpowiedzi (true lub false) zgodnie z kolejnym elementem w liście <paramref name="responses"/>.</returns>
         /// <exception cref="ObjectDisposedException">Rzucane, gdy obiekt został wcześniej zniszczony.</exception>
-        public bool YesNo(string errorMessage)
+        public bool YesNo(string errorMessage, CancellationToken ct)
         {
             return GetNextResponse();
         }

@@ -492,14 +492,15 @@ namespace Answers.Tests
         {
             // Arrange
             var message = "Test message";
-            _dialogMock.Setup(d => d.YesNo(message)).Returns(true);
+            var ct = new CancellationTokenSource().Token;
+            _dialogMock.Setup(d => d.YesNo(message,ct)).Returns(true);
 
             // Act
-            var result = _service.AskYesNo(message);
+            var result = _service.AskYesNo(message,ct);
 
             // Assert
             Assert.True(result);
-            _dialogMock.Verify(d => d.YesNo(message), Times.Once);
+            _dialogMock.Verify(d => d.YesNo(message, ct), Times.Once);
         }
 
         [Fact]

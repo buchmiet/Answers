@@ -20,7 +20,7 @@ namespace Answers
         void AddDialog(IUserDialog dialog1);
         Task<bool> AskYesNoAsync(string message, CancellationToken ct);
         Task<bool> AskYesNoToWaitAsync(string message, CancellationToken localCancellationToken, CancellationToken ct);
-        bool AskYesNo(string message);
+        bool AskYesNo(string message, CancellationToken ct);
         bool AskYesNoToWait(string message, CancellationToken localCancellationToken, CancellationToken ct);
         void SetTimeout(TimeSpan timeout);
         void LogWarning(string message);
@@ -92,12 +92,12 @@ namespace Answers
         }
 
         // Metody synchroniczne
-        public bool AskYesNo(string message)
+        public bool AskYesNo(string message, CancellationToken ct)
         {
             var dialog1 = _dialog;
             if (dialog1 is not null)
             {
-                return dialog1.YesNo(message);
+                return dialog1.YesNo(message,ct);
             }
 
             throw new InvalidOperationException("Dialog is not set.");

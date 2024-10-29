@@ -466,39 +466,30 @@ public partial class PresentationLayer//:IAnswerable
         {
             try
             {
-                Answers.Answer methodResult;
-
-                if (timeoutValue != System.TimeSpan.Zero)
-                {
-                    methodResult = await WaitWithTimeoutAsync(methodTask, timeoutValue, ct);
-                }
-                else
-                {
-                    methodResult = await methodTask;
-                }
+                Answers.Answer methodResult= timeoutValue != System.TimeSpan.Zero?
+                    await WaitWithTimeoutAsync(methodTask, timeoutValue, ct):
+                    await methodTask;
 
                 Answers.Answer processedAnswer = await ProcessAnswerAsync(methodResult, ct);
-
-                if (!processedAnswer.IsSuccess)
+                if (processedAnswer.IsSuccess)
                 {
-                    if (processedAnswer.DialogConcluded)
-                    {
-                        stopwatch.Stop();
-                        return processedAnswer;
-                    }
-
-                    // If methodTask is completed (unsuccessfully), we need to restart it.
-                    if (methodTask.IsCompleted)
-                    {
-                        methodTask = method();
-                    }
-
-                    // Continue waiting for the methodTask to complete.
-                    continue;
+                    stopwatch.Stop();
+                    return processedAnswer.GetValue<Answers.Answer>();
                 }
 
-                stopwatch.Stop();
-                return processedAnswer.GetValue<Answers.Answer>();
+                if (processedAnswer.DialogConcluded)
+                {
+                    stopwatch.Stop();
+                    return processedAnswer;
+                }
+
+                // If methodTask is completed (unsuccessfully), we need to restart it.
+                if (methodTask.IsCompleted)
+                {
+                    methodTask = method();
+                }
+
+               
             }
             catch (System.TimeoutException)
             {
@@ -552,16 +543,9 @@ public partial class PresentationLayer//:IAnswerable
             return Answers.Answer.Prepare("Success").WithValue(methodResult);
         }
 
-        System.Boolean userWantsToRetry;
-
-        if (_answerService.HasYesNoAsyncDialog)
-        {
-            userWantsToRetry = await _answerService.AskYesNoAsync(methodResult.Message, ct);
-        }
-        else
-        {
-            userWantsToRetry = _answerService.AskYesNo(methodResult.Message);
-        }
+        System.Boolean userWantsToRetry= _answerService.HasYesNoAsyncDialog ?
+            await _answerService.AskYesNoAsync(methodResult.Message, ct) :
+            _answerService.AskYesNo(methodResult.Message,ct);
 
         if (userWantsToRetry)
         {
@@ -609,7 +593,7 @@ public partial class PresentationLayer//:IAnswerable
         if (await System.Threading.Tasks.Task.WhenAny(methodTask, dialogTask) == methodTask)
         {
             // Method completed before user responded; cancel the dialog
-            dialogCts.Cancel();
+            await dialogCts.CancelAsync();
 
             // Get the method result
             Answers.Answer methodResult = await methodTask;
@@ -625,13 +609,11 @@ public partial class PresentationLayer//:IAnswerable
             // User wants to wait; continue waiting for methodTask
             return (true, null);
         }
-        else
-        {
-            // User does not want to wait; return a timeout answer
-            return (false, Answers.Answer.Prepare("Timeout")
-                .Error("User chose not to wait")
-                .ConcludeDialog());
-        }
+
+        // User does not want to wait; return a timeout answer
+        return (false, Answers.Answer.Prepare("Timeout")
+            .Error("User chose not to wait")
+            .ConcludeDialog());
     }
 
 
