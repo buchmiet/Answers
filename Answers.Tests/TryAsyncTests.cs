@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -286,7 +287,7 @@ namespace Answers.Tests
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.Contains("Time out", result.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("Timeout", result.Message, StringComparison.OrdinalIgnoreCase);
         }
 
         [Fact]
@@ -313,6 +314,80 @@ namespace Answers.Tests
             // Assert
             Assert.False(result.IsSuccess);
             Assert.Contains("canceled", result.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+
+        [Fact]
+        public async System.Threading.Tasks.Task TryAsync_LongRunningMethod_WithTimeout_UserContinues_MethodCompletesDuringThirdPrompt()
+        {
+            // Arrange
+            var timeout = System.TimeSpan.FromSeconds(2);
+            using var cts = new System.Threading.CancellationTokenSource();
+            var ct = cts.Token;
+
+            var mockAnswerService = new Moq.Mock<IAnswerService>();
+
+            // Set up the timeout
+            mockAnswerService.Setup(x => x.GetTimeout()).Returns(timeout);
+            mockAnswerService.Setup(x => x.HasTimeout).Returns(true);
+
+            // Counters to keep track of prompts
+            int promptCount = 0;
+
+            // Simulate user responses
+            mockAnswerService.Setup(x => x.HasTimeOutAsyncDialog).Returns(true);
+            mockAnswerService
+                .Setup(x => x.AskYesNoToWaitAsync(
+                    Moq.It.IsAny<string>(),
+                    Moq.It.IsAny<System.Threading.CancellationToken>(),
+                    Moq.It.IsAny<System.Threading.CancellationToken>()))
+                .Returns<string, System.Threading.CancellationToken, System.Threading.CancellationToken>(async (message, dialogCt, globalCt) =>
+                {
+                    promptCount++;
+                    if (promptCount <= 2)
+                    {
+                        // First two responses take 200ms
+                        await System.Threading.Tasks.Task.Delay(200, dialogCt);
+                        return true; // User chooses to continue
+                    }
+
+                    // Third response takes 1 second
+                    await System.Threading.Tasks.Task.Delay(1000, dialogCt);
+                    return true; // User chooses to continue
+                });
+
+            // Simulate the long-running method
+            var methodDuration = System.TimeSpan.FromSeconds(7);
+            var methodStopwatch = new System.Diagnostics.Stopwatch();
+
+            System.Func<System.Threading.Tasks.Task<Answer>> method = async () =>
+            {
+                methodStopwatch.Start();
+                await System.Threading.Tasks.Task.Delay(methodDuration, ct); // Simulate long-running operation
+                methodStopwatch.Stop();
+                return Answer.Prepare("Success");
+            };
+
+            var testClass = new TestAnswerableClass(mockAnswerService.Object);
+
+            // Act
+            var totalStopwatch = System.Diagnostics.Stopwatch.StartNew();
+            Answer result = await testClass.DoSomething(method, ct);
+            totalStopwatch.Stop();
+
+            // Assert
+            Assert.True(result.IsSuccess);
+            Assert.Equal("Success", result.Message);
+
+            // The method should have completed during the third prompt
+            // Total time should be slightly over 7 seconds due to the delays
+            Assert.InRange(totalStopwatch.Elapsed.TotalSeconds, 7, 8);
+
+            // The method's stopwatch should have recorded approximately 7 seconds
+            Assert.InRange(methodStopwatch.Elapsed.TotalSeconds, 7, 7.5);
+
+            // The prompt count should be 3
+            Assert.Equal(3, promptCount);
         }
 
     }
