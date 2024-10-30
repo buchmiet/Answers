@@ -331,7 +331,6 @@ public partial class PresentationLayer//:IAnswerable
                 }
                 catch (System.TimeoutException)
                 {
-                  
                     // Wystąpił timeout
                     System.String action = $"{callerName} at {System.IO.Path.GetFileName(callerFilePath)}:{callerLineNumber}";
                     // if timeout dialogs are implemented
@@ -407,21 +406,18 @@ public partial class PresentationLayer//:IAnswerable
 
         Answers.Answer TimedOutResponse() => Answers.Answer.Prepare("Time out").Error($"{stopwatch.Elapsed.TotalSeconds} seconds elapsed");
 
-        System.Threading.Tasks.Task<bool> ChooseBetweenAsyncAndNonAsyncDialogTask(string s, System.Threading.CancellationTokenSource cancellationTokenSource)
-        {
-            return _answerService.HasTimeOutAsyncDialog ? _answerService.AskYesNoToWaitAsync(s, cancellationTokenSource.Token, ct) :
+        System.Threading.Tasks.Task<bool> ChooseBetweenAsyncAndNonAsyncDialogTask(string s, System.Threading.CancellationTokenSource localCancellationTokenSource) =>
+         _answerService.HasTimeOutAsyncDialog ? _answerService.AskYesNoToWaitAsync(s, localCancellationTokenSource.Token, ct) :
                 System.Threading.Tasks.Task.Run(() =>
-                    _answerService.AskYesNoToWait(s, cancellationTokenSource.Token, ct), ct);
-        }
+                    _answerService.AskYesNoToWait(s, localCancellationTokenSource.Token, ct), ct);
+        
 
         async System.Threading.Tasks.Task<(Answers.AnswerService.DialogResponse Response, Answers.Answer Answer)> ProcessAnswerAsync(Answers.Answer localAnswer)
         {
-            Answers.Answer returnAnswer = Answers.Answer.Prepare("ProcessAnswerAsync");
             if (localAnswer.IsSuccess || localAnswer.DialogConcluded || !(_answerService.HasYesNoDialog || _answerService.HasYesNoAsyncDialog))
             {
                 return (Answers.AnswerService.DialogResponse.Answered,localAnswer);
             }
-
             System.Boolean userResponse;
             if (_answerService.HasYesNoAsyncDialog)
             {
@@ -454,7 +450,7 @@ public partial class PresentationLayer//:IAnswerable
             }
             catch (System.OperationCanceledException ex)
             {
-                return (Answers.AnswerService.DialogResponse.Cancel, Answers.Answer.Prepare("Canceled").Error("Operation cancelled").ConcludeDialog());
+                return (Answers.AnswerService.DialogResponse.Cancel, Answers.Answer.Prepare("Operation cancelled").Error(ex.Message).ConcludeDialog());
             }
 
             if (dialogOutcomeTask == methodTask)
