@@ -9,6 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="AnswerServiceTests.cs" />
+    <Compile Remove="AnswerStateTests.cs" />
+    <Compile Remove="AnswerTests.cs" />
+    <Compile Remove="AnswerValueTests.cs" />
+    <Compile Remove="MessageAggregatorTests.cs" />
+    <Compile Remove="TestClassesForAnswerServiceTests.cs" />
     <Compile Remove="UserDialogStubTests.cs" />
   </ItemGroup>
 
@@ -39,6 +45,15 @@
   <ItemGroup>
 	  <ProjectReference Include="..\AnswerGenerator\AnswerGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
 	  <ProjectReference Include="..\Answers\Answers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="AnswerServiceTests.cs" />
+    <None Include="AnswerStateTests.cs" />
+    <None Include="AnswerTests.cs" />
+    <None Include="AnswerValueTests.cs" />
+    <None Include="MessageAggregatorTests.cs" />
+    <None Include="TestClassesForAnswerServiceTests.cs" />
   </ItemGroup>
 
 </Project>

@@ -2,11 +2,12 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
+using Answers;
 
 namespace Answers
 {
 
-   
+
 
     public interface IAnswer
     {
@@ -22,7 +23,9 @@ namespace Answers
         string ToString();
         Answer WithValue<T>(T value);
         bool Out<T>(out T value);
+        string diagnostics { get; set; }
     }
+
 
     public class Answer : IAnswer
     {
@@ -39,15 +42,16 @@ namespace Answers
             set => State.DialogConcluded = value;
         }
 
-        
+
         public Answer ConcludeDialog()
         {
             State.ConcludeDialog();
             return this;
         }
-        public Answer(string action)=> Messages.AddAction(action);
-        public static Answer Prepare(string action)=>new(action);
-        
+
+        public Answer(string action) => Messages.AddAction(action);
+        public static Answer Prepare(string action) => new(action);
+
 
         public Answer Attach(Answer answer)
         {
@@ -62,13 +66,16 @@ namespace Answers
 
             if (HasValue && answer.HasValue)
             {
-                throw new InvalidOperationException($"There is already value ({AnswerValue.GetValue()}) of type {AnswerValue.GetType().FullName} assigned to this Answer object. You can not merge value {answer.AnswerValue.GetValue()} of Type {answer.AnswerValue.GetType()} from {answer.Message} with it.");
+                throw new InvalidOperationException(
+                    $"There is already value ({AnswerValue.GetValue()}) of type {AnswerValue.GetType().FullName} assigned to this Answer object. You can not merge value {answer.AnswerValue.GetValue()} of Type {answer.AnswerValue.GetType()} from {answer.Message} with it.");
             }
+
             if (answer.HasValue)
             {
                 AnswerValue = answer.AnswerValue;
                 State.HasValueSet = true;
             }
+
             return this;
         }
 
@@ -77,19 +84,22 @@ namespace Answers
         {
             if (HasValue)
             {
-                throw new InvalidOperationException("Answer already has value, therefore it can not be in error state ");
+                throw new InvalidOperationException(
+                    "Answer already has value, therefore it can not be in error state ");
             }
+
             if (!IsSuccess)
             {
                 throw new InvalidOperationException("Error can only be set once.");
             }
+
             State.IsSuccess = false;
             Messages.AddAction(message);
             return this;
         }
 
         public override string ToString() => Message;
-   
+
 
         public Answer WithValue<T>(T value)
         {
@@ -97,12 +107,14 @@ namespace Answers
             State.HasValueSet = true;
             return this;
         }
+
         public void AddValue<T>(T value)
         {
             if (!IsSuccess)
             {
                 throw new InvalidOperationException("Answer is in Error state, no values can be added");
             }
+
             State.HasValueSet = true;
             AnswerValue = new AnswerValue<T>(value);
         }
@@ -114,6 +126,7 @@ namespace Answers
             {
                 return record.GetValue();
             }
+
             throw new InvalidOperationException("Value is not of the correct type.");
         }
 
@@ -129,6 +142,7 @@ namespace Answers
             throw new InvalidOperationException("Value not set.");
         }
 
-   
+        public string diagnostics { get; set; }
     }
+
 }

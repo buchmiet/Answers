@@ -30,6 +30,14 @@ namespace Answers
 
     public class AnswerService : IAnswerService
     {
+        public enum DialogResponse
+        {
+            Continue,
+            Cancel,
+            DoNotWait,
+            Answered,
+            DoNotRepeat
+        }
         private readonly object _syncRoot = new();
         private IUserDialog _dialog;
         private readonly ILogger _logger;

@@ -101,7 +101,7 @@ namespace Answers.Tests
 
             // Assert
             Assert.True(result.IsSuccess);
-            
+
         }
 
 
@@ -287,7 +287,7 @@ namespace Answers.Tests
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.Contains("Timeout", result.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("Time out", result.Message, StringComparison.OrdinalIgnoreCase);
         }
 
         [Fact]
