@@ -81,11 +81,11 @@ namespace Answers.Tests
             var delays = new List<TimeSpan> { TimeSpan.FromMilliseconds(100) };
             var stub = new UserDialogStub(responses, delays);
             var cts1 = new CancellationTokenSource();
-            var cts2 = new CancellationTokenSource();
+
 
             // Act
             var startTime = DateTime.UtcNow;
-            var result = stub.ContinueTimedOutYesNo("Test", cts1.Token, cts2.Token);
+            var result = stub.ContinueTimedOutYesNo("Test", cts1.Token);
             var elapsedTime = DateTime.UtcNow - startTime;
 
             // Assert
@@ -101,11 +101,11 @@ namespace Answers.Tests
             var delays = new List<TimeSpan> { TimeSpan.FromMilliseconds(100) };
             var stub = new UserDialogStub(responses, delays);
             var cts1 = new CancellationTokenSource();
-            var cts2 = new CancellationTokenSource();
+
 
             // Act
             var startTime = DateTime.UtcNow;
-            var result = await stub.ContinueTimedOutYesNoAsync("Test", cts1.Token, cts2.Token);
+            var result = await stub.ContinueTimedOutYesNoAsync("Test", cts1.Token);
             var elapsedTime = DateTime.UtcNow - startTime;
 
             // Assert
@@ -121,13 +121,13 @@ namespace Answers.Tests
             var delays = new List<TimeSpan> { TimeSpan.FromMilliseconds(500) };
             var stub = new UserDialogStub(responses, delays);
             var cts1 = new CancellationTokenSource();
-            var cts2 = new CancellationTokenSource();
+
 
             // Act
             cts1.CancelAfter(100); // Cancel after 100ms
 
             // Assert
-            Assert.Throws<OperationCanceledException>(() => stub.ContinueTimedOutYesNo("Test", cts1.Token, cts2.Token));
+            Assert.Throws<OperationCanceledException>(() => stub.ContinueTimedOutYesNo("Test", cts1.Token));
 
             // After cancellation, the object should be disposed
             Assert.Throws<ObjectDisposedException>(() => stub.YesNo("Test"));
@@ -141,14 +141,14 @@ namespace Answers.Tests
             var delays = new List<TimeSpan> { TimeSpan.FromMilliseconds(500) };
             var stub = new UserDialogStub(responses, delays);
             var cts1 = new CancellationTokenSource();
-            var cts2 = new CancellationTokenSource();
+
 
             // Act
             cts1.CancelAfter(100); // Cancel after 100ms
 
             // Assert
             await Assert.ThrowsAsync<OperationCanceledException>(async () =>
-                await stub.ContinueTimedOutYesNoAsync("Test", cts1.Token, cts2.Token));
+                await stub.ContinueTimedOutYesNoAsync("Test", cts1.Token));
 
             // After cancellation, the object should be disposed
             Assert.Throws<ObjectDisposedException>(() => stub.YesNo("Test"));
@@ -167,10 +167,10 @@ namespace Answers.Tests
 
             // Assert
             Assert.Throws<ObjectDisposedException>(() => stub.YesNo("Test"));
-            Assert.Throws<ObjectDisposedException>(() => stub.ContinueTimedOutYesNo("Test", CancellationToken.None, CancellationToken.None));
+            Assert.Throws<ObjectDisposedException>(() => stub.ContinueTimedOutYesNo("Test",  CancellationToken.None));
 
             await Assert.ThrowsAsync<ObjectDisposedException>(() => stub.YesNoAsync("Test", CancellationToken.None));
-            await Assert.ThrowsAsync<ObjectDisposedException>(() => stub.ContinueTimedOutYesNoAsync("Test", CancellationToken.None, CancellationToken.None));
+            await Assert.ThrowsAsync<ObjectDisposedException>(() => stub.ContinueTimedOutYesNoAsync("Test",  CancellationToken.None));
         }
 
     }

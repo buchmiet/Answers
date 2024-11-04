@@ -507,16 +507,15 @@ namespace Answers.Tests
         {
             // Arrange
             var message = "Test message";
-            var localCancellationToken = new CancellationTokenSource().Token;
             var ct = new CancellationTokenSource().Token;
-            _dialogMock.Setup(d => d.ContinueTimedOutYesNo(message, localCancellationToken, ct)).Returns(true);
+            _dialogMock.Setup(d => d.ContinueTimedOutYesNo(message,  ct)).Returns(true);
 
             // Act
-            var result = _service.AskYesNoToWait(message, localCancellationToken, ct);
+            var result = _service.AskYesNoToWait(message,  ct);
 
             // Assert
             Assert.True(result);
-            _dialogMock.Verify(d => d.ContinueTimedOutYesNo(message, localCancellationToken, ct), Times.Once);
+            _dialogMock.Verify(d => d.ContinueTimedOutYesNo(message,  ct), Times.Once);
         }
 
         #endregion
@@ -545,16 +544,15 @@ namespace Answers.Tests
         {
             // Arrange
             var message = "Test message";
-            var localCancellationToken = new CancellationTokenSource().Token;
             var ct = new CancellationTokenSource().Token;
-            _dialogMock.Setup(d => d.ContinueTimedOutYesNoAsync(message, localCancellationToken, ct)).ReturnsAsync(true);
+            _dialogMock.Setup(d => d.ContinueTimedOutYesNoAsync(message,  ct)).ReturnsAsync(true);
 
             // Act
-            var result = await _service.AskYesNoToWaitAsync(message, localCancellationToken, ct);
+            var result = await _service.AskYesNoToWaitAsync(message,  ct);
 
             // Assert
             Assert.True(result);
-            _dialogMock.Verify(d => d.ContinueTimedOutYesNoAsync(message, localCancellationToken, ct), Times.Once);
+            _dialogMock.Verify(d => d.ContinueTimedOutYesNoAsync(message,  ct), Times.Once);
         }
 
         [Fact]

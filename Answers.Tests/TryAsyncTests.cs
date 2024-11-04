@@ -243,9 +243,9 @@ namespace Answers.Tests
             mockAnswerService.Setup(x => x.GetTimeout()).Returns(TimeSpan.FromSeconds(1));
             mockAnswerService.Setup(x => x.HasTimeout).Returns(true);
             mockAnswerService.Setup(x => x.HasTimeOutAsyncDialog).Returns(true);
-            mockAnswerService.Setup(x => x.AskYesNoToWaitAsync(It.IsAny<string>(),  ct))
+            mockAnswerService.Setup(x => x.AskYesNoToWaitAsync(It.IsAny<string>(), ct))
                 .ReturnsAsync(false); // User chooses not to continue waiting
-
+            mockAnswerService.Setup(x => x.Strings).Returns(new AnswerServiceStrings());
             var testClass = new TestAnswerableClass(mockAnswerService.Object);
 
             Func<Task<Answer>> method = async () =>
@@ -259,7 +259,7 @@ namespace Answers.Tests
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.Contains("Timeout", result.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains(new AnswerServiceStrings().TimeoutError, result.Message, StringComparison.OrdinalIgnoreCase);
         }
 
         [Fact]
@@ -273,7 +273,7 @@ namespace Answers.Tests
             mockAnswerService.Setup(x => x.GetTimeout()).Returns(TimeSpan.FromSeconds(1));
             mockAnswerService.Setup(x => x.HasTimeout).Returns(true);
             mockAnswerService.Setup(x => x.HasTimeOutAsyncDialog).Returns(false);
-
+            mockAnswerService.Setup(x => x.Strings).Returns(new AnswerServiceStrings());
             var testClass = new TestAnswerableClass(mockAnswerService.Object);
 
             Func<Task<Answer>> method = async () =>
@@ -300,6 +300,14 @@ namespace Answers.Tests
             var mockAnswerService = new Mock<IAnswerService>();
             mockAnswerService.Setup(x => x.GetTimeout()).Returns(TimeSpan.FromSeconds(1));
             mockAnswerService.Setup(x => x.HasTimeout).Returns(true);
+
+            // Konfiguracja lokalizacji dla stringów
+            var localizedStrings = new AnswerServiceStrings
+            {
+                CancelMessage = "Operation canceled by user" // Ustawiamy oczekiwany komunikat
+            };
+            mockAnswerService.Setup(x => x.Strings).Returns(localizedStrings);
+
             var testClass = new TestAnswerableClass(mockAnswerService.Object);
 
             Func<Task<Answer>> method = async () =>
@@ -313,8 +321,9 @@ namespace Answers.Tests
 
             // Assert
             Assert.False(result.IsSuccess);
-            Assert.Contains("canceled", result.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains(localizedStrings.CancelMessage, result.Message, StringComparison.OrdinalIgnoreCase);
         }
+
 
 
         [Fact]
@@ -330,7 +339,7 @@ namespace Answers.Tests
             // Set up the timeout
             mockAnswerService.Setup(x => x.GetTimeout()).Returns(timeout);
             mockAnswerService.Setup(x => x.HasTimeout).Returns(true);
-
+            mockAnswerService.Setup(x => x.Strings).Returns(new AnswerServiceStrings());
             // Counters to keep track of prompts
             int promptCount = 0;
 
@@ -340,7 +349,7 @@ namespace Answers.Tests
                 .Setup(x => x.AskYesNoToWaitAsync(
                     Moq.It.IsAny<string>(),
                     Moq.It.IsAny<System.Threading.CancellationToken>()))
-                .Returns<string,  System.Threading.CancellationToken>(async (message,  ct) =>
+                .Returns<string, System.Threading.CancellationToken>(async (message, ct) =>
                 {
                     promptCount++;
                     if (promptCount <= 2)
@@ -451,7 +460,7 @@ namespace Answers.Tests
             // Set up the timeout
             mockAnswerService.Setup(x => x.GetTimeout()).Returns(timeout);
             mockAnswerService.Setup(x => x.HasTimeout).Returns(true);
-
+            mockAnswerService.Setup(x => x.Strings).Returns(new AnswerServiceStrings());
             // Simulate the method that takes a long time
             System.Func<System.Threading.Tasks.Task<Answer>> method = async () =>
             {
@@ -536,7 +545,7 @@ namespace Answers.Tests
             // Setup timeout
             mockAnswerService.Setup(x => x.HasTimeout).Returns(true);
             mockAnswerService.Setup(x => x.GetTimeout()).Returns(timeout);
-
+            mockAnswerService.Setup(x => x.Strings).Returns(new AnswerServiceStrings());
             // Simulate timeout dialog
             mockAnswerService.Setup(x => x.HasTimeOutAsyncDialog).Returns(true);
             mockAnswerService
@@ -585,7 +594,7 @@ namespace Answers.Tests
             // Setup timeout
             mockAnswerService.Setup(x => x.HasTimeout).Returns(true);
             mockAnswerService.Setup(x => x.GetTimeout()).Returns(timeout);
-
+            mockAnswerService.Setup(x => x.Strings).Returns(new AnswerServiceStrings());
             // Simulate method that will time out
             System.Func<System.Threading.Tasks.Task<Answer>> method = async () =>
             {
@@ -600,7 +609,7 @@ namespace Answers.Tests
                     Moq.It.IsAny<string>(),
                     Moq.It.IsAny<System.Threading.CancellationToken>()
                     ))
-                .Returns<string, System.Threading.CancellationToken>(async (message,  ct) =>
+                .Returns<string, System.Threading.CancellationToken>(async (message, ct) =>
                 {
                     // Cancel the global cancellation token after 1 second
                     await System.Threading.Tasks.Task.Delay(1000);

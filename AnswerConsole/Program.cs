@@ -332,11 +332,16 @@ public partial class PresentationLayer//:IAnswerable
                 catch (System.TimeoutException)
                 {
                     // Wystąpił timeout
-                    System.String action = $"{callerName} at {System.IO.Path.GetFileName(callerFilePath)}:{callerLineNumber}";
+                    System.String action = string.Format(
+                        _answerService.Strings.CallerMessageFormat,
+                        callerName,
+                        System.IO.Path.GetFileName(callerFilePath),
+                        callerLineNumber
+                    ); 
                     // if timeout dialogs are implemented
                     if (_answerService.HasTimeOutDialog || _answerService.HasTimeOutAsyncDialog)
                     {
-                        System.String timeoutMessage = $"The operation '{action}' timed out. Do you want to retry?";
+                        System.String timeoutMessage = string.Format(_answerService.Strings.TimeoutMessage, action); 
                         // async dialog has priority, but sync will run if async is not available
                         using var dialogCts = new System.Threading.CancellationTokenSource();
                         using var linkedCts = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(ct, dialogCts.Token);
@@ -370,7 +375,7 @@ public partial class PresentationLayer//:IAnswerable
                 }
                 catch (System.OperationCanceledException)
                 {
-                    return Answers.Answer.Prepare("Cancelled").Error("Operation canceled by user");
+                    return Answers.Answer.Prepare(_answerService.Strings.CancelledText).Error(_answerService.Strings.CancelMessage);
                 }
 
                 var responseReceivedWithinTimeout = await ProcessAnswerAsync(answer);
@@ -405,7 +410,7 @@ public partial class PresentationLayer//:IAnswerable
         }
 
 
-        Answers.Answer TimedOutResponse() => Answers.Answer.Prepare("Time out").Error($"{stopwatch.Elapsed.TotalSeconds} seconds elapsed");
+        Answers.Answer TimedOutResponse() => Answers.Answer.Prepare(_answerService.Strings.TimeOutText).Error(string.Format(_answerService.Strings.TimeoutElapsedMessage, stopwatch.Elapsed.TotalSeconds));
 
         System.Threading.Tasks.Task<bool> ChooseBetweenAsyncAndNonAsyncDialogTask(string s, System.Threading.CancellationTokenSource linkedCts) =>
          _answerService.HasTimeOutAsyncDialog ? _answerService.AskYesNoToWaitAsync(s, linkedCts.Token) :
@@ -462,13 +467,12 @@ public partial class PresentationLayer//:IAnswerable
                 }
 
                 return (Answers.AnswerService.DialogResponse.DoNotWait,
-                    Answers.Answer.Prepare("Timeout").Error("User wishes not to wait").ConcludeDialog());
+                    Answers.Answer.Prepare(_answerService.Strings.CancelledText).Error(_answerService.Strings.TimeoutError).ConcludeDialog());
             }
             catch (System.OperationCanceledException)
             {
-                // Obsługa anulowania globalnego
                 return (Answers.AnswerService.DialogResponse.Cancel,
-                    Answers.Answer.Prepare("Operation cancelled").Error("Operation canceled by user").ConcludeDialog());
+                    Answers.Answer.Prepare(_answerService.Strings.CancelMessage).Error(_answerService.Strings.CancelMessage).ConcludeDialog());
             }
         }
     }

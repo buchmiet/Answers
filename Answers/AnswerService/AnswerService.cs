@@ -26,10 +26,13 @@ namespace Answers
         void LogWarning(string message);
         void LogError(string message);
         void LogInfo(string message);
+        AnswerServiceStrings Strings { get; }
     }
 
     public class AnswerService : IAnswerService
     {
+        public AnswerServiceStrings Strings { get; } = new();
+
         public enum DialogResponse
         {
             Continue,
