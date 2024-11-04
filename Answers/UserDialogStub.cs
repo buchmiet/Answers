@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using Answers.Dialogs;
 
 namespace Answers
 {
@@ -41,6 +42,11 @@ namespace Answers
             }
         }
 
+        public bool ContinueTimedOutYesNo(string errorMessage, CancellationToken ct)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Wskazuje, że metoda asynchroniczna <see cref="YesNoAsync"/> jest dostępna.
         /// </summary>
@@ -68,7 +74,7 @@ namespace Answers
         /// <param name="errorMessage">Wiadomość do wyświetlenia w dialogu (symulowana).</param>
         /// <returns>Wartość odpowiedzi (true lub false) zgodnie z kolejnym elementem w liście <paramref name="responses"/>.</returns>
         /// <exception cref="ObjectDisposedException">Rzucane, gdy obiekt został wcześniej zniszczony.</exception>
-        public bool YesNo(string errorMessage)
+        public bool YesNo(string errorMessage, CancellationToken ct)
         {
             return GetNextResponse();
         }
@@ -87,6 +93,16 @@ namespace Answers
             return Task.FromResult(response);
         }
 
+        public Task<bool> ContinueTimedOutYesNoAsync(string errorMessage, CancellationToken ct)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool YesNo(string errorMessage)
+        {
+            throw new NotImplementedException();
+        }
+
         /// <summary>
         /// Symuluje dialog synchroniczny z użytkownikiem z opóźnieniem, zwracając wartość odpowiedzi po upływie czasu z listy <paramref name="delays"/>.
         /// Czas oczekiwania i odpowiedzi są cykliczne. Jeśli którykolwiek z tokenów anulowania zostanie aktywowany,
@@ -98,7 +114,7 @@ namespace Answers
         /// <returns>Wartość odpowiedzi (true lub false) po upływie opóźnienia z listy <paramref name="delays"/>.</returns>
         /// <exception cref="OperationCanceledException">Rzucane, gdy nastąpi anulowanie operacji przez dowolny token.</exception>
         /// <exception cref="ObjectDisposedException">Rzucane, gdy obiekt został wcześniej zniszczony.</exception>
-        public bool ContinueTimedOutYesNo(string errorMessage,  CancellationToken ct)
+        public bool ContinueTimedOutYesNo(string errorMessage, CancellationToken localCancellationToken, CancellationToken ct)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(UserDialogStub));
@@ -110,7 +126,7 @@ namespace Answers
 
             while (waited < totalMilliseconds)
             {
-                if ( ct.IsCancellationRequested)
+                if (localCancellationToken.IsCancellationRequested || ct.IsCancellationRequested)
                 {
                     Dispose();
                     throw new OperationCanceledException("Operation was canceled.");
@@ -132,22 +148,24 @@ namespace Answers
         /// <returns>Odpowiedź (true lub false) po opóźnieniu z listy <paramref name="delays"/>.</returns>
         /// <exception cref="OperationCanceledException">Rzucane, gdy nastąpi anulowanie operacji przez dowolny token.</exception>
         /// <exception cref="ObjectDisposedException">Rzucane, gdy obiekt został wcześniej zniszczony.</exception>
-        public async Task<bool> ContinueTimedOutYesNoAsync(string errorMessage, CancellationToken ct)
+        public async Task<bool> ContinueTimedOutYesNoAsync(string errorMessage, CancellationToken localCancellationToken, CancellationToken ct)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(UserDialogStub));
 
             var delay = GetNextDelay();
-
+            using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(localCancellationToken, ct))
+            {
                 try
                 {
-                    await Task.Delay(delay, ct);
+                    await Task.Delay(delay, linkedCts.Token);
                 }
                 catch (TaskCanceledException)
                 {
                     Dispose();
-                    throw new OperationCanceledException("Operation was canceled.", ct);
+                    throw new OperationCanceledException("Operation was canceled.", linkedCts.Token);
                 }
+            }
             return GetNextResponse();
         }
 

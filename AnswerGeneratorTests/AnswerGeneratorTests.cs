@@ -13,6 +13,7 @@ using static AnswerGeneratorTests.TestSourcesProvider;
 using FluentAssertions;
 using static Microsoft.CodeAnalysis.DiagnosticSeverity;
 using System.Reflection.Emit;
+using Answers.AnswerService;
 
 namespace AnswerGeneratorTests
 {
@@ -60,7 +61,7 @@ namespace AnswerGeneratorTests
             Assert.True(passed);
 
             // Check for the constructor that accepts IAnswerService
-            var ctor = testClassType.GetConstructor([typeof(Answers.IAnswerService)]);
+            var ctor = testClassType.GetConstructor([typeof(IAnswerService)]);
 
             Assert.NotNull(ctor);
         }
@@ -154,7 +155,7 @@ namespace AnswerGeneratorTests
             Assert.Equal("_customAnswerService", fields[0].Name);
         
             // Check for constructor that assigns to the existing field
-            var constructor = testClassType.GetConstructor([typeof(Answers.IAnswerService)]);
+            var constructor = testClassType.GetConstructor([typeof(IAnswerService)]);
             Assert.NotNull(constructor);
         }
 

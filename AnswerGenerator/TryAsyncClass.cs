@@ -12,11 +12,11 @@ namespace AnswerGenerator
     {
 
         private async System.Threading.Tasks.Task<Answers.Answer> TryAsync(
-      System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
-      System.Threading.CancellationToken ct,
-      [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
-      [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
-      [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
+       System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
+       System.Threading.CancellationToken ct,
+       [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
+       [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
+       [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
         {
             var timeoutValue = _answerService.HasTimeout ? _answerService.GetTimeout() : System.TimeSpan.Zero; // Pobiera i resetuje timeout
             System.Threading.Tasks.Task<Answers.Answer> methodTask = method();
@@ -41,7 +41,7 @@ namespace AnswerGenerator
                             callerName,
                             System.IO.Path.GetFileName(callerFilePath),
                             callerLineNumber
-                        ); ;
+                        );
                         // if timeout dialogs are implemented
                         if (_answerService.HasTimeOutDialog || _answerService.HasTimeOutAsyncDialog)
                         {
@@ -54,16 +54,16 @@ namespace AnswerGenerator
 
                             switch (response.Response)
                             {
-                                case Answers.AnswerService.DialogResponse.Continue:
+                                case Answers.Dialogs.DialogResponse.Continue:
                                     // carry on waiting
                                     continue;
-                                case Answers.AnswerService.DialogResponse.Cancel:
+                                case Answers.Dialogs.DialogResponse.Cancel:
                                     stopwatch.Stop();
                                     return response.Answer;
-                                case Answers.AnswerService.DialogResponse.DoNotWait:
+                                case Answers.Dialogs.DialogResponse.DoNotWait:
                                     stopwatch.Stop();
                                     return response.Answer;
-                                case Answers.AnswerService.DialogResponse.Answered:
+                                case Answers.Dialogs.DialogResponse.Answered:
                                     if (response.Answer.IsSuccess)
                                     {
                                         stopwatch.Stop();
@@ -85,13 +85,13 @@ namespace AnswerGenerator
                     var responseReceivedWithinTimeout = await ProcessAnswerAsync(answer);
                     switch (responseReceivedWithinTimeout.Response)
                     {
-                        case Answers.AnswerService.DialogResponse.Answered:
+                        case Answers.Dialogs.DialogResponse.Answered:
                             stopwatch.Stop();
                             return responseReceivedWithinTimeout.Answer;
-                        case Answers.AnswerService.DialogResponse.DoNotRepeat:
+                        case Answers.Dialogs.DialogResponse.DoNotRepeat:
                             stopwatch.Stop();
                             return responseReceivedWithinTimeout.Answer;
-                        case Answers.AnswerService.DialogResponse.Continue:
+                        case Answers.Dialogs.DialogResponse.Continue:
                             continue;
                     }
                 }
@@ -100,13 +100,13 @@ namespace AnswerGenerator
                 var noTimeoutSetResponse = await ProcessAnswerAsync(await methodTask);
                 switch (noTimeoutSetResponse.Response)
                 {
-                    case Answers.AnswerService.DialogResponse.Answered:
+                    case Answers.Dialogs.DialogResponse.Answered:
                         stopwatch.Stop();
                         return noTimeoutSetResponse.Answer;
-                    case Answers.AnswerService.DialogResponse.DoNotRepeat:
+                    case Answers.Dialogs.DialogResponse.DoNotRepeat:
                         stopwatch.Stop();
                         return noTimeoutSetResponse.Answer;
-                    case Answers.AnswerService.DialogResponse.Continue:
+                    case Answers.Dialogs.DialogResponse.Continue:
                         continue;
                 }
 
@@ -122,11 +122,11 @@ namespace AnswerGenerator
                         _answerService.AskYesNoToWait(s, linkedCts.Token), ct);
 
 
-            async System.Threading.Tasks.Task<(Answers.AnswerService.DialogResponse Response, Answers.Answer Answer)> ProcessAnswerAsync(Answers.Answer localAnswer)
+            async System.Threading.Tasks.Task<(Answers.Dialogs.DialogResponse Response, Answers.Answer Answer)> ProcessAnswerAsync(Answers.Answer localAnswer)
             {
                 if (localAnswer.IsSuccess || localAnswer.DialogConcluded || !(_answerService.HasYesNoDialog || _answerService.HasYesNoAsyncDialog))
                 {
-                    return (Answers.AnswerService.DialogResponse.Answered, localAnswer);
+                    return (Answers.Dialogs.DialogResponse.Answered, localAnswer);
                 }
                 System.Boolean userResponse;
                 if (_answerService.HasYesNoAsyncDialog)
@@ -141,15 +141,15 @@ namespace AnswerGenerator
                 if (userResponse)
                 {
                     methodTask = method();
-                    return (Answers.AnswerService.DialogResponse.Continue, null);
+                    return (Answers.Dialogs.DialogResponse.Continue, null);
                 }
 
                 localAnswer.ConcludeDialog();
-                return (Answers.AnswerService.DialogResponse.DoNotRepeat, localAnswer); // Użytkownik wybrał "No", kończymy
+                return (Answers.Dialogs.DialogResponse.DoNotRepeat, localAnswer); // Użytkownik wybrał "No", kończymy
             }
 
 
-            async System.Threading.Tasks.Task<(Answers.AnswerService.DialogResponse Response, Answers.Answer Answer)> ProcessTimeOutDialog(
+            async System.Threading.Tasks.Task<(Answers.Dialogs.DialogResponse Response, Answers.Answer Answer)> ProcessTimeOutDialog(
                 System.Threading.Tasks.Task<bool> dialogTask,
                 System.Threading.CancellationTokenSource dialogCts)
             {
@@ -161,25 +161,26 @@ namespace AnswerGenerator
                     {
                         var localAnswer = await methodTask;
                         await dialogCts.CancelAsync();
-                        return (Answers.AnswerService.DialogResponse.Answered, localAnswer);
+                        return (Answers.Dialogs.DialogResponse.Answered, localAnswer);
                     }
 
                     // Sprawdzamy czy dialog został zakończony przez użytkownika
                     if (await dialogTask)
                     {
-                        return (Answers.AnswerService.DialogResponse.Continue, null);
+                        return (Answers.Dialogs.DialogResponse.Continue, null);
                     }
 
-                    return (Answers.AnswerService.DialogResponse.DoNotWait,
+                    return (Answers.Dialogs.DialogResponse.DoNotWait,
                         Answers.Answer.Prepare(_answerService.Strings.CancelledText).Error(_answerService.Strings.TimeoutError).ConcludeDialog());
                 }
                 catch (System.OperationCanceledException)
                 {
-                    return (Answers.AnswerService.DialogResponse.Cancel,
+                    return (Answers.Dialogs.DialogResponse.Cancel,
                         Answers.Answer.Prepare(_answerService.Strings.CancelMessage).Error(_answerService.Strings.CancelMessage).ConcludeDialog());
                 }
             }
         }
+
     }
 
 

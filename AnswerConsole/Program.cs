@@ -8,6 +8,7 @@ using Spectre.Console;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Reflection;
 using System.Text;
+using Answers.AnswerService;
 
 var loggerFactory = LoggerFactory.Create(builder =>
 {
@@ -350,16 +351,16 @@ public partial class PresentationLayer//:IAnswerable
 
                         switch (response.Response)
                         {
-                            case Answers.AnswerService.DialogResponse.Continue:
+                            case Answers.Dialogs.DialogResponse.Continue:
                             // carry on waiting
                                 continue;
-                            case Answers.AnswerService.DialogResponse.Cancel:
+                            case Answers.Dialogs.DialogResponse.Cancel:
                                 stopwatch.Stop();
                                 return response.Answer;
-                            case Answers.AnswerService.DialogResponse.DoNotWait:
+                            case Answers.Dialogs.DialogResponse.DoNotWait:
                                 stopwatch.Stop();
                                 return response.Answer;
-                            case Answers.AnswerService.DialogResponse.Answered:
+                            case Answers.Dialogs.DialogResponse.Answered:
                                 if (response.Answer.IsSuccess)
                                 {
                                     stopwatch.Stop();
@@ -381,13 +382,13 @@ public partial class PresentationLayer//:IAnswerable
                 var responseReceivedWithinTimeout = await ProcessAnswerAsync(answer);
                 switch (responseReceivedWithinTimeout.Response)
                 {
-                    case Answers.AnswerService.DialogResponse.Answered:
+                    case Answers.Dialogs.DialogResponse.Answered:
                         stopwatch.Stop();
                         return responseReceivedWithinTimeout.Answer;
-                    case Answers.AnswerService.DialogResponse.DoNotRepeat:
+                    case Answers.Dialogs.DialogResponse.DoNotRepeat:
                         stopwatch.Stop();
                         return responseReceivedWithinTimeout.Answer;
-                    case Answers.AnswerService.DialogResponse.Continue:
+                    case Answers.Dialogs.DialogResponse.Continue:
                         continue;
                 }
             }
@@ -396,13 +397,13 @@ public partial class PresentationLayer//:IAnswerable
             var noTimeoutSetResponse = await ProcessAnswerAsync(await methodTask);
             switch (noTimeoutSetResponse.Response)
             {
-                case Answers.AnswerService.DialogResponse.Answered:
+                case Answers.Dialogs.DialogResponse.Answered:
                     stopwatch.Stop();
                     return noTimeoutSetResponse.Answer;
-                case Answers.AnswerService.DialogResponse.DoNotRepeat:
+                case Answers.Dialogs.DialogResponse.DoNotRepeat:
                     stopwatch.Stop();
                     return noTimeoutSetResponse.Answer;
-                case Answers.AnswerService.DialogResponse.Continue:
+                case Answers.Dialogs.DialogResponse.Continue:
                     continue;
             }
 
@@ -418,11 +419,11 @@ public partial class PresentationLayer//:IAnswerable
                     _answerService.AskYesNoToWait(s, linkedCts.Token), ct);
         
 
-        async System.Threading.Tasks.Task<(Answers.AnswerService.DialogResponse Response, Answers.Answer Answer)> ProcessAnswerAsync(Answers.Answer localAnswer)
+        async System.Threading.Tasks.Task<(Answers.Dialogs.DialogResponse Response, Answers.Answer Answer)> ProcessAnswerAsync(Answers.Answer localAnswer)
         {
             if (localAnswer.IsSuccess || localAnswer.DialogConcluded || !(_answerService.HasYesNoDialog || _answerService.HasYesNoAsyncDialog))
             {
-                return (Answers.AnswerService.DialogResponse.Answered,localAnswer);
+                return (Answers.Dialogs.DialogResponse.Answered,localAnswer);
             }
             System.Boolean userResponse;
             if (_answerService.HasYesNoAsyncDialog)
@@ -437,15 +438,15 @@ public partial class PresentationLayer//:IAnswerable
             if (userResponse)
             {
                 methodTask = method();
-                return (Answers.AnswerService.DialogResponse.Continue, null);
+                return (Answers.Dialogs.DialogResponse.Continue, null);
             }
 
             localAnswer.ConcludeDialog();
-            return (Answers.AnswerService.DialogResponse.DoNotRepeat,localAnswer); // Użytkownik wybrał "No", kończymy
+            return (Answers.Dialogs.DialogResponse.DoNotRepeat,localAnswer); // Użytkownik wybrał "No", kończymy
         }
 
 
-        async System.Threading.Tasks.Task<(Answers.AnswerService.DialogResponse Response, Answers.Answer Answer)> ProcessTimeOutDialog(
+        async System.Threading.Tasks.Task<(Answers.Dialogs.DialogResponse Response, Answers.Answer Answer)> ProcessTimeOutDialog(
             System.Threading.Tasks.Task<bool> dialogTask,
             System.Threading.CancellationTokenSource dialogCts)
         {
@@ -457,21 +458,21 @@ public partial class PresentationLayer//:IAnswerable
                 {
                     var localAnswer = await methodTask;
                     await dialogCts.CancelAsync();
-                    return (Answers.AnswerService.DialogResponse.Answered, localAnswer);
+                    return (Answers.Dialogs.DialogResponse.Answered, localAnswer);
                 }
 
                 // Sprawdzamy czy dialog został zakończony przez użytkownika
                 if (await dialogTask)
                 {
-                    return (Answers.AnswerService.DialogResponse.Continue, null);
+                    return (Answers.Dialogs.DialogResponse.Continue, null);
                 }
 
-                return (Answers.AnswerService.DialogResponse.DoNotWait,
+                return (Answers.Dialogs.DialogResponse.DoNotWait,
                     Answers.Answer.Prepare(_answerService.Strings.CancelledText).Error(_answerService.Strings.TimeoutError).ConcludeDialog());
             }
             catch (System.OperationCanceledException)
             {
-                return (Answers.AnswerService.DialogResponse.Cancel,
+                return (Answers.Dialogs.DialogResponse.Cancel,
                     Answers.Answer.Prepare(_answerService.Strings.CancelMessage).Error(_answerService.Strings.CancelMessage).ConcludeDialog());
             }
         }
@@ -666,7 +667,7 @@ public partial class PresentationLayer//:IAnswerable
 
     private IAnswerService _answerService;
     private BusinessLogicClass _utilityLayer;
-    public PresentationLayer(BusinessLogicClass utilityLayer, Answers.IAnswerService answerService)
+    public PresentationLayer(BusinessLogicClass utilityLayer, IAnswerService answerService)
     {
         _answerService = answerService;
        _answerService.AddDialog(new UserDialogStub([true,false],null));

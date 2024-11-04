@@ -1,10 +1,10 @@
-﻿using Answers;
-using Moq;
+﻿using Moq;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Xunit;
+using Answers.Dialogs;
 
 namespace Answers.Tests
 {
@@ -12,13 +12,13 @@ namespace Answers.Tests
     {
         private readonly Mock<ILogger> _loggerMock;
         private readonly Mock<IUserDialog> _dialogMock;
-        private readonly AnswerService _service;
+        private readonly AnswerService.AnswerService _service;
 
         public AnswerServiceTests()
         {
             _loggerMock = new Mock<ILogger>();
             _dialogMock = new Mock<IUserDialog>();
-            _service = new AnswerService(_dialogMock.Object, _loggerMock.Object);
+            _service = new AnswerService.AnswerService(_dialogMock.Object, _loggerMock.Object);
         }
 
         #region Constructor Tests
@@ -28,7 +28,7 @@ namespace Answers.Tests
         public void Constructor_WithNullLogger_ThrowsArgumentNullException()
         {
             // Arrange & Act
-            var exception = Assert.Throws<ArgumentNullException>(() => new AnswerService(_dialogMock.Object, null));
+            var exception = Assert.Throws<ArgumentNullException>(() => new AnswerService.AnswerService(_dialogMock.Object, null));
 
             // Assert
             Assert.Equal("logger", exception.ParamName);
@@ -481,10 +481,10 @@ namespace Answers.Tests
         public void AddDialogNull_ThrowsArgumetNullException()
         {
             // Arrange
-            AnswerService service;
+            AnswerService.AnswerService service;
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => service = new AnswerService(null, _loggerMock.Object));
+            Assert.Throws<ArgumentNullException>(() => service = new AnswerService.AnswerService(null, _loggerMock.Object));
         }
 
         [Fact]
