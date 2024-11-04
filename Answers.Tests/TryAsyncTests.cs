@@ -213,7 +213,7 @@ namespace Answers.Tests
                 .Returns(TimeSpan.FromSeconds(1))
                 .Returns(TimeSpan.FromSeconds(2)); // New timeout after user chooses to wait
             mockAnswerService.Setup(x => x.HasTimeOutAsyncDialog).Returns(true);
-            mockAnswerService.Setup(x => x.AskYesNoToWaitAsync(It.IsAny<string>(), ct, ct))
+            mockAnswerService.Setup(x => x.AskYesNoToWaitAsync(It.IsAny<string>(), ct))
                 .ReturnsAsync(true); // User chooses to continue waiting
 
             var testClass = new TestAnswerableClass(mockAnswerService.Object);
@@ -243,7 +243,7 @@ namespace Answers.Tests
             mockAnswerService.Setup(x => x.GetTimeout()).Returns(TimeSpan.FromSeconds(1));
             mockAnswerService.Setup(x => x.HasTimeout).Returns(true);
             mockAnswerService.Setup(x => x.HasTimeOutAsyncDialog).Returns(true);
-            mockAnswerService.Setup(x => x.AskYesNoToWaitAsync(It.IsAny<string>(), ct, ct))
+            mockAnswerService.Setup(x => x.AskYesNoToWaitAsync(It.IsAny<string>(),  ct))
                 .ReturnsAsync(false); // User chooses not to continue waiting
 
             var testClass = new TestAnswerableClass(mockAnswerService.Object);
@@ -339,20 +339,19 @@ namespace Answers.Tests
             mockAnswerService
                 .Setup(x => x.AskYesNoToWaitAsync(
                     Moq.It.IsAny<string>(),
-                    Moq.It.IsAny<System.Threading.CancellationToken>(),
                     Moq.It.IsAny<System.Threading.CancellationToken>()))
-                .Returns<string, System.Threading.CancellationToken, System.Threading.CancellationToken>(async (message, dialogCt, globalCt) =>
+                .Returns<string,  System.Threading.CancellationToken>(async (message,  ct) =>
                 {
                     promptCount++;
                     if (promptCount <= 2)
                     {
                         // First two responses take 200ms
-                        await System.Threading.Tasks.Task.Delay(200, dialogCt);
+                        await System.Threading.Tasks.Task.Delay(200, ct);
                         return true; // User chooses to continue
                     }
 
                     // Third response takes 1 second
-                    await System.Threading.Tasks.Task.Delay(1000, dialogCt);
+                    await System.Threading.Tasks.Task.Delay(1000, ct);
                     return true; // User chooses to continue
                 });
 
@@ -543,7 +542,6 @@ namespace Answers.Tests
             mockAnswerService
                 .Setup(x => x.AskYesNoToWaitAsync(
                     Moq.It.IsAny<string>(),
-                    Moq.It.IsAny<System.Threading.CancellationToken>(),
                     Moq.It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync(true); // User chooses to wait
 
@@ -574,54 +572,54 @@ namespace Answers.Tests
             Assert.Equal("Success", result.Message);
         }
 
-        //[Fact]
-        //public async System.Threading.Tasks.Task TryAsync_GlobalCancellationDuringUserPrompt_ReturnsCanceledResponse()
-        //{
-        //    // Arrange
-        //    var timeout = System.TimeSpan.FromSeconds(2);
-        //    using var cts = new System.Threading.CancellationTokenSource();
-        //    var ct = cts.Token;
+        [Fact]
+        public async System.Threading.Tasks.Task TryAsync_GlobalCancellationDuringUserPrompt_ReturnsCanceledResponse()
+        {
+            // Arrange
+            var timeout = System.TimeSpan.FromSeconds(2);
+            using var cts = new System.Threading.CancellationTokenSource();
+            var ct = cts.Token;
 
-        //    var mockAnswerService = new Moq.Mock<IAnswerService>();
+            var mockAnswerService = new Moq.Mock<IAnswerService>();
 
-        //    // Setup timeout
-        //    mockAnswerService.Setup(x => x.HasTimeout).Returns(true);
-        //    mockAnswerService.Setup(x => x.GetTimeout()).Returns(timeout);
+            // Setup timeout
+            mockAnswerService.Setup(x => x.HasTimeout).Returns(true);
+            mockAnswerService.Setup(x => x.GetTimeout()).Returns(timeout);
 
-        //    // Simulate method that will time out
-        //    System.Func<System.Threading.Tasks.Task<Answer>> method = async () =>
-        //    {
-        //        await System.Threading.Tasks.Task.Delay(5000, ct); // Simulate long-running operation
-        //        return Answer.Prepare("Success");
-        //    };
+            // Simulate method that will time out
+            System.Func<System.Threading.Tasks.Task<Answer>> method = async () =>
+            {
+                await System.Threading.Tasks.Task.Delay(5000, ct); // Simulate long-running operation
+                return Answer.Prepare("Success");
+            };
 
-        //    // Simulate timeout dialog
-        //    mockAnswerService.Setup(x => x.HasTimeOutAsyncDialog).Returns(true);
-        //    mockAnswerService
-        //        .Setup(x => x.AskYesNoToWaitAsync(
-        //            Moq.It.IsAny<string>(),
-        //            Moq.It.IsAny<System.Threading.CancellationToken>(),
-        //            Moq.It.IsAny<System.Threading.CancellationToken>()))
-        //        .Returns<string, System.Threading.CancellationToken, System.Threading.CancellationToken>(async (message, dialogCt, globalCt) =>
-        //        {
-        //            // Cancel the global cancellation token after 1 second
-        //            await System.Threading.Tasks.Task.Delay(1000);
-        //            cts.Cancel();
+            // Simulate timeout dialog
+            mockAnswerService.Setup(x => x.HasTimeOutAsyncDialog).Returns(true);
+            mockAnswerService
+                .Setup(x => x.AskYesNoToWaitAsync(
+                    Moq.It.IsAny<string>(),
+                    Moq.It.IsAny<System.Threading.CancellationToken>()
+                    ))
+                .Returns<string, System.Threading.CancellationToken>(async (message,  ct) =>
+                {
+                    // Cancel the global cancellation token after 1 second
+                    await System.Threading.Tasks.Task.Delay(1000);
+                    cts.Cancel();
 
-        //            // Simulate user taking time to respond
-        //            await System.Threading.Tasks.Task.Delay(2000, dialogCt);
-        //            return true;
-        //        });
+                    // Simulate user taking time to respond
+                    await System.Threading.Tasks.Task.Delay(2000, ct);
+                    return true;
+                });
 
-        //    var testClass = new TestAnswerableClass(mockAnswerService.Object);
+            var testClass = new TestAnswerableClass(mockAnswerService.Object);
 
-        //    // Act
-        //    Answer result = await testClass.DoSomething(method, ct);
+            // Act
+            Answer result = await testClass.DoSomething(method, ct);
 
-        //    // Assert
-        //    Assert.False(result.IsSuccess);
-        //    Assert.Contains("canceled", result.Message, StringComparison.OrdinalIgnoreCase);
-        //}
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("canceled", result.Message, StringComparison.OrdinalIgnoreCase);
+        }
 
 
     }

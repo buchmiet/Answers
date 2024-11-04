@@ -19,9 +19,9 @@ namespace Answers
         TimeSpan GetTimeout();
         void AddDialog(IUserDialog dialog1);
         Task<bool> AskYesNoAsync(string message, CancellationToken ct);
-        Task<bool> AskYesNoToWaitAsync(string message, CancellationToken localCancellationToken, CancellationToken ct);
+        Task<bool> AskYesNoToWaitAsync(string message,  CancellationToken ct);
         bool AskYesNo(string message);
-        bool AskYesNoToWait(string message, CancellationToken localCancellationToken, CancellationToken ct);
+        bool AskYesNoToWait(string message, CancellationToken ct);
         void SetTimeout(TimeSpan timeout);
         void LogWarning(string message);
         void LogError(string message);
@@ -90,11 +90,11 @@ namespace Answers
             throw new InvalidOperationException("Dialog is not set.");
         }
 
-        public Task<bool> AskYesNoToWaitAsync(string message, CancellationToken localCancellationToken, CancellationToken ct)
+        public Task<bool> AskYesNoToWaitAsync(string message, CancellationToken ct)
         {
             if (_dialog is not null)
             {
-                return _dialog.ContinueTimedOutYesNoAsync(message, localCancellationToken, ct);
+                return _dialog.ContinueTimedOutYesNoAsync(message,  ct);
             }
             throw new InvalidOperationException("Dialog is not set.");
         }
@@ -111,12 +111,12 @@ namespace Answers
             throw new InvalidOperationException("Dialog is not set.");
         }
 
-        public bool AskYesNoToWait(string message, CancellationToken localCancellationToken, CancellationToken ct)
+        public bool AskYesNoToWait(string message,  CancellationToken ct)
         {
             var dialog1 = _dialog;
             if (dialog1 is not null)
             {
-                return dialog1.ContinueTimedOutYesNo(message, localCancellationToken,ct);
+                return dialog1.ContinueTimedOutYesNo(message, ct);
             }
 
             throw new InvalidOperationException("Dialog is not set.");

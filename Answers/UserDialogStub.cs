@@ -98,7 +98,7 @@ namespace Answers
         /// <returns>Wartość odpowiedzi (true lub false) po upływie opóźnienia z listy <paramref name="delays"/>.</returns>
         /// <exception cref="OperationCanceledException">Rzucane, gdy nastąpi anulowanie operacji przez dowolny token.</exception>
         /// <exception cref="ObjectDisposedException">Rzucane, gdy obiekt został wcześniej zniszczony.</exception>
-        public bool ContinueTimedOutYesNo(string errorMessage, CancellationToken localCancellationToken, CancellationToken ct)
+        public bool ContinueTimedOutYesNo(string errorMessage,  CancellationToken ct)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(UserDialogStub));
@@ -110,7 +110,7 @@ namespace Answers
 
             while (waited < totalMilliseconds)
             {
-                if (localCancellationToken.IsCancellationRequested || ct.IsCancellationRequested)
+                if ( ct.IsCancellationRequested)
                 {
                     Dispose();
                     throw new OperationCanceledException("Operation was canceled.");
@@ -132,24 +132,22 @@ namespace Answers
         /// <returns>Odpowiedź (true lub false) po opóźnieniu z listy <paramref name="delays"/>.</returns>
         /// <exception cref="OperationCanceledException">Rzucane, gdy nastąpi anulowanie operacji przez dowolny token.</exception>
         /// <exception cref="ObjectDisposedException">Rzucane, gdy obiekt został wcześniej zniszczony.</exception>
-        public async Task<bool> ContinueTimedOutYesNoAsync(string errorMessage, CancellationToken localCancellationToken, CancellationToken ct)
+        public async Task<bool> ContinueTimedOutYesNoAsync(string errorMessage, CancellationToken ct)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(UserDialogStub));
 
             var delay = GetNextDelay();
-            using (var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(localCancellationToken, ct))
-            {
+
                 try
                 {
-                    await Task.Delay(delay, linkedCts.Token);
+                    await Task.Delay(delay, ct);
                 }
                 catch (TaskCanceledException)
                 {
                     Dispose();
-                    throw new OperationCanceledException("Operation was canceled.", linkedCts.Token);
+                    throw new OperationCanceledException("Operation was canceled.", ct);
                 }
-            }
             return GetNextResponse();
         }
 

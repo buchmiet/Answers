@@ -12,18 +12,17 @@ namespace AnswerGenerator
     {
 
         private async System.Threading.Tasks.Task<Answers.Answer> TryAsync(
-        System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
-        System.Threading.CancellationToken ct,
-        [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
-        [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
-        [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
+       System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
+       System.Threading.CancellationToken ct,
+       [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
+       [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
+       [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
         {
             var timeoutValue = _answerService.HasTimeout ? _answerService.GetTimeout() : System.TimeSpan.Zero; // Pobiera i resetuje timeout
             System.Threading.Tasks.Task<Answers.Answer> methodTask = method();
             // repeat until method returns a successful answer or dialog is concluded
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             stopwatch.Start();
-            System.Text.StringBuilder logger = new();
             while (true)
             {
                 //AnswerService has timeout set, so we need to wait for the method to complete or timeout to occur
@@ -36,7 +35,6 @@ namespace AnswerGenerator
                     }
                     catch (System.TimeoutException)
                     {
-
                         // Wystąpił timeout
                         System.String action = $"{callerName} at {System.IO.Path.GetFileName(callerFilePath)}:{callerLineNumber}";
                         // if timeout dialogs are implemented
@@ -44,8 +42,9 @@ namespace AnswerGenerator
                         {
                             System.String timeoutMessage = $"The operation '{action}' timed out. Do you want to retry?";
                             // async dialog has priority, but sync will run if async is not available
-                            using System.Threading.CancellationTokenSource dialogCts = new System.Threading.CancellationTokenSource();
-                            System.Threading.Tasks.Task<bool> dialogTask = ChooseBetweenAsyncAndNonAsyncDialogTask(timeoutMessage, dialogCts);
+                            using var dialogCts = new System.Threading.CancellationTokenSource();
+                            using var linkedCts = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(ct, dialogCts.Token);
+                            System.Threading.Tasks.Task<bool> dialogTask = ChooseBetweenAsyncAndNonAsyncDialogTask(timeoutMessage, linkedCts);
                             var response = await ProcessTimeOutDialog(dialogTask, dialogCts);
 
                             switch (response.Response)
@@ -55,11 +54,9 @@ namespace AnswerGenerator
                                     continue;
                                 case Answers.AnswerService.DialogResponse.Cancel:
                                     stopwatch.Stop();
-                                    response.Answer.diagnostics = logger.ToString();
                                     return response.Answer;
                                 case Answers.AnswerService.DialogResponse.DoNotWait:
                                     stopwatch.Stop();
-                                    response.Answer.diagnostics = logger.ToString();
                                     return response.Answer;
                                 case Answers.AnswerService.DialogResponse.Answered:
                                     if (response.Answer.IsSuccess)
@@ -114,21 +111,18 @@ namespace AnswerGenerator
 
             Answers.Answer TimedOutResponse() => Answers.Answer.Prepare("Time out").Error($"{stopwatch.Elapsed.TotalSeconds} seconds elapsed");
 
-            System.Threading.Tasks.Task<bool> ChooseBetweenAsyncAndNonAsyncDialogTask(string s, System.Threading.CancellationTokenSource cancellationTokenSource)
-            {
-                return _answerService.HasTimeOutAsyncDialog ? _answerService.AskYesNoToWaitAsync(s, cancellationTokenSource.Token, ct) :
+            System.Threading.Tasks.Task<bool> ChooseBetweenAsyncAndNonAsyncDialogTask(string s, System.Threading.CancellationTokenSource linkedCts) =>
+             _answerService.HasTimeOutAsyncDialog ? _answerService.AskYesNoToWaitAsync(s, linkedCts.Token) :
                     System.Threading.Tasks.Task.Run(() =>
-                        _answerService.AskYesNoToWait(s, cancellationTokenSource.Token, ct), ct);
-            }
+                        _answerService.AskYesNoToWait(s, linkedCts.Token), ct);
+
 
             async System.Threading.Tasks.Task<(Answers.AnswerService.DialogResponse Response, Answers.Answer Answer)> ProcessAnswerAsync(Answers.Answer localAnswer)
             {
-                Answers.Answer returnAnswer = Answers.Answer.Prepare("ProcessAnswerAsync");
                 if (localAnswer.IsSuccess || localAnswer.DialogConcluded || !(_answerService.HasYesNoDialog || _answerService.HasYesNoAsyncDialog))
                 {
                     return (Answers.AnswerService.DialogResponse.Answered, localAnswer);
                 }
-
                 System.Boolean userResponse;
                 if (_answerService.HasYesNoAsyncDialog)
                 {
@@ -154,27 +148,32 @@ namespace AnswerGenerator
                 System.Threading.Tasks.Task<bool> dialogTask,
                 System.Threading.CancellationTokenSource dialogCts)
             {
-                System.Threading.Tasks.Task dialogOutcomeTask;
                 try
                 {
-                    dialogOutcomeTask = await System.Threading.Tasks.Task.WhenAny(methodTask, dialogTask);
-                }
-                catch (System.OperationCanceledException ex)
-                {
-                    return (Answers.AnswerService.DialogResponse.Cancel, Answers.Answer.Prepare("Canceled").Error("Operation cancelled").ConcludeDialog());
-                }
+                    var dialogOutcomeTask = await System.Threading.Tasks.Task.WhenAny(methodTask, dialogTask).WaitAsync(ct);
 
-                if (dialogOutcomeTask == methodTask)
-                {
-                    var localAnswer = await methodTask;
-                    await dialogCts.CancelAsync();
-                    return (Answers.AnswerService.DialogResponse.Answered, localAnswer);
+                    if (dialogOutcomeTask == methodTask)
+                    {
+                        var localAnswer = await methodTask;
+                        await dialogCts.CancelAsync();
+                        return (Answers.AnswerService.DialogResponse.Answered, localAnswer);
+                    }
+
+                    // Sprawdzamy czy dialog został zakończony przez użytkownika
+                    if (await dialogTask)
+                    {
+                        return (Answers.AnswerService.DialogResponse.Continue, null);
+                    }
+
+                    return (Answers.AnswerService.DialogResponse.DoNotWait,
+                        Answers.Answer.Prepare("Timeout").Error("User wishes not to wait").ConcludeDialog());
                 }
-                if (await dialogTask)
+                catch (System.OperationCanceledException)
                 {
-                    return (Answers.AnswerService.DialogResponse.Continue, null);
+                    // Obsługa anulowania globalnego
+                    return (Answers.AnswerService.DialogResponse.Cancel,
+                        Answers.Answer.Prepare("Operation cancelled").Error("Operation canceled by user").ConcludeDialog());
                 }
-                return (Answers.AnswerService.DialogResponse.DoNotWait, Answers.Answer.Prepare("Timeout").Error("User wishes not to wait").ConcludeDialog());
             }
         }
     }
