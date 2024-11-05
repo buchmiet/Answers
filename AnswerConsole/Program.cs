@@ -345,7 +345,7 @@ public partial class PresentationLayer//:IAnswerable
                         // async dialog has priority, but sync will run if async is not available
                         using var dialogCts = new System.Threading.CancellationTokenSource();
                         using var linkedCts = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(ct, dialogCts.Token);
-                        System.Threading.Tasks.Task<bool> dialogTask = ChooseBetweenAsyncAndNonAsyncDialogTask(timeoutMessage, linkedCts);
+                        System.Threading.Tasks.Task<bool> dialogTask = ChooseBetweenAsyncAndNonAsyncDialogTask(timeoutMessage, linkedCts.Token);
                         var response = await ProcessTimeOutDialog(dialogTask, dialogCts);
 
                         switch (response.Response)
@@ -412,10 +412,10 @@ public partial class PresentationLayer//:IAnswerable
 
         Answers.Answer TimedOutResponse() => Answers.Answer.Prepare(_answerService.Strings.TimeOutText).Error(string.Format(_answerService.Strings.TimeoutElapsedMessage, stopwatch.Elapsed.TotalSeconds));
 
-        System.Threading.Tasks.Task<bool> ChooseBetweenAsyncAndNonAsyncDialogTask(string s, System.Threading.CancellationTokenSource linkedCts) =>
-         _answerService.HasTimeOutAsyncDialog ? _answerService.AskYesNoToWaitAsync(s, linkedCts.Token) :
+        System.Threading.Tasks.Task<bool> ChooseBetweenAsyncAndNonAsyncDialogTask(string s, System.Threading.CancellationToken linkedCts) =>
+         _answerService.HasTimeOutAsyncDialog ? _answerService.AskYesNoToWaitAsync(s, linkedCts) :
                 System.Threading.Tasks.Task.Run(() =>
-                    _answerService.AskYesNoToWait(s, linkedCts.Token), ct);
+                    _answerService.AskYesNoToWait(s, linkedCts), ct);
         
 
         async System.Threading.Tasks.Task<(Answers.Dialogs.DialogResponse Response, Answers.Answer Answer)> ProcessAnswerAsync(Answers.Answer localAnswer)
@@ -424,16 +424,9 @@ public partial class PresentationLayer//:IAnswerable
             {
                 return (Answers.Dialogs.DialogResponse.Answered,localAnswer);
             }
-            System.Boolean userResponse;
-            if (_answerService.HasYesNoAsyncDialog)
-            {
-                userResponse = await _answerService.AskYesNoAsync(localAnswer.Message, ct);
-            }
-            else
-            {
-                userResponse = _answerService.AskYesNo(localAnswer.Message);
-            }
-
+            System.Boolean userResponse= _answerService.HasYesNoAsyncDialog? await _answerService.AskYesNoAsync(localAnswer.Message, ct) :
+                _answerService.AskYesNo(localAnswer.Message);
+            
             if (userResponse)
             {
                 methodTask = method();

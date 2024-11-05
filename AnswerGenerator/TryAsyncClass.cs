@@ -12,11 +12,11 @@ namespace AnswerGenerator
     {
 
         private async System.Threading.Tasks.Task<Answers.Answer> TryAsync(
-       System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
-       System.Threading.CancellationToken ct,
-       [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
-       [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
-       [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
+      System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
+      System.Threading.CancellationToken ct,
+      [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
+      [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
+      [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
         {
             var timeoutValue = _answerService.HasTimeout ? _answerService.GetTimeout() : System.TimeSpan.Zero; // Pobiera i resetuje timeout
             System.Threading.Tasks.Task<Answers.Answer> methodTask = method();
@@ -49,7 +49,7 @@ namespace AnswerGenerator
                             // async dialog has priority, but sync will run if async is not available
                             using var dialogCts = new System.Threading.CancellationTokenSource();
                             using var linkedCts = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(ct, dialogCts.Token);
-                            System.Threading.Tasks.Task<bool> dialogTask = ChooseBetweenAsyncAndNonAsyncDialogTask(timeoutMessage, linkedCts);
+                            System.Threading.Tasks.Task<bool> dialogTask = ChooseBetweenAsyncAndNonAsyncDialogTask(timeoutMessage, linkedCts.Token);
                             var response = await ProcessTimeOutDialog(dialogTask, dialogCts);
 
                             switch (response.Response)
@@ -116,10 +116,10 @@ namespace AnswerGenerator
 
             Answers.Answer TimedOutResponse() => Answers.Answer.Prepare(_answerService.Strings.TimeOutText).Error(string.Format(_answerService.Strings.TimeoutElapsedMessage, stopwatch.Elapsed.TotalSeconds));
 
-            System.Threading.Tasks.Task<bool> ChooseBetweenAsyncAndNonAsyncDialogTask(string s, System.Threading.CancellationTokenSource linkedCts) =>
-             _answerService.HasTimeOutAsyncDialog ? _answerService.AskYesNoToWaitAsync(s, linkedCts.Token) :
+            System.Threading.Tasks.Task<bool> ChooseBetweenAsyncAndNonAsyncDialogTask(string s, System.Threading.CancellationToken linkedCts) =>
+             _answerService.HasTimeOutAsyncDialog ? _answerService.AskYesNoToWaitAsync(s, linkedCts) :
                     System.Threading.Tasks.Task.Run(() =>
-                        _answerService.AskYesNoToWait(s, linkedCts.Token), ct);
+                        _answerService.AskYesNoToWait(s, linkedCts), ct);
 
 
             async System.Threading.Tasks.Task<(Answers.Dialogs.DialogResponse Response, Answers.Answer Answer)> ProcessAnswerAsync(Answers.Answer localAnswer)
@@ -128,15 +128,8 @@ namespace AnswerGenerator
                 {
                     return (Answers.Dialogs.DialogResponse.Answered, localAnswer);
                 }
-                System.Boolean userResponse;
-                if (_answerService.HasYesNoAsyncDialog)
-                {
-                    userResponse = await _answerService.AskYesNoAsync(localAnswer.Message, ct);
-                }
-                else
-                {
-                    userResponse = _answerService.AskYesNo(localAnswer.Message);
-                }
+                System.Boolean userResponse = _answerService.HasYesNoAsyncDialog ? await _answerService.AskYesNoAsync(localAnswer.Message, ct) :
+                    _answerService.AskYesNo(localAnswer.Message);
 
                 if (userResponse)
                 {
