@@ -46,39 +46,27 @@ namespace Answers.AnswerService
             Interlocked.Exchange(ref _dialog, dialog1);
             lock (_syncRoot)
             {
-                _state = new AnswerServiceState(
-                    hasYesNoDialog: _dialog.HasYesNo,
-                    hasYesNoAsyncDialog: _dialog.HasAsyncYesNo,
-                    hasTimeOutDialog: _dialog.HasTimeoutDialog,
-                    hasTimeOutAsyncDialog: _dialog.HasAsyncTimeoutDialog,
-                    hasLogger: true
-                );
+                _state = new AnswerServiceState(_dialog, _logger);
             }
         }
 
 
         public AnswerService()
         {
-            _state = new AnswerServiceState(false, false, false, false, false);
+            _state = new AnswerServiceState(null,null);
         }
 
         public AnswerService(ILogger logger) 
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _state = new AnswerServiceState(false, false, false, false, false);
+            _state = new AnswerServiceState(null,logger);
         }
 
         public AnswerService(IUserDialog dialog, ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _dialog = dialog ?? throw new ArgumentNullException(nameof(dialog));
-            _state = new AnswerServiceState(
-                hasYesNoDialog: dialog.HasYesNo,
-                hasYesNoAsyncDialog: dialog.HasAsyncYesNo,
-                hasTimeOutDialog: dialog.HasTimeoutDialog,
-                hasTimeOutAsyncDialog: dialog.HasAsyncTimeoutDialog,
-                hasLogger: true
-            );
+            _state = new AnswerServiceState(_dialog,_logger);
         }
 
 

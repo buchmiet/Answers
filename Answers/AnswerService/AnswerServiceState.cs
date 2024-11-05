@@ -1,24 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using Answers.Dialogs;
+using Microsoft.Extensions.Logging;
 
 namespace Answers.AnswerService
 {
-    public class AnswerServiceState(
-        bool hasYesNoDialog,
-        bool hasYesNoAsyncDialog,
-        bool hasTimeOutDialog,
-        bool hasTimeOutAsyncDialog,
-        bool hasLogger)
+    public class AnswerServiceState(IUserDialog dialog,ILogger logger
+        )
     {
         public TimeSpan TimeOut { get; set; } = TimeSpan.Zero;
         public bool HasTimeOut => TimeOut != TimeSpan.Zero;
 
-        public bool HasYesNoDialog { get; private set; } = hasYesNoDialog;
-        public bool HasYesNoAsyncDialog { get; private set; } = hasYesNoAsyncDialog;
-        public bool HasTimeOutDialog { get; private set; } = hasTimeOutDialog;
-        public bool HasTimeOutAsyncDialog { get; private set; } = hasTimeOutAsyncDialog;
-        public bool HasLogger { get; private set; } = hasLogger;
+        public bool HasYesNoDialog = dialog?.HasYesNo ?? false;
+        public bool HasYesNoAsyncDialog =dialog?.HasAsyncYesNo??false;
+        public bool HasTimeOutDialog = dialog?.HasTimeoutDialog ?? false;
+        public bool HasTimeOutAsyncDialog =dialog?.HasAsyncTimeoutDialog ?? false;
+        public bool HasLogger =logger is not null;
     }
 
 }

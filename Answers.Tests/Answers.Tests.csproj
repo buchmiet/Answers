@@ -9,10 +9,22 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="AnswerTests.cs" />
+    <Compile Remove="AnswerValueTests.cs" />
+    <Compile Remove="MessageAggregatorTests.cs" />
+    <Compile Remove="TestClassesForAnswerServiceTests.cs" />
+    <Compile Remove="TestClassForTryAsync.cs" />
+    <Compile Remove="TryAsyncTests.cs" />
     <Compile Remove="UserDialogStubTests.cs" />
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="AnswerTests.cs" />
+    <None Include="AnswerValueTests.cs" />
+    <None Include="MessageAggregatorTests.cs" />
+    <None Include="TestClassesForAnswerServiceTests.cs" />
+    <None Include="TestClassForTryAsync.cs" />
+    <None Include="TryAsyncTests.cs" />
     <None Include="UserDialogStubTests.cs" />
   </ItemGroup>
 

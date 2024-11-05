@@ -12,7 +12,7 @@ namespace Answers.AnswerService
         public AnswerServiceStrings Strings { get; } = new();
         private readonly object _syncRoot = new();
         private AnswerServiceState _state;
-        private  IUserDialog _dialog;
+        private IUserDialog _dialog;
         private readonly ILogger _logger;
         public bool HasTimeout => _state.HasTimeOut;
         public bool HasYesNoDialog => _state.HasYesNoDialog;
