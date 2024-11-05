@@ -453,49 +453,70 @@ namespace Answers.Tests
             [Fact]
             public void LogInfo_CallsLoggerInformation()
             {
-                // Arrange
-                var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(loggerMock.Object);
-                var message = "Test info message";
+            var loggerMock = new Mock<ILogger<AnswerService.AnswerService>>();
+            var answerService = new AnswerService.AnswerService(loggerMock.Object);
+            var message = "Test info message";
 
-                // Act
-                answerService.LogInfo(message);
+            // Act
+            answerService.LogInfo(message);
 
-                // Assert
-                loggerMock.Verify(l => l.LogInformation(message), Times.Once);
-            }
+            // Assert
+            loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Information,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains(message)),
+                    It.IsAny<Exception>(),
+                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)),
+                Times.Once);
+        }
 
-            [Fact]
-            public void LogWarning_CallsLoggerWarning()
-            {
-                // Arrange
-                var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(loggerMock.Object);
-                var message = "Test warning message";
+        [Fact]
+        public void LogWarning_CallsLoggerWarning()
+        {
+            // Arrange
+            var loggerMock = new Mock<ILogger<AnswerService.AnswerService>>();
+            var answerService = new AnswerService.AnswerService(loggerMock.Object);
+            var message = "Test warning message";
 
-                // Act
-                answerService.LogWarning(message);
+            // Act
+            answerService.LogWarning(message);
 
-                // Assert
-                loggerMock.Verify(l => l.LogWarning(message), Times.Once);
-            }
+            // Assert
+            loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Warning,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains(message)),
+                    It.IsAny<Exception>(),
+                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)),
+                Times.Once);
+        }
 
-            [Fact]
-            public void LogError_CallsLoggerError()
-            {
-                // Arrange
-                var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(loggerMock.Object);
-                var message = "Test error message";
+        [Fact]
+        public void LogError_CallsLoggerError()
+        {
+            // Arrange
+            var loggerMock = new Mock<ILogger<AnswerService.AnswerService>>();
+            var answerService = new AnswerService.AnswerService(loggerMock.Object);
+            var message = "Test error message";
 
-                // Act
-                answerService.LogError(message);
+            // Act
+            answerService.LogError(message);
 
-                // Assert
-                loggerMock.Verify(l => l.LogError(message), Times.Once);
-            }
+            // Assert
+            loggerMock.Verify(
+                l => l.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((v, t) => v.ToString().Contains(message)),
+                    It.IsAny<Exception>(),
+                    It.Is<Func<It.IsAnyType, Exception, string>>((v, t) => true)),
+                Times.Once);
+        }
 
-            [Fact]
+
+        [Fact]
             public void AddDialogNull_ThrowsArgumentNullException()
             {
                 // Arrange

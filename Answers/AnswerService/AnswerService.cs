@@ -43,6 +43,10 @@ namespace Answers.AnswerService
         
         public void AddDialog(IUserDialog dialog1)
         {
+            if (dialog1 == null)
+            {
+                throw new ArgumentNullException(nameof(dialog1));
+            }
             Interlocked.Exchange(ref _dialog, dialog1);
             lock (_syncRoot)
             {
