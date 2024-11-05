@@ -4,7 +4,7 @@ using System.Text;
 using Answers.Dialogs;
 using Microsoft.Extensions.Logging;
 
-namespace Answers.AnswerService
+namespace Answers
 {
     public class AnswerServiceState(IUserDialog dialog,ILogger logger
         )

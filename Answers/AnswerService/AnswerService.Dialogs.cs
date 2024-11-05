@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace Answers.AnswerService
+namespace Answers
 {
     public partial class AnswerService
     {

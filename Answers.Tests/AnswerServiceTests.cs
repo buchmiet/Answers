@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Answers.Dialogs;
-using Answers.AnswerService;
+using Answers;
 
 namespace Answers.Tests
 {
@@ -17,7 +17,7 @@ namespace Answers.Tests
             public void Constructor_WithNullLogger_ThrowsArgumentNullException()
             {
                 // Arrange & Act & Assert
-                Assert.Throws<ArgumentNullException>(() => new AnswerService.AnswerService(null));
+                Assert.Throws<ArgumentNullException>(() => new Answers.AnswerService(null));
             }
 
             [Fact]
@@ -28,7 +28,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasYesNo).Returns(true);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(dialogMock.Object, loggerMock.Object);
+                var answerService = new Answers.AnswerService(dialogMock.Object, loggerMock.Object);
 
                 // Act
                 var result = answerService.HasYesNoDialog;
@@ -45,7 +45,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasTimeoutDialog).Returns(true);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(dialogMock.Object, loggerMock.Object);
+                var answerService = new Answers.AnswerService(dialogMock.Object, loggerMock.Object);
 
                 // Act
                 var result = answerService.HasTimeOutDialog;
@@ -62,7 +62,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasAsyncTimeoutDialog).Returns(true);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(dialogMock.Object, loggerMock.Object);
+                var answerService = new Answers.AnswerService(dialogMock.Object, loggerMock.Object);
 
                 // Act
                 var result = answerService.HasTimeOutAsyncDialog;
@@ -75,7 +75,7 @@ namespace Answers.Tests
             public void HasTimeout_WhenTimeoutIsSet_ReturnsTrue()
             {
                 // Arrange
-                var answerService = new AnswerService.AnswerService();
+                var answerService = new Answers.AnswerService();
                 var timeout = TimeSpan.FromSeconds(30);
                 answerService.SetTimeout(timeout);
 
@@ -90,7 +90,7 @@ namespace Answers.Tests
             public void HasTimeout_WhenTimeoutIsZero_ReturnsFalse()
             {
                 // Arrange
-                var answerService = new AnswerService.AnswerService();
+                var answerService = new Answers.AnswerService();
 
                 // Act
                 var result = answerService.HasTimeout;
@@ -107,7 +107,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasYesNo).Returns(true);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(loggerMock.Object);
+                var answerService = new Answers.AnswerService(loggerMock.Object);
 
                 // Act
                 answerService.AddDialog(dialogMock.Object);
@@ -124,7 +124,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasYesNo).Returns(false);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(loggerMock.Object);
+                var answerService = new Answers.AnswerService(loggerMock.Object);
 
                 // Act
                 answerService.AddDialog(dialogMock.Object);
@@ -141,7 +141,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasAsyncYesNo).Returns(true);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(loggerMock.Object);
+                var answerService = new Answers.AnswerService(loggerMock.Object);
 
                 // Act
                 answerService.AddDialog(dialogMock.Object);
@@ -158,7 +158,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasAsyncYesNo).Returns(false);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(loggerMock.Object);
+                var answerService = new Answers.AnswerService(loggerMock.Object);
 
                 // Act
                 answerService.AddDialog(dialogMock.Object);
@@ -175,7 +175,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasTimeoutDialog).Returns(true);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(loggerMock.Object);
+                var answerService = new Answers.AnswerService(loggerMock.Object);
 
                 // Act
                 answerService.AddDialog(dialogMock.Object);
@@ -192,7 +192,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasTimeoutDialog).Returns(false);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(loggerMock.Object);
+                var answerService = new Answers.AnswerService(loggerMock.Object);
 
                 // Act
                 answerService.AddDialog(dialogMock.Object);
@@ -209,7 +209,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasAsyncTimeoutDialog).Returns(true);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(loggerMock.Object);
+                var answerService = new Answers.AnswerService(loggerMock.Object);
 
                 // Act
                 answerService.AddDialog(dialogMock.Object);
@@ -226,7 +226,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasAsyncTimeoutDialog).Returns(false);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(loggerMock.Object);
+                var answerService = new Answers.AnswerService(loggerMock.Object);
 
                 // Act
                 answerService.AddDialog(dialogMock.Object);
@@ -247,7 +247,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasAsyncTimeoutDialog).Returns(true);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(loggerMock.Object);
+                var answerService = new Answers.AnswerService(loggerMock.Object);
 
                 // Act
                 answerService.AddDialog(dialogMock.Object);
@@ -271,7 +271,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasAsyncTimeoutDialog).Returns(false);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(loggerMock.Object);
+                var answerService = new Answers.AnswerService(loggerMock.Object);
 
                 // Act
                 answerService.AddDialog(dialogMock.Object);
@@ -291,7 +291,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasYesNo).Returns(true);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(dialogMock.Object, loggerMock.Object);
+                var answerService = new Answers.AnswerService(dialogMock.Object, loggerMock.Object);
 
                 // Act
                 var result = answerService.HasYesNoDialog;
@@ -308,7 +308,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasYesNo).Returns(false);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(dialogMock.Object, loggerMock.Object);
+                var answerService = new Answers.AnswerService(dialogMock.Object, loggerMock.Object);
 
                 // Act
                 var result = answerService.HasYesNoDialog;
@@ -325,7 +325,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasAsyncYesNo).Returns(true);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(dialogMock.Object, loggerMock.Object);
+                var answerService = new Answers.AnswerService(dialogMock.Object, loggerMock.Object);
 
                 // Act
                 var result = answerService.HasYesNoAsyncDialog;
@@ -342,7 +342,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasAsyncYesNo).Returns(false);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(dialogMock.Object, loggerMock.Object);
+                var answerService = new Answers.AnswerService(dialogMock.Object, loggerMock.Object);
 
                 // Act
                 var result = answerService.HasYesNoAsyncDialog;
@@ -359,7 +359,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasTimeoutDialog).Returns(true);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(dialogMock.Object, loggerMock.Object);
+                var answerService = new Answers.AnswerService(dialogMock.Object, loggerMock.Object);
 
                 // Act
                 var result = answerService.HasTimeOutDialog;
@@ -376,7 +376,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasTimeoutDialog).Returns(false);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(dialogMock.Object, loggerMock.Object);
+                var answerService = new Answers.AnswerService(dialogMock.Object, loggerMock.Object);
 
                 // Act
                 var result = answerService.HasTimeOutDialog;
@@ -393,7 +393,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasAsyncTimeoutDialog).Returns(true);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(dialogMock.Object, loggerMock.Object);
+                var answerService = new Answers.AnswerService(dialogMock.Object, loggerMock.Object);
 
                 // Act
                 var result = answerService.HasTimeOutAsyncDialog;
@@ -410,7 +410,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.HasAsyncTimeoutDialog).Returns(false);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(dialogMock.Object, loggerMock.Object);
+                var answerService = new Answers.AnswerService(dialogMock.Object, loggerMock.Object);
 
                 // Act
                 var result = answerService.HasTimeOutAsyncDialog;
@@ -423,7 +423,7 @@ namespace Answers.Tests
             public void SetTimeout_StoresTimeoutValue()
             {
                 // Arrange
-                var answerService = new AnswerService.AnswerService();
+                var answerService = new Answers.AnswerService();
                 var timeout = TimeSpan.FromSeconds(30);
 
                 // Act
@@ -437,7 +437,7 @@ namespace Answers.Tests
             public void GetTimeout_ReturnsAndResetsTimeout()
             {
                 // Arrange
-                var answerService = new AnswerService.AnswerService();
+                var answerService = new Answers.AnswerService();
                 var timeout = TimeSpan.FromSeconds(30);
                 answerService.SetTimeout(timeout);
 
@@ -453,8 +453,8 @@ namespace Answers.Tests
             [Fact]
             public void LogInfo_CallsLoggerInformation()
             {
-            var loggerMock = new Mock<ILogger<AnswerService.AnswerService>>();
-            var answerService = new AnswerService.AnswerService(loggerMock.Object);
+            var loggerMock = new Mock<ILogger<Answers.AnswerService>>();
+            var answerService = new Answers.AnswerService(loggerMock.Object);
             var message = "Test info message";
 
             // Act
@@ -475,8 +475,8 @@ namespace Answers.Tests
         public void LogWarning_CallsLoggerWarning()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<AnswerService.AnswerService>>();
-            var answerService = new AnswerService.AnswerService(loggerMock.Object);
+            var loggerMock = new Mock<ILogger<Answers.AnswerService>>();
+            var answerService = new Answers.AnswerService(loggerMock.Object);
             var message = "Test warning message";
 
             // Act
@@ -497,8 +497,8 @@ namespace Answers.Tests
         public void LogError_CallsLoggerError()
         {
             // Arrange
-            var loggerMock = new Mock<ILogger<AnswerService.AnswerService>>();
-            var answerService = new AnswerService.AnswerService(loggerMock.Object);
+            var loggerMock = new Mock<ILogger<Answers.AnswerService>>();
+            var answerService = new Answers.AnswerService(loggerMock.Object);
             var message = "Test error message";
 
             // Act
@@ -521,7 +521,7 @@ namespace Answers.Tests
             {
                 // Arrange
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(loggerMock.Object);
+                var answerService = new Answers.AnswerService(loggerMock.Object);
 
                 // Act & Assert
                 Assert.Throws<ArgumentNullException>(() => answerService.AddDialog(null));
@@ -533,7 +533,7 @@ namespace Answers.Tests
                 // Arrange
                 var dialogMock = new Mock<IUserDialog>();
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(dialogMock.Object, loggerMock.Object);
+                var answerService = new Answers.AnswerService(dialogMock.Object, loggerMock.Object);
                 var message = "Test message";
 
                 // Act
@@ -549,7 +549,7 @@ namespace Answers.Tests
                 // Arrange
                 var dialogMock = new Mock<IUserDialog>();
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(dialogMock.Object, loggerMock.Object);
+                var answerService = new Answers.AnswerService(dialogMock.Object, loggerMock.Object);
                 var message = "Test message";
                 var cancellationToken = new CancellationToken();
 
@@ -568,7 +568,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.YesNoAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(dialogMock.Object, loggerMock.Object);
+                var answerService = new Answers.AnswerService(dialogMock.Object, loggerMock.Object);
                 var message = "Test async message";
                 var cancellationToken = new CancellationToken();
 
@@ -587,7 +587,7 @@ namespace Answers.Tests
                 dialogMock.Setup(d => d.ContinueTimedOutYesNoAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(dialogMock.Object, loggerMock.Object);
+                var answerService = new Answers.AnswerService(dialogMock.Object, loggerMock.Object);
                 var message = "Test async message";
                 var cancellationToken = new CancellationToken();
 
@@ -610,7 +610,7 @@ namespace Answers.Tests
                           .ThrowsAsync(new TaskCanceledException());
 
                 var loggerMock = new Mock<ILogger>();
-                var answerService = new AnswerService.AnswerService(dialogMock.Object, loggerMock.Object);
+                var answerService = new Answers.AnswerService(dialogMock.Object, loggerMock.Object);
 
                 // Act & Assert
                 await Assert.ThrowsAsync<TaskCanceledException>(() =>

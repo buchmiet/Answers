@@ -5,7 +5,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Answers.AnswerService;
+using Answers;
 using Moq;
 
 namespace Answers.Tests

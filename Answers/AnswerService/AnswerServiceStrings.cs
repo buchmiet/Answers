@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Answers.AnswerService
+namespace Answers
 {
     public class AnswerServiceStrings
     {

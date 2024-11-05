@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace Answers.AnswerService
+namespace Answers
 {
     public partial class AnswerService
     {

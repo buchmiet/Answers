@@ -13,7 +13,6 @@ using static AnswerGeneratorTests.TestSourcesProvider;
 using FluentAssertions;
 using static Microsoft.CodeAnalysis.DiagnosticSeverity;
 using System.Reflection.Emit;
-using Answers.AnswerService;
 
 namespace AnswerGeneratorTests
 {

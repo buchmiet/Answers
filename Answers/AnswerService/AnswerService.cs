@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Answers.Dialogs;
 using Microsoft.Extensions.Logging;
 
-namespace Answers.AnswerService
+namespace Answers
 {
     public interface IAnswerService
     {

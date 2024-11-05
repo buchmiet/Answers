@@ -8,7 +8,6 @@ using Spectre.Console;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Reflection;
 using System.Text;
-using Answers.AnswerService;
 
 var loggerFactory = LoggerFactory.Create(builder =>
 {

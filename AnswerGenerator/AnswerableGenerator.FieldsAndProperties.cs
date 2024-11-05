@@ -6,7 +6,7 @@ namespace AnswerGenerator
     partial class AnswerableGenerator
     {
 
-        public string ServiceInterface => "Answers.AnswerService.IAnswerService";
+        public string ServiceInterface => "Answers.IAnswerService";
         public string ClassInterfaceName => "Answers.IAnswerable";
         public string ConstructorServiceField => "answerService";
 
