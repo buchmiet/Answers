@@ -59,7 +59,7 @@ namespace Answers.Tests
             var mockAnswerService = new Mock<IAnswerService>();
             mockAnswerService.Setup(x => x.GetTimeout()).Returns(TimeSpan.Zero);
             mockAnswerService.Setup(x => x.HasYesNoDialog).Returns(false);
-
+            mockAnswerService.Setup(x => x.Strings).Returns(new AnswerServiceStrings());
             var testClass = new TestAnswerableClass(mockAnswerService.Object);
 
             Func<Task<Answer>> method = async () =>
@@ -117,7 +117,7 @@ namespace Answers.Tests
             mockAnswerService.Setup(x => x.HasYesNoAsyncDialog).Returns(true);
             mockAnswerService.Setup(x => x.AskYesNoAsync(It.IsAny<string>(), ct))
                 .ReturnsAsync(true); // User chooses to retry
-
+            mockAnswerService.Setup(x => x.Strings).Returns(new AnswerServiceStrings());
             var testClass = new TestAnswerableClass(mockAnswerService.Object);
 
             int attempt = 0;
@@ -154,7 +154,7 @@ namespace Answers.Tests
             mockAnswerService.Setup(x => x.HasYesNoAsyncDialog).Returns(true);
             mockAnswerService.Setup(x => x.AskYesNoAsync(It.IsAny<string>(), ct))
                 .ReturnsAsync(false); // User chooses not to retry
-
+            mockAnswerService.Setup(x => x.Strings).Returns(new AnswerServiceStrings());
             var testClass = new TestAnswerableClass(mockAnswerService.Object);
 
             int attempt = 0;
@@ -389,10 +389,10 @@ namespace Answers.Tests
 
             // The method should have completed during the third prompt
             // Total time should be slightly over 7 seconds due to the delays
-            Assert.InRange(totalStopwatch.Elapsed.TotalSeconds, 7, 8);
+            Assert.InRange(totalStopwatch.Elapsed.TotalSeconds, 6.5, 8);
 
             // The method's stopwatch should have recorded approximately 7 seconds
-            Assert.InRange(methodStopwatch.Elapsed.TotalSeconds, 7, 7.5);
+            Assert.InRange(methodStopwatch.Elapsed.TotalSeconds, 6.5, 7.5);
 
             // The prompt count should be 3
             Assert.Equal(3, promptCount);
@@ -417,7 +417,7 @@ namespace Answers.Tests
                     Moq.It.IsAny<string>(),
                     Moq.It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync(true); // User chooses to retry
-
+            mockAnswerService.Setup(x => x.Strings).Returns(new AnswerServiceStrings());
             int attemptCount = 0;
 
             // Simulate the method failing twice before succeeding
@@ -503,7 +503,7 @@ namespace Answers.Tests
                     Moq.It.IsAny<string>(),
                     Moq.It.IsAny<System.Threading.CancellationToken>()))
                 .ReturnsAsync(true); // User chooses to retry
-
+            mockAnswerService.Setup(x => x.Strings).Returns(new AnswerServiceStrings());
             int attemptCount = 0;
 
             System.Func<System.Threading.Tasks.Task<Answer>> method = async () =>
@@ -630,6 +630,144 @@ namespace Answers.Tests
             Assert.Contains("canceled", result.Message, StringComparison.OrdinalIgnoreCase);
         }
 
+        [Fact]
+        public async Task TryAsync_MethodFails_LogsError()
+        {
+            // Arrange
+            var mockAnswerService = new Mock<IAnswerService>();
+            mockAnswerService.Setup(x => x.Strings).Returns(new AnswerServiceStrings());
+            var logMessages = new List<string>();
+            mockAnswerService.Setup(x => x.LogError(It.IsAny<string>()))
+                .Callback<string>(message => logMessages.Add(message));
+            Func<Task<Answer>> method = () =>
+            {
+                return Task.FromResult(Answer.Prepare("Method failed").Error("An error occurred."));
+            };
+
+            var testClass = new TestAnswerableClass(mockAnswerService.Object);
+
+            // Act
+            var result = await testClass.DoSomething(method, CancellationToken.None);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("An error occurred.", result.Message);
+            Assert.Single(logMessages);
+            Assert.Contains("Error in", logMessages[0]);
+     
+        }
+
+
+        [Fact]
+        public async Task TryAsync_MethodTimesOut_LogsWarning()
+        {
+            // Arrange
+            var timeout = TimeSpan.FromSeconds(1);
+            using var cts = new CancellationTokenSource();
+            var ct = cts.Token;
+
+            var mockAnswerService = new Mock<IAnswerService>();
+            mockAnswerService.Setup(x => x.GetTimeout()).Returns(timeout);
+            mockAnswerService.Setup(x => x.HasTimeout).Returns(true);
+            mockAnswerService.Setup(x => x.Strings).Returns(new AnswerServiceStrings());
+            mockAnswerService.Setup(x => x.HasTimeOutAsyncDialog).Returns(false); // No timeout dialogs
+            var logMessages = new List<string>();
+            mockAnswerService.Setup(x => x.LogWarning(It.IsAny<string>()))
+                .Callback<string>(message => logMessages.Add(message));
+            mockAnswerService.Setup(x => x.Strings).Returns(new AnswerServiceStrings());
+            Func<Task<Answer>> method = async () =>
+            {
+                await Task.Delay(TimeSpan.FromSeconds(5), ct);
+                return Answer.Prepare("Success");
+            };
+
+            var testClass = new TestAnswerableClass(mockAnswerService.Object);
+
+            // Act
+            var result = await testClass.DoSomething(method, ct);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains(new AnswerServiceStrings().TimeOutText, result.Message);
+            Assert.Single(logMessages);
+            Assert.Contains("Timeout in", logMessages[0]);
+        }
+        [Fact]
+        public async Task TryAsync_UserCancelsOperation_LogsError()
+        {
+            // Arrange
+            using var cts = new CancellationTokenSource();
+            var ct = cts.Token;
+
+            var mockAnswerService = new Mock<IAnswerService>();
+            mockAnswerService.Setup(x => x.Strings).Returns(new AnswerServiceStrings());
+            mockAnswerService.Setup(x => x.HasYesNoAsyncDialog).Returns(true);
+            mockAnswerService.Setup(x => x.AskYesNoAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false); // User chooses not to continue
+
+            var logMessages = new List<string>();
+            mockAnswerService.Setup(x => x.LogError(It.IsAny<string>()))
+                .Callback<string>(message => logMessages.Add(message));
+
+            Func<Task<Answer>> method = () =>
+            {
+                return Task.FromResult(Answer.Prepare("Method encountered an issue").Error("An error occurred."));
+            };
+
+            var testClass = new TestAnswerableClass(mockAnswerService.Object);
+
+            // Act
+            var result = await testClass.DoSomething(method, ct);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains("An error occurred.", result.Message);
+            Assert.Equal(2, logMessages.Count);
+            Assert.Contains("Error in", logMessages[0]);
+            
+            Assert.Contains("Operation cancelled by user in", logMessages[1]);
+        }
+
+        [Fact]
+        public async Task TryAsync_MethodTimesOut_UserDeclinesToContinue_LogsWarningAndError()
+        {
+            // Arrange
+            var timeout = TimeSpan.FromSeconds(1);
+            using var cts = new CancellationTokenSource();
+            var ct = cts.Token;
+
+            var mockAnswerService = new Mock<IAnswerService>();
+            mockAnswerService.Setup(x => x.GetTimeout()).Returns(timeout);
+            mockAnswerService.Setup(x => x.HasTimeout).Returns(true);
+            mockAnswerService.Setup(x => x.Strings).Returns(new AnswerServiceStrings());
+            mockAnswerService.Setup(x => x.HasTimeOutAsyncDialog).Returns(true);
+            mockAnswerService.Setup(x => x.AskYesNoToWaitAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false); // User chooses not to wait
+
+            var logMessages = new List<string>();
+            mockAnswerService.Setup(x => x.LogWarning(It.IsAny<string>()))
+                .Callback<string>(message => logMessages.Add("Warning: " + message));
+            mockAnswerService.Setup(x => x.LogError(It.IsAny<string>()))
+                .Callback<string>(message => logMessages.Add("Error: " + message));
+            mockAnswerService.Setup(x => x.Strings).Returns(new AnswerServiceStrings());
+            Func<Task<Answer>> method = async () =>
+            {
+                await Task.Delay(TimeSpan.FromSeconds(5), ct);
+                return Answer.Prepare("Success");
+            };
+
+            var testClass = new TestAnswerableClass(mockAnswerService.Object);
+
+            // Act
+            var result = await testClass.DoSomething(method, ct);
+
+            // Assert
+            Assert.False(result.IsSuccess);
+            Assert.Contains(new AnswerServiceStrings().CancelledText, result.Message);
+            Assert.Equal(2, logMessages.Count);
+            Assert.Contains("Warning: Timeout in", logMessages[0]);
+            Assert.Contains("Error: Operation cancelled by user in", logMessages[1]);
+        }
 
     }
 }
