@@ -314,7 +314,8 @@ public partial class PresentationLayer//:IAnswerable
       [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
       [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
     {
-        var timeoutValue = _answerService.HasTimeout ? _answerService.GetTimeout() : System.TimeSpan.Zero; // Pobiera i resetuje timeout
+   
+    var timeoutValue = _answerService.HasTimeout ? _answerService.GetTimeout() : System.TimeSpan.Zero; // Pobiera i resetuje timeout
         System.Threading.Tasks.Task<Answers.Answer> methodTask = method();
         // repeat until method returns a successful answer or dialog is concluded
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -331,7 +332,15 @@ public partial class PresentationLayer//:IAnswerable
                 }
                 catch (System.TimeoutException)
                 {
-                    // Wystąpił timeout
+                    string warningMessage = string.Format(
+                        _answerService.Strings.WarningMessageFormat,
+                        callerName,
+                        System.IO.Path.GetFileName(callerFilePath),
+                        callerLineNumber,
+                        "Operation timed out"
+                    );
+                    _answerService.LogWarning(warningMessage);
+
                     System.String action = string.Format(
                         _answerService.Strings.CallerMessageFormat,
                         callerName,
@@ -405,8 +414,6 @@ public partial class PresentationLayer//:IAnswerable
                 case Answers.Dialogs.DialogResponse.Continue:
                     continue;
             }
-
-
         }
 
 
@@ -420,10 +427,22 @@ public partial class PresentationLayer//:IAnswerable
 
         async System.Threading.Tasks.Task<(Answers.Dialogs.DialogResponse Response, Answers.Answer Answer)> ProcessAnswerAsync(Answers.Answer localAnswer)
         {
+            if (!localAnswer.IsSuccess)
+            {
+                string errorMessage = string.Format(
+                    _answerService.Strings.ErrorMessageFormat,
+                    callerName,
+                    System.IO. Path.GetFileName(callerFilePath),
+                    callerLineNumber,
+                    localAnswer.Message
+                );
+                _answerService.LogError(errorMessage);
+            }
             if (localAnswer.IsSuccess || localAnswer.DialogConcluded || !(_answerService.HasYesNoDialog || _answerService.HasYesNoAsyncDialog))
             {
                 return (Answers.Dialogs.DialogResponse.Answered,localAnswer);
             }
+            
             System.Boolean userResponse= _answerService.HasYesNoAsyncDialog? await _answerService.AskYesNoAsync(localAnswer.Message, ct) :
                 _answerService.AskYesNo(localAnswer.Message);
             
@@ -434,6 +453,13 @@ public partial class PresentationLayer//:IAnswerable
             }
 
             localAnswer.ConcludeDialog();
+            string userCancelledMessage = string.Format(
+                _answerService.Strings.UserCancelledMessageFormat,
+                callerName,
+                System.IO.Path.GetFileName(callerFilePath),
+                callerLineNumber
+            );
+            _answerService.LogError(userCancelledMessage);
             return (Answers.Dialogs.DialogResponse.DoNotRepeat,localAnswer); // Użytkownik wybrał "No", kończymy
         }
 
@@ -458,12 +484,25 @@ public partial class PresentationLayer//:IAnswerable
                 {
                     return (Answers.Dialogs.DialogResponse.Continue, null);
                 }
-
+                string userCancelledMessage = string.Format(
+                    _answerService.Strings.UserCancelledMessageFormat,
+                    callerName,
+                    System.IO.Path.GetFileName(callerFilePath),
+                    callerLineNumber
+                );
+                _answerService.LogError(userCancelledMessage);
                 return (Answers.Dialogs.DialogResponse.DoNotWait,
                     Answers.Answer.Prepare(_answerService.Strings.CancelledText).Error(_answerService.Strings.TimeoutError).ConcludeDialog());
             }
             catch (System.OperationCanceledException)
             {
+                string errorMessage = string.Format(
+                    _answerService.Strings.UserCancelledMessageFormat,
+                    callerName,
+                    System.IO.Path.GetFileName(callerFilePath),
+                    callerLineNumber
+                );
+                _answerService.LogError(errorMessage);
                 return (Answers.Dialogs.DialogResponse.Cancel,
                     Answers.Answer.Prepare(_answerService.Strings.CancelMessage).Error(_answerService.Strings.CancelMessage).ConcludeDialog());
             }

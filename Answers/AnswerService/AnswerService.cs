@@ -28,7 +28,6 @@ namespace Answers
 
     public partial class AnswerService : IAnswerService
     {
-     
 
         public TimeSpan GetTimeout()
         {
