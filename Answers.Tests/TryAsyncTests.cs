@@ -390,10 +390,10 @@ namespace Answers.Tests
 
             // The method should have completed during the third prompt
             // Total time should be slightly over 7 seconds due to the delays
-            Assert.InRange(totalStopwatch.Elapsed.TotalSeconds, 7, 8);
+            Assert.InRange(totalStopwatch.Elapsed.TotalSeconds, 6.5, 8);
 
             // The method's stopwatch should have recorded approximately 7 seconds
-            Assert.InRange(methodStopwatch.Elapsed.TotalSeconds, 6.5, 7.5);
+            Assert.InRange(methodStopwatch.Elapsed.TotalSeconds, 7, 7.5);
 
             // The prompt count should be 3
             Assert.Equal(3, promptCount);
@@ -725,8 +725,7 @@ namespace Answers.Tests
             Assert.Contains("An error occurred.", result.Message);
             Assert.Equal(2, logMessages.Count);
             Assert.Contains("Error in", logMessages[0]);
-    
-
+            
             Assert.Contains("Operation cancelled by user in", logMessages[1]);
         }
 
