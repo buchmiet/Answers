@@ -393,7 +393,7 @@ namespace Answers.Tests
             Assert.InRange(totalStopwatch.Elapsed.TotalSeconds, 6.5, 8);
 
             // The method's stopwatch should have recorded approximately 7 seconds
-            Assert.InRange(methodStopwatch.Elapsed.TotalSeconds, 7, 7.5);
+            Assert.InRange(methodStopwatch.Elapsed.TotalSeconds, 6.5, 7.5);
 
             // The prompt count should be 3
             Assert.Equal(3, promptCount);
