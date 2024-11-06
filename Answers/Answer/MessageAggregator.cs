@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Answers
+namespace Answers.Answer
 {
     public class MessageAggregator
     {
@@ -28,7 +28,7 @@ namespace Answers
                     Actions.Add(action);
                     break;
             }
-        } 
+        }
 
         public void AddActions(IEnumerable<string> actions) => Actions.AddRange(actions);
     }

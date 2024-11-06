@@ -8,6 +8,7 @@ using Spectre.Console;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 using System.Reflection;
 using System.Text;
+using Answers.Answer;
 
 var loggerFactory = LoggerFactory.Create(builder =>
 {
@@ -307,15 +308,15 @@ await presentationLayer.ExecuteConcurrentOperations(new CancellationToken());
 
 public partial class PresentationLayer//:IAnswerable
 {
-    private async System.Threading.Tasks.Task<Answers.Answer> TryAsync(
-      System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
+    private async System.Threading.Tasks.Task<Answer> TryAsync(
+      System.Func<System.Threading.Tasks.Task<Answer>> method,
       System.Threading.CancellationToken ct,
       [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
       [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
       [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
     {
         var timeoutValue = _answerService.HasTimeout ? _answerService.GetTimeout() : System.TimeSpan.Zero; // Pobiera i resetuje timeout
-        System.Threading.Tasks.Task<Answers.Answer> methodTask = method();
+        System.Threading.Tasks.Task<Answer> methodTask = method();
         // repeat until method returns a successful answer or dialog is concluded
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         stopwatch.Start();
@@ -324,7 +325,7 @@ public partial class PresentationLayer//:IAnswerable
             //AnswerService has timeout set, so we need to wait for the method to complete or timeout to occur
             if (timeoutValue != System.TimeSpan.Zero)
             {
-                Answers.Answer answer;
+                Answer answer;
                 try
                 {
                     answer = await methodTask.WaitAsync(timeoutValue, ct);
@@ -375,7 +376,7 @@ public partial class PresentationLayer//:IAnswerable
                 }
                 catch (System.OperationCanceledException)
                 {
-                    return Answers.Answer.Prepare(_answerService.Strings.CancelledText).Error(_answerService.Strings.CancelMessage);
+                    return Answer.Prepare(_answerService.Strings.CancelledText).Error(_answerService.Strings.CancelMessage);
                 }
 
                 var responseReceivedWithinTimeout = await ProcessAnswerAsync(answer);
@@ -410,7 +411,7 @@ public partial class PresentationLayer//:IAnswerable
         }
 
 
-        Answers.Answer TimedOutResponse() => Answers.Answer.Prepare(_answerService.Strings.TimeOutText).Error(string.Format(_answerService.Strings.TimeoutElapsedMessage, stopwatch.Elapsed.TotalSeconds));
+        Answer TimedOutResponse() => Answer.Prepare(_answerService.Strings.TimeOutText).Error(string.Format(_answerService.Strings.TimeoutElapsedMessage, stopwatch.Elapsed.TotalSeconds));
 
         System.Threading.Tasks.Task<bool> ChooseBetweenAsyncAndNonAsyncDialogTask(string s, System.Threading.CancellationToken linkedCts) =>
          _answerService.HasTimeOutAsyncDialog ? _answerService.AskYesNoToWaitAsync(s, linkedCts) :
@@ -418,7 +419,7 @@ public partial class PresentationLayer//:IAnswerable
                     _answerService.AskYesNoToWait(s, linkedCts), ct);
         
 
-        async System.Threading.Tasks.Task<(Answers.Dialogs.DialogResponse Response, Answers.Answer Answer)> ProcessAnswerAsync(Answers.Answer localAnswer)
+        async System.Threading.Tasks.Task<(Answers.Dialogs.DialogResponse Response, Answer Answer)> ProcessAnswerAsync(Answer localAnswer)
         {
             if (localAnswer.IsSuccess || localAnswer.DialogConcluded || !(_answerService.HasYesNoDialog || _answerService.HasYesNoAsyncDialog))
             {
@@ -438,7 +439,7 @@ public partial class PresentationLayer//:IAnswerable
         }
 
 
-        async System.Threading.Tasks.Task<(Answers.Dialogs.DialogResponse Response, Answers.Answer Answer)> ProcessTimeOutDialog(
+        async System.Threading.Tasks.Task<(Answers.Dialogs.DialogResponse Response, Answer Answer)> ProcessTimeOutDialog(
             System.Threading.Tasks.Task<bool> dialogTask,
             System.Threading.CancellationTokenSource dialogCts)
         {
@@ -460,12 +461,12 @@ public partial class PresentationLayer//:IAnswerable
                 }
 
                 return (Answers.Dialogs.DialogResponse.DoNotWait,
-                    Answers.Answer.Prepare(_answerService.Strings.CancelledText).Error(_answerService.Strings.TimeoutError).ConcludeDialog());
+                    Answer.Prepare(_answerService.Strings.CancelledText).Error(_answerService.Strings.TimeoutError).ConcludeDialog());
             }
             catch (System.OperationCanceledException)
             {
                 return (Answers.Dialogs.DialogResponse.Cancel,
-                    Answers.Answer.Prepare(_answerService.Strings.CancelMessage).Error(_answerService.Strings.CancelMessage).ConcludeDialog());
+                    Answer.Prepare(_answerService.Strings.CancelMessage).Error(_answerService.Strings.CancelMessage).ConcludeDialog());
             }
         }
     }

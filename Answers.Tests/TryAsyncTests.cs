@@ -5,7 +5,6 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Answers;
 using Moq;
 
 namespace Answers.Tests
@@ -13,7 +12,7 @@ namespace Answers.Tests
     public partial class TestAnswerableClass : IAnswerable
     {
         public async Task<Answer> DoSomething(
-            System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
+            System.Func<System.Threading.Tasks.Task<Answer.Answer>> method,
             System.Threading.CancellationToken ct)
         {
             return await TryAsync(method, ct);

@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
-using Answers;
 
 namespace Answers.Tests
 {
@@ -12,6 +11,7 @@ namespace Answers.Tests
 
     using Xunit;
     using System;
+    using Answers.Answer;
 
     public class AnswerTests
     {

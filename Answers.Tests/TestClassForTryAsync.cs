@@ -9,7 +9,7 @@ namespace Answers.Tests
     public  partial class TestClassForTryAsync:IAnswerable
     {
 
-        public async Task<Answer> MethodReturningAnswer(Func<Task<Answers.Answer>> method,
+        public async Task<Answer> MethodReturningAnswer(Func<Task<Answer.Answer>> method,
             CancellationToken ct
             )
         {

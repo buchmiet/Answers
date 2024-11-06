@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Answers.Answer;
 using Xunit;
 
 namespace Answers.Tests
 {
 
-public class AnswerValueTests
+    public class AnswerValueTests
     {
         [Fact]
         public void Constructor_WhenValueIsNull_ShouldCreateInstance()

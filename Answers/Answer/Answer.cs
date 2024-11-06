@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
-using Answers;
 
-namespace Answers
+namespace Answers.Answer
 {
 
 
