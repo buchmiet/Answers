@@ -19,4 +19,15 @@
     <ProjectReference Include="..\Answers\Answers.csproj" />
   </ItemGroup>
 
+	<ItemGroup>
+		<!-- Dodanie AnswerGenerator jako analyzer -->
+		<Analyzer Include="..\AnswerGenerator\bin\$(Configuration)\netstandard2.0\AnswerGenerator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" />
+	</ItemGroup>
+
+	<Target Name="CopyAnalyzers" AfterTargets="Build">
+		<ItemGroup>
+			<Analyzer Include="..\AnswerGenerator\bin\$(Configuration)\netstandard2.0\AnswerGenerator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" />
+		</ItemGroup>
+	</Target>
+
 </Project>
