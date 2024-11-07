@@ -1,19 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-	  <TargetFramework>netstandard2.0</TargetFramework>
-	  <LangVersion>12.0</LangVersion>
+    <TargetFramework>netstandard2.0</TargetFramework>
 	  <PackageId>Answerable</PackageId>
 	  <Version>0.4.9</Version>
 	  <Authors>Lukasz Buchmiet</Authors>
 	  <Description>Multi tier communication solution.</Description>
 	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
 	  <RepositoryUrl>https://github.com/buchmiet/Answers</RepositoryUrl>
-	  <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+	  <IncludeBuildOutput>false</IncludeBuildOutput>
+	  <NoBuild>true</NoBuild>
+	  <PackDependsOn>$(PackDependsOn);Build</PackDependsOn>
+	  <IsPackable>true</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
+    <ProjectReference Include="..\AnswerGenerator\AnswerGenerator.csproj" />
+    <ProjectReference Include="..\Answers\Answers.csproj" />
   </ItemGroup>
 
 </Project>
