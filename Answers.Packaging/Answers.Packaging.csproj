@@ -9,8 +9,7 @@
 	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
 	  <RepositoryUrl>https://github.com/buchmiet/Answers</RepositoryUrl>
 	  <IncludeBuildOutput>false</IncludeBuildOutput>
-	  <NoBuild>true</NoBuild>
-	  <PackDependsOn>$(PackDependsOn);Build</PackDependsOn>
+	  <PackDependsOn Condition="'$(NoBuild)' != 'true'">$(PackDependsOn);Build</PackDependsOn>
 	  <IsPackable>true</IsPackable>
   </PropertyGroup>
 
