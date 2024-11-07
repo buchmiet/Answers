@@ -9,9 +9,7 @@ namespace Answers.Tests
 {
 
 
-    using Xunit;
-    using System;
-    using Answers.Answer;
+   
 
     public class AnswerTests
     {

@@ -1,4 +1,4 @@
-﻿namespace Answers.Answer;
+﻿namespace Answers;
 
 public interface IAnswerValue
 {
