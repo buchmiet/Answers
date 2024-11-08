@@ -16,7 +16,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v3
       with:
-        fetch-depth: 0  # Pobiera pełną historię repozytorium
+        fetch-depth: 0  
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
@@ -33,6 +33,7 @@ jobs:
       uses: gittools/actions/gitversion/execute@v0
       with:
         useConfigFile: true
+        configFilePath: '.gitversion.yml'
 
     - name: Restore dependencies
       run: dotnet restore Answers.sln
