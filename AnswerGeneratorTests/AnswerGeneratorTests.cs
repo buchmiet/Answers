@@ -231,8 +231,15 @@ namespace AnswerGeneratorTests
                 }
             }
 
+            // Determine the build configuration
+#if DEBUG
+            string configuration = "Debug";
+#else
+    string configuration = "Release";
+#endif
+
             // Construct the path to the Answers.dll in the bin directory
-            string answersDllPath = Path.Combine(solutionDirectory, "Answers", "bin", "Debug", "netstandard2.0", "Answers.dll");
+            string answersDllPath = Path.Combine(solutionDirectory, "Answers", "bin", configuration, "netstandard2.0", "Answers.dll");
 
             if (!File.Exists(answersDllPath))
             {
@@ -241,6 +248,7 @@ namespace AnswerGeneratorTests
 
             return answersDllPath;
         }
+
 
     }
 }
