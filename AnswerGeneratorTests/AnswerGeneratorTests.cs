@@ -185,7 +185,11 @@ namespace AnswerGeneratorTests
                 .Cast<MetadataReference>()
                 .ToList();
 
-            references.Add(_answersReference);
+            if (!references.Any(r => r.Display.EndsWith("Answers.dll", StringComparison.OrdinalIgnoreCase)))
+            {
+                references.Add(_answersReference);
+            }
+
             references.Add(_netstandardReference);
 
             var compilation = CSharpCompilation.Create("TestAssembly",
