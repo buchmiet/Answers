@@ -3,7 +3,7 @@
   <PropertyGroup>
 	  <TargetFramework>netstandard2.0</TargetFramework>
 	  <LangVersion>12.0</LangVersion>
-	  <PackageId>Answerable</PackageId>
+	  <PackageId>Answers.Core</PackageId>
 	  <Authors>Lukasz Buchmiet</Authors>
 	  <Description>Multi tier communication solution.</Description>
 	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
