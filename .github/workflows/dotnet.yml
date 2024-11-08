@@ -44,4 +44,13 @@ jobs:
        flags: unittests
        name: code-coverage-report
        fail_ci_if_error: true
+ # Pack and publish only on pushes to main
+    - name: Pack NuGet package
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: dotnet pack Answers.Packaging/Answers.Packaging.csproj -c Release --output ./output
 
+    - name: Publish to NuGet
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      run: dotnet nuget push ./output/*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json
