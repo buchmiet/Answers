@@ -21,6 +21,17 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
+    - name: Install GitVersion
+      uses: gittools/actions/gitversion/setup@v0
+      with:
+        versionSpec: '5.x'
+
+    - name: Use GitVersion
+      id: gitversion
+      uses: gittools/actions/gitversion/execute@v0
+      with:
+        useConfigFile: true
+
     - name: Restore dependencies
       run: dotnet restore Answers.sln
 
@@ -44,4 +55,13 @@ jobs:
        flags: unittests
        name: code-coverage-report
        fail_ci_if_error: true
+ # Pack and publish only on pushes to main
+    - name: Pack NuGet package
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      run: dotnet pack Answers.Packaging/Answers.Packaging.csproj -c Release --output -p:PackageVersion=${{ steps.gitversion.outputs.SemVer }} ./output
 
+    - name: Publish to NuGet
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      run: dotnet nuget push ./output/*.nupkg --api-key $NUGET_API_KEY --source https://api.nuget.org/v3/index.json --skip-duplicate
