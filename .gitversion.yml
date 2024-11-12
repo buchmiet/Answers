@@ -8,6 +8,7 @@ branches:
     regex: ^main$
     increment: Patch
     is-mainline: true
+    is-release-branch: true
   develop:
     regex: ^dev(elop)?(/.+)?$
     tag: alpha
