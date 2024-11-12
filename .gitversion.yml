@@ -2,7 +2,6 @@ mode: Mainline
 assembly-versioning-scheme: MajorMinorPatch
 assembly-file-versioning-scheme: MajorMinorPatch
 increment: Patch
-tag: ''
 
 branches:
   main:
@@ -11,11 +10,9 @@ branches:
     is-mainline: true
   develop:
     regex: ^dev(elop)?(/.+)?$
-    tag: alpha
     increment: Minor
   feature:
     regex: ^features?[/-]
-    tag: beta
     increment: Inherit
 ignore:
   sha: []
