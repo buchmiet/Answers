@@ -1,15 +1,18 @@
-next-version: 0.4.10  # Początkowa wersja, od której zacznie się automatyczne wersjonowanie
-mode: ContinuousDelivery
+mode: Mainline
+assembly-versioning-scheme: MajorMinorPatch
+assembly-file-versioning-scheme: MajorMinorPatch
+increment: Patch
+
 branches:
   main:
-    tag: ''
-    increment: Patch  # Inkrementacja dla wersji Patch (np. 0.4.10, 0.4.11, ..., 0.4.99)
+    regex: ^main$
+    increment: Patch
+    is-mainline: true
   develop:
-    tag: 'alpha'
-    increment: Minor  # Przejście do wersji Minor na gałęzi develop (np. 0.5.0-alpha)
+    regex: ^dev(elop)?(/.+)?$
+    increment: Minor
   feature:
-    regex: feature[-/](.*)
-    tag: 'beta'
-    increment: Patch  # Inkrementacja dla gałęzi feature (np. 0.4.10-beta.1)
+    regex: ^features?[/-]
+    increment: Inherit
 ignore:
   sha: []
