@@ -35,6 +35,11 @@ jobs:
         useConfigFile: true
         configFilePath: '.gitversion.yml'
 
+
+    - name: Output GitVersion Variables
+      run: |
+        echo "SemVer: ${{ steps.gitversion.outputs.SemVer }}"
+        echo "NuGetVersion: ${{ steps.gitversion.outputs.NuGetVersion }}"
     - name: Restore dependencies
       run: dotnet restore Answers.sln
 
@@ -64,7 +69,7 @@ jobs:
     - name: Display GitVersion Config
       run: cat .gitversion.yml
     - name: GitVersion Diagnostic Run
-      run: gitversion /diag
+      run: ${{ steps.gitversion.outputs.gitversion_executable }} /diag
     - name: Print GitVersion Output
       run: |
        echo "Version: ${{ steps.gitversion.outputs.SemVer }}"
