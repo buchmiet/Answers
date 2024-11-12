@@ -8,6 +8,7 @@
 	  <IsRoslynComponent>true</IsRoslynComponent>
 	  <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
 	  <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+   <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
 
   <ItemGroup>
