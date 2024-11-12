@@ -39,13 +39,11 @@ jobs:
     - name: Output GitVersion Variables
       run: |
         echo "SemVer: ${{ steps.gitversion.outputs.SemVer }}"
-        echo "NuGetVersion: ${{ steps.gitversion.outputs.NuGetVersion }}"
-    - name: GitVersion Diagnostic Run
-      run: ${{ steps.gitversion.outputs.gitversion_executable }} /diag
+        echo "NuGetVersion: ${{ steps.gitversion.outputs.NuGetVersion }}"   
     - name: Restore dependencies
       run: dotnet restore Answers.sln
-    - name: GitVersion Diagnostic Run
-      run: ${{ steps.gitversion.outputs.gitversion_executable }} /diag
+  #  - name: GitVersion Diagnostic Run
+  #    run: ${{ steps.gitversion.outputs.gitversion_executable }} /diag
     - name: Build
       run: dotnet build --no-restore -c Release Answers.sln
 
