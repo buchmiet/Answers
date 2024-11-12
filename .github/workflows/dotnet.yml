@@ -58,6 +58,9 @@ jobs:
        flags: unittests
        name: code-coverage-report
        fail_ci_if_error: true
+    - name: Clear GitHub Actions Cache
+      run: |
+        rm -rf ${{ github.workspace }}/.git
     - name: Print GitVersion Output
       run: |
        echo "Version: ${{ steps.gitversion.outputs.SemVer }}"
