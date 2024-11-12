@@ -8,6 +8,9 @@
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<RepositoryUrl>https://github.com/buchmiet/Answers</RepositoryUrl>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<IncludeBuildOutput>false</IncludeBuildOutput>
+		<NoPackageAnalysis>true</NoPackageAnalysis>
+		<SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -21,11 +24,12 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<!-- Package the generator in the analyzer directory of the nuget package -->
-		<None Include="..\AnswerGenerator\bin\$(Configuration)\netstandard2.0\AnswerGenerator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+		<!-- Package the generator -->
+		<None Include="..\AnswerGenerator\bin\Release\netstandard2.0\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" />
     
-		<!-- Package the Answers library -->
-		<None Include="..\Answers\bin\$(Configuration)\netstandard2.0\Answers.dll" Pack="true" PackagePath="lib/netstandard2.0" Visible="false" />
+		<!-- Package the main library -->
+		<None Include="..\Answers\bin\Release\netstandard2.0\Answers.dll" Pack="true" PackagePath="lib/netstandard2.0" />
+		<None Include="..\Answers\bin\Release\netstandard2.0\Answers.pdb" Pack="true" PackagePath="lib/netstandard2.0" />
 	</ItemGroup>
 
 </Project>
