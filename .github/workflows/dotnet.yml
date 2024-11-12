@@ -61,6 +61,8 @@ jobs:
     - name: Clear GitHub Actions Cache
       run: |
         rm -rf ${{ github.workspace }}/.git
+    - name: Display GitVersion Config
+      run: cat .gitversion.yml
     - name: Print GitVersion Output
       run: |
        echo "Version: ${{ steps.gitversion.outputs.SemVer }}"
