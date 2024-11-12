@@ -42,7 +42,8 @@ jobs:
         echo "NuGetVersion: ${{ steps.gitversion.outputs.NuGetVersion }}"
     - name: Restore dependencies
       run: dotnet restore Answers.sln
-
+    - name: GitVersion Diagnostic Run
+      run: ${{ steps.gitversion.outputs.gitversion_executable }} /diag
     - name: Build
       run: dotnet build --no-restore -c Release Answers.sln
 
@@ -67,9 +68,7 @@ jobs:
       run: |
         rm -rf ${{ github.workspace }}/.git
     - name: Display GitVersion Config
-      run: cat .gitversion.yml
-    - name: GitVersion Diagnostic Run
-      run: ${{ steps.gitversion.outputs.gitversion_executable }} /diag
+      run: cat .gitversion.yml   
     - name: Print GitVersion Output
       run: |
        echo "Version: ${{ steps.gitversion.outputs.SemVer }}"
