@@ -63,6 +63,8 @@ jobs:
         rm -rf ${{ github.workspace }}/.git
     - name: Display GitVersion Config
       run: cat .gitversion.yml
+    - name: GitVersion Diagnostic Run
+      run: gitversion /diag
     - name: Print GitVersion Output
       run: |
        echo "Version: ${{ steps.gitversion.outputs.SemVer }}"
