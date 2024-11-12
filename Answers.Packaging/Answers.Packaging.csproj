@@ -1,30 +1,35 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
-  <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
-	  <PackageId>Answerable</PackageId>
-	  <Authors>Lukasz Buchmiet</Authors>
-	  <Description>Multi tier communication solution.</Description>
-	  <PackageLicenseExpression>MIT</PackageLicenseExpression>
-	  <RepositoryUrl>https://github.com/buchmiet/Answers</RepositoryUrl>
-	  <IncludeBuildOutput>false</IncludeBuildOutput>
-	  <IsPackable>true</IsPackable>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\AnswerGenerator\AnswerGenerator.csproj" />
-    <ProjectReference Include="..\Answers\Answers.csproj" />
-  </ItemGroup>
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<PackageId>Answerable</PackageId>
+		<Authors>Lukasz Buchmiet</Authors>
+		<Description>Multi tier communication solution.</Description>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<RepositoryUrl>https://github.com/buchmiet/Answers</RepositoryUrl>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<IncludeBuildOutput>false</IncludeBuildOutput>
+		<NoPackageAnalysis>true</NoPackageAnalysis>
+	</PropertyGroup>
 
 	<ItemGroup>
-		<!-- Dodanie AnswerGenerator jako analyzer -->
-		<Analyzer Include="..\AnswerGenerator\bin\$(Configuration)\netstandard2.0\AnswerGenerator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" />
+		<ProjectReference Include="..\Answers\Answers.csproj">
+			<PrivateAssets>all</PrivateAssets>
+		</ProjectReference>
+		<ProjectReference Include="..\AnswerGenerator\AnswerGenerator.csproj">
+			<PrivateAssets>all</PrivateAssets>
+			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+			<OutputItemType>Analyzer</OutputItemType>
+		</ProjectReference>
 	</ItemGroup>
 
-	<Target Name="CopyAnalyzers" AfterTargets="Build">
-		<ItemGroup>
-			<Analyzer Include="..\AnswerGenerator\bin\$(Configuration)\netstandard2.0\AnswerGenerator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" />
-		</ItemGroup>
-	</Target>
+	<ItemGroup>
+		<!-- Package the generator and its dependencies -->
+		<None Include="..\AnswerGenerator\bin\Release\netstandard2.0\AnswerGenerator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+		<None Include="..\AnswerGenerator\bin\Release\netstandard2.0\Microsoft.CodeAnalysis.CSharp.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+		<None Include="..\AnswerGenerator\bin\Release\netstandard2.0\System.Text.Json.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
 
+		<!-- Package the main library -->
+		<None Include="..\Answers\bin\Release\netstandard2.0\Answers.dll" Pack="true" PackagePath="lib/netstandard2.0" />
+		<None Include="..\Answers\bin\Release\netstandard2.0\Answers.pdb" Pack="true" PackagePath="lib/netstandard2.0" />
+	</ItemGroup>
 </Project>
