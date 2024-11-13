@@ -23,9 +23,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Include="..\AnswerGenerator\bin\Release\netstandard2.0\AnswerGenerator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" />
-		<!-- Include 'Answers.dll' for the generator -->
-		<None Include="..\AnswerGenerator\bin\Release\netstandard2.0\Answers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" />
+		<None Include="..\AnswerGenerator\bin\Release\netstandard2.0\AnswerGenerator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+		<None Include="..\AnswerGenerator\bin\Release\netstandard2.0\Microsoft.CodeAnalysis.CSharp.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+		<None Include="..\AnswerGenerator\bin\Release\netstandard2.0\System.Text.Json.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
 
 		<None Include="..\Answers\bin\Release\netstandard2.0\Answers.dll" Pack="true" PackagePath="lib/netstandard2.0" />
 		<None Include="..\Answers\bin\Release\netstandard2.0\Answers.pdb" Pack="true" PackagePath="lib/netstandard2.0" />
