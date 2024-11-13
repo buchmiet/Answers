@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<PackageId>Answerable</PackageId>
@@ -10,7 +9,6 @@
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<IncludeBuildOutput>false</IncludeBuildOutput>
 		<NoPackageAnalysis>true</NoPackageAnalysis>
-		<SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -20,16 +18,16 @@
 		<ProjectReference Include="..\AnswerGenerator\AnswerGenerator.csproj">
 			<PrivateAssets>all</PrivateAssets>
 			<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+			<OutputItemType>Analyzer</OutputItemType>
 		</ProjectReference>
 	</ItemGroup>
 
 	<ItemGroup>
-		<!-- Package the generator -->
-		<None Include="..\AnswerGenerator\bin\Release\netstandard2.0\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" />
-    
-		<!-- Package the main library -->
+		<None Include="..\AnswerGenerator\bin\Release\netstandard2.0\AnswerGenerator.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+		<None Include="..\AnswerGenerator\bin\Release\netstandard2.0\Microsoft.CodeAnalysis.CSharp.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+		<None Include="..\AnswerGenerator\bin\Release\netstandard2.0\System.Text.Json.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+
 		<None Include="..\Answers\bin\Release\netstandard2.0\Answers.dll" Pack="true" PackagePath="lib/netstandard2.0" />
 		<None Include="..\Answers\bin\Release\netstandard2.0\Answers.pdb" Pack="true" PackagePath="lib/netstandard2.0" />
 	</ItemGroup>
-
 </Project>
