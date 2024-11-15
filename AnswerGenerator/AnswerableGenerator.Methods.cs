@@ -12,7 +12,7 @@ namespace AnswerGenerator
 {
     public partial class AnswerableGenerator
     {
-        private void ProcessClass(SourceProductionContext context, INamedTypeSymbol classSymbol)
+        private void ProcessClass(SourceProductionContext context, INamedTypeSymbol classSymbol,NestingStructure nestingStructure)
         {
             List<IMethodSymbol> constructors = GetConstructors();
             List<ISymbol> answerServiceMembers = GetAnswerServiceMembers(classSymbol);
@@ -41,7 +41,7 @@ namespace AnswerGenerator
                     break;
                 }
                 case 0:
-                    GenerateAnswerServiceMember(context, classSymbol, answerServiceMemberName);
+                    GenerateAnswerServiceMember(context, classSymbol, answerServiceMemberName,nestingStructure);
                     break;
             }
 
@@ -49,19 +49,19 @@ namespace AnswerGenerator
             if (constructors.Count == 0)
             {
                 // No constructors declared, generate the constructor
-                GenerateConstructorOverload(context, classSymbol, null, answerServiceMemberName);
+                GenerateConstructorOverload(context, classSymbol, null, answerServiceMemberName, nestingStructure);
             }
             else
             {
                 foreach (var constructor in constructors.Where(p =>
                              !p.Parameters.Any(q => q.Type.ToDisplayString().EndsWith("IAnswerService"))))
                 {
-                    GenerateConstructorOverload(context, classSymbol, constructor, answerServiceMemberName);
+                    GenerateConstructorOverload(context, classSymbol, constructor, answerServiceMemberName, nestingStructure);
                 }
             }
 
             // Generate helper methods with the appropriate field/property name
-            GenerateHelperMethods(context, classSymbol, answerServiceMemberName);
+            GenerateHelperMethods(context, classSymbol, answerServiceMemberName,nestingStructure);
             return;
 
             List<ISymbol> GetAnswerServiceMembers(INamedTypeSymbol symbol)=>
@@ -81,19 +81,19 @@ namespace AnswerGenerator
         }
 
         private void GenerateAnswerServiceMember(SourceProductionContext context, INamedTypeSymbol classSymbol,
-            string propertyName)
+            string propertyName,NestingStructure nestingStructure)
         {
             var namespaceName = classSymbol.ContainingNamespace.IsGlobalNamespace
                 ? null
                 : classSymbol.ContainingNamespace.ToDisplayString();
             var className = classSymbol.Name;
             var source = GenerateAnswerServiceMemberSource(namespaceName, className, propertyName);
-            context.AddSource($"{className}_AnswerServiceProperty.g.cs", SourceText.From(source, Encoding.UTF8));
+            context.AddSource($"{className}_AnswerServiceProperty.g.cs", SourceText.From(nestingStructure.Opening+source+nestingStructure.Closing, Encoding.UTF8));
 
         }
 
         private void GenerateConstructorOverload(SourceProductionContext context, INamedTypeSymbol classSymbol,
-            IMethodSymbol constructor, string answerServiceMemberName)
+            IMethodSymbol constructor, string answerServiceMemberName,NestingStructure nestingStructure)
         {
             var namespaceName = classSymbol.ContainingNamespace.IsGlobalNamespace
                 ? null
@@ -130,7 +130,7 @@ namespace AnswerGenerator
             var constructorSignatureHash =
                 constructor?.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).GetHashCode() ?? 0;
             context.AddSource($"{className}_ConstructorOverload_{constructorSignatureHash}.g.cs",
-                SourceText.From(source, Encoding.UTF8));
+                SourceText.From(nestingStructure.Opening+source+nestingStructure.Closing, Encoding.UTF8));
         }
 
         private bool PrepareHelperMethods(SourceProductionContext context)
@@ -183,7 +183,7 @@ namespace AnswerGenerator
             }
         }
 
-        private void GenerateHelperMethods(SourceProductionContext context, INamedTypeSymbol classSymbol, string answerServiceFieldName)
+        private void GenerateHelperMethods(SourceProductionContext context, INamedTypeSymbol classSymbol, string answerServiceFieldName,NestingStructure nestingStructure)
         {
             var namespaceName = classSymbol.ContainingNamespace.IsGlobalNamespace
                 ? null
@@ -192,7 +192,7 @@ namespace AnswerGenerator
             var methodsCode = string.Join("\r\n", _helperMethods).Replace(DefaultAnswerServiceMemberName, answerServiceFieldName);
             var classBody = GenerateHelperMethods_001(className, methodsCode);
             var source = GenerateHelperMethods_002(namespaceName, classBody);
-            context.AddSource($"{className}_HelperMethods.g.cs", SourceText.From(source, Encoding.UTF8));
+            context.AddSource($"{className}_HelperMethods.g.cs", SourceText.From(nestingStructure.Opening+source+nestingStructure.Closing, Encoding.UTF8));
         }
 
     }

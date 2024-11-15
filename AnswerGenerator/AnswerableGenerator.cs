@@ -1,7 +1,9 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Text;
 
 namespace AnswerGenerator
 {
@@ -39,11 +41,12 @@ namespace AnswerGenerator
                 return;
             }
 
-            foreach (var classDeclaration in typeList)
+            foreach (ClassDeclarationSyntax classDeclaration in typeList)
             {
+
                 var model = compilation.GetSemanticModel(classDeclaration.SyntaxTree);
 
-                if (ModelExtensions.GetDeclaredSymbol(model, classDeclaration) is not INamedTypeSymbol classSymbol)
+                if (model.GetDeclaredSymbol(classDeclaration) is not INamedTypeSymbol classSymbol)
                     continue;
 
                 if (!classSymbol.AllInterfaces.Contains(compilation.GetTypeByMetadataName(ClassInterfaceName)))
@@ -51,9 +54,48 @@ namespace AnswerGenerator
               
                 if (!_processedClasses.Add(classSymbol.ToDisplayString()))
                     continue;
-                
-                ProcessClass(context, classSymbol);
+
+                ProcessClass(context, classSymbol, BuildNestingHierarchy(classSymbol));
             }
         }
+
+     
+
+        private NestingStructure BuildNestingHierarchy(INamedTypeSymbol classSymbol)
+        {
+            var symbols = new Stack<INamedTypeSymbol>();
+            var current = classSymbol;
+            while (current is not null)
+            {
+                symbols.Push(current);
+                current = current.ContainingType;
+            }
+
+            var returnValue = new NestingStructure();
+            while (symbols.Count > 1)
+            {
+                var symbol = symbols.Pop();
+                returnValue.AddSignature(symbol.Name);
+            }
+
+            return returnValue;
+        }
+
+        public class NestingStructure
+        {
+            private StringBuilder _opening=new StringBuilder();
+            private StringBuilder _closing=new StringBuilder();
+
+            public string Opening => _opening.ToString();
+            public string Closing => _closing.ToString();
+
+            public void AddSignature(string signature)
+            {
+                _opening.AppendLine($"partial class {signature}");
+                _opening.AppendLine("{");
+                _closing.AppendLine("}");
+            }
+        }
+
     }
 }
