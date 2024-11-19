@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp;
 using System.IO;
 using System.Reflection;
+using static AnswerGenerator.AnswerableGenerator;
 
 namespace AnswerGenerator
 {
@@ -87,8 +88,8 @@ namespace AnswerGenerator
                 ? null
                 : classSymbol.ContainingNamespace.ToDisplayString();
             var className = classSymbol.Name;
-            var source = GenerateAnswerServiceMemberSource(namespaceName, className, propertyName);
-            context.AddSource($"{className}_AnswerServiceProperty.g.cs", SourceText.From(nestingStructure.Opening+source+nestingStructure.Closing, Encoding.UTF8));
+            var source = SourceInjector. GenerateAnswerServiceMemberSource(nestingStructure.Opening, nestingStructure.Closing,ServiceInterface, namespaceName, className, propertyName);
+            context.AddSource($"{className}_AnswerServiceProperty.g.cs", SourceText.From(source, Encoding.UTF8));
 
         }
 
@@ -105,7 +106,7 @@ namespace AnswerGenerator
             if (constructor is null)
             {
                 // No constructors found, generate a constructor without calling `this()`
-                classBody = GenerateConstructorOverload_001(className, answerServiceMemberName);
+                classBody = SourceInjector. GenerateConstructorOverload_001(ServiceInterface,ConstructorServiceField,className, answerServiceMemberName);
             }
             else
             {
@@ -120,17 +121,17 @@ namespace AnswerGenerator
                 // Build argument list (only original parameters)
                 var argumentList = string.Join(", ", parameters.Select(p => p.Name));
                 // Generate constructor code
-                classBody = GenerateConstructorOverload_002(className, parameterList, argumentList, answerServiceMemberName);
+                classBody = SourceInjector. GenerateConstructorOverload_002(ConstructorServiceField, className, parameterList, argumentList, answerServiceMemberName);
             }
 
             // Include namespace if it's not global
-            var source = GenerateConstructorOverload_003(classBody, namespaceName);
+            var source = SourceInjector. GenerateConstructorOverload_003(nestingStructure.Opening, nestingStructure.Closing,classBody, namespaceName);
 
             // Ensure unique filenames for each constructor overload
             var constructorSignatureHash =
                 constructor?.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat).GetHashCode() ?? 0;
             context.AddSource($"{className}_ConstructorOverload_{constructorSignatureHash}.g.cs",
-                SourceText.From(nestingStructure.Opening+source+nestingStructure.Closing, Encoding.UTF8));
+                SourceText.From(source, Encoding.UTF8));
         }
 
         private bool PrepareHelperMethods(SourceProductionContext context)
@@ -190,9 +191,9 @@ namespace AnswerGenerator
                 : classSymbol.ContainingNamespace.ToDisplayString();
             var className = classSymbol.Name;
             var methodsCode = string.Join("\r\n", _helperMethods).Replace(DefaultAnswerServiceMemberName, answerServiceFieldName);
-            var classBody = GenerateHelperMethods_001(className, methodsCode);
-            var source = GenerateHelperMethods_002(namespaceName, classBody);
-            context.AddSource($"{className}_HelperMethods.g.cs", SourceText.From(nestingStructure.Opening+source+nestingStructure.Closing, Encoding.UTF8));
+            var classBody = SourceInjector. GenerateHelperMethods_001(className, methodsCode);
+            var source = SourceInjector. GenerateHelperMethods_002(nestingStructure.Opening,nestingStructure.Closing, namespaceName, classBody);
+            context.AddSource($"{className}_HelperMethods.g.cs", SourceText.From(source, Encoding.UTF8));
         }
 
     }

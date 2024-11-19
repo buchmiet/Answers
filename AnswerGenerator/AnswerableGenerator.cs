@@ -1,8 +1,10 @@
 ﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Linq;
 using System.Text;
 
 namespace AnswerGenerator
@@ -31,7 +33,7 @@ namespace AnswerGenerator
 #if DEBUG
             if (!Debugger.IsAttached)
             {
-              //         Debugger.Launch();
+             //          Debugger.Launch();
             }
 #endif
 
@@ -55,7 +57,11 @@ namespace AnswerGenerator
                 if (!_processedClasses.Add(classSymbol.ToDisplayString()))
                     continue;
 
-                ProcessClass(context, classSymbol, BuildNestingHierarchy(classSymbol));
+                var nesting= BuildNestingHierarchy(classSymbol);
+                if (nesting is not null)
+                {
+                    ProcessClass(context, classSymbol, nesting);
+                }
             }
         }
 
@@ -67,6 +73,14 @@ namespace AnswerGenerator
             var current = classSymbol;
             while (current is not null)
             {
+                if (!current.DeclaringSyntaxReferences
+                        .Select(reference => reference.GetSyntax())
+                        .OfType<ClassDeclarationSyntax>()
+                        .Any(classDecl => classDecl.Modifiers.Any(mod => mod.IsKind(SyntaxKind.PartialKeyword))))
+                {
+                    // If not partial, return null to indicate that code should not be injected
+                    return null;
+                }
                 symbols.Push(current);
                 current = current.ContainingType;
             }
@@ -81,6 +95,20 @@ namespace AnswerGenerator
             return returnValue;
         }
 
+        private bool IsPartial(INamedTypeSymbol typeSymbol)
+        {
+            // Sprawdzamy wszystkie deklaracje klasy
+            foreach (var syntaxRef in typeSymbol.DeclaringSyntaxReferences)
+            {
+                var syntaxNode = syntaxRef.GetSyntax() as TypeDeclarationSyntax;
+                if (syntaxNode is null || !syntaxNode.Modifiers.Any(SyntaxKind.PartialKeyword))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
         public class NestingStructure
         {
             private StringBuilder _opening=new StringBuilder();

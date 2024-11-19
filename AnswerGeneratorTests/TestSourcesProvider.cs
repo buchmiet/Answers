@@ -81,5 +81,65 @@ namespace AnswerGeneratorTests
               
                       
               """;
+
+        public static string NestedSource_001(ITestableGenerator generator) =>
+            $$"""
+              namespace {{TestNamespace}}
+              {
+                  public partial class {{TestClassName}}Outer
+                  {
+                      public partial class {{TestClassName}}Nested : {{generator.ClassInterfaceName}}
+                      {
+                          // Empty nested partial class
+                      }
+                  }
+              }
+              """;
+        public static string NestedSource_002(ITestableGenerator generator) =>
+            $$"""
+              namespace {{TestNamespace}}
+              {
+                  public partial class {{TestClassName}}LevelOne
+                  {
+                      public partial class {{TestClassName}}LevelTwo
+                      {
+                          public partial class {{TestClassName}}LevelThree : {{generator.ClassInterfaceName}}
+                          {
+                              // Empty multi-level nested partial class
+                          }
+                      }
+                  }
+              }
+              """;
+        public static string NestedSource_003(ITestableGenerator generator) =>
+            $$"""
+              namespace {{TestNamespace}}
+              {
+                  public class {{TestClassName}}NonPartialOuter
+                  {
+                      public partial class {{TestClassName}}PartialNested : {{generator.ClassInterfaceName}}
+                      {
+                          // Empty nested partial class inside a non-partial outer class
+                      }
+                  }
+              }
+              """;
+        public static string NestedSource_004(ITestableGenerator generator) =>
+            $$"""
+              namespace {{TestNamespace}}
+              {
+                  public partial class {{TestClassName}}PartialOuter
+                  {
+                      public class {{TestClassName}}NonPartialInner
+                      {
+                          public partial class {{TestClassName}}DeepNested : {{generator.ClassInterfaceName}}
+                          {
+                              // Empty nested partial class within a non-partial inner class
+                          }
+                      }
+                  }
+              }
+              """;
+
     }
 }
