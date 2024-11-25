@@ -14,10 +14,10 @@ namespace Answers.Tests
         public class AnswerServiceTests
         {
             [Fact]
-            public void Constructor_WithNullLogger_ThrowsArgumentNullException()
+            public void Constructor_WithNullLoggerAndNullDialog_ThrowsArgumentNullException()
             {
                 // Arrange & Act & Assert
-                Assert.Throws<ArgumentNullException>(() => new Answers.AnswerService(null));
+                Assert.Throws<ArgumentNullException>(() => new Answers.AnswerService(null,null));
             }
 
             [Fact]
