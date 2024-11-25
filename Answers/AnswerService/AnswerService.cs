@@ -71,7 +71,11 @@ namespace Answers
             _dialog = dialog ?? throw new ArgumentNullException(nameof(dialog));
             _state = new AnswerServiceState(_dialog,_logger);
         }
-
+        public AnswerService(IUserDialog dialog)
+        {
+            _dialog = dialog ?? throw new ArgumentNullException(nameof(dialog));
+            _state = new AnswerServiceState(_dialog, null);
+        }
 
         public void SetTimeout(TimeSpan timeout)
         {
