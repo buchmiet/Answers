@@ -15,8 +15,8 @@ var loggerFactory = LoggerFactory.Create(builder =>
 });
 
 var logger = loggerFactory.CreateLogger<Program>();
-var answerService = new AnswerService(null, logger);
-//answerService.AddTimeoutDialog(new ConsoleUserDialog());
+var answerService = new AnswerService( logger);
+
 var randomServie = new RandomService(logger);
 var cancellationToken = new CancellationToken();
 #endregion AUTOEXEC.BAT
@@ -25,285 +25,17 @@ var cancellationToken = new CancellationToken();
 var databaseClass = new DatabaseTierClass(randomServie, answerService);
 var httpClass = new HttpTierClass(randomServie, answerService);
 var businessLogic = new BusinessLogicClass(databaseClass, httpClass, answerService);
-var presentationLayer = new PresentationLayer(businessLogic, answerService);
+var presentationLayer = new PresentationLayer(businessLogic,new QuickBooksPseudoClass(), answerService);
 //presentationLayer.jednaMetoda();
 //presentationLayer.drugametoda();
 //presentationLayer.trzeciaMetoda();
-
+var res=await presentationLayer.SimulateSomething();
 await presentationLayer.ExecuteConcurrentOperations(new CancellationToken());
 
 
 
 
-//await wyswietlacz.DisplayProductInformation(0, cancellationToken);
 
-
-
-
-//public partial class TestClassName : IAnswerable
-//{
-//    private readonly IAnswerService _customAnswerService;
-//}
-
-
-//public class PresentationLayer
-//{
-//    IAnswerService _answerService;
-//    //private BusinessLogicClass _utilityLayer;
-
-//    //public PresentationLayer(Answers.IAnswerService answerService, BusinessLogicClass utilityLayer)
-//    //{
-//    //    _answerService = answerService;
-//    //    _answerService.AddDialog(new ConsoleUserDialog());
-//    //    this._utilityLayer = utilityLayer;
-//    //}
-
-//    //public async Task DisplayProductInformation(int id, CancellationToken ct)
-//    //{
-//    //    var response = await TryAsync(() => _utilityLayer.GetOrderAndProductsData(0, ct), ct);
-//    //    if (response.IsSuccess)
-//    //    {
-//    //        Console.WriteLine(response.GetValue<string>());
-//    //    }
-//    //    else
-//    //    {
-//    //        DisplayError(response);
-//    //    }
-//    //}
-
-//    //public void DisplayError(Answer answer)
-//    //{
-//    //    Console.ForegroundColor = ConsoleColor.Red;
-//    //    Console.Write("Error:");
-//    //    Console.ResetColor();
-//    //    Console.WriteLine(answer.Message);
-//    //}
-
-
-//    private BusinessLogicClass _utilityLayer;
-//    private BusinessLogicClass _anotherUtilityLayer;
-
-//    public PresentationLayer(Answers.IAnswerService answerService, BusinessLogicClass utilityLayer, BusinessLogicClass anotherUtilityLayer)
-//    {
-//        _answerService = answerService;
-//        _answerService.AddDialog(new ConsoleUserDialog());
-//        this._utilityLayer = utilityLayer;
-//        this._anotherUtilityLayer = anotherUtilityLayer;
-//    }
-
-//    public async Task SimulateConcurrentButtonClicks(CancellationToken ct)
-//    {
-//        var task1 = DisplayDatabaseInformation(1, ct);
-//        var task2 = DisplayWebApiInformation(2, ct);
-
-//        await Task.WhenAll(task1, task2);
-//    }
-
-//    public async Task DisplayDatabaseInformation(int id, CancellationToken ct)
-//    {
-//        var response = await TryAsync(() => _utilityLayer.GetOrderAndProductsData(id, ct), ct, TimeSpan.FromSeconds(7));
-//        if (response.IsSuccess)
-//        {
-//            Console.WriteLine($"[DB] Success: {response.GetValue<string>()}");
-//        }
-//        else
-//        {
-//            Console.WriteLine($"[DB] Error: {response.Message}");
-//        }
-//    }
-
-//    public async Task DisplayWebApiInformation(int id, CancellationToken ct)
-//    {
-//        var response = await TryAsync(() => _anotherUtilityLayer.GetOrderAndProductsData(id, ct), ct, TimeSpan.FromSeconds(7));
-//        if (response.IsSuccess)
-//        {
-//            Console.WriteLine($"[WebAPI] Success: {response.GetValue<string>()}");
-//        }
-//        else
-//        {
-//            Console.WriteLine($"[WebAPI] Error: {response.Message}");
-//        }
-//    }
-
-
-
-
-//    public async Task<Answers.Answer> TryAsync(
-//        Func<Task<Answers.Answer>> method,
-//        CancellationToken ct,
-//        TimeSpan? timeout = null)
-//    {
-//        while (true)
-//        {
-//            Task<Answers.Answer> methodTask = method();
-//            Task timeoutTask = null;
-//            Answers.Answer answer;
-
-//            if (timeout.HasValue)
-//            {
-//                // Create a delay task that completes after the specified timeout
-//                timeoutTask = Task.Delay(timeout.Value, ct);
-//            }
-
-//            if (timeoutTask != null)
-//            {
-//                // Wait for either the method to complete or the timeout to occur
-//                Task completedTask = await Task.WhenAny(methodTask, timeoutTask);
-
-//                if (completedTask == methodTask)
-//                {
-//                    // The method completed before the timeout
-
-//                    answer = await methodTask;
-//                    if (answer.IsSuccess || answer.DialogConcluded || !_answerService.HasDialog)
-//                    {
-//                        return answer;
-//                    }
-
-//                    // Method failed; prompt the user to retry
-//                    if (await _answerService.AskYesNoAsync(answer.Message, ct))
-//                    {
-//                        continue;
-//                    }
-
-//                    answer.ConcludeDialog();
-//                    return answer;
-//                }
-
-//                // The timeout occurred before the method completed
-//                //if (!_answerService.HasTimeOutDialog || !await _answerService.AskYesNoToWaitAsync(
-//                //        "The operation timed out. Do you want to retry?", ct))
-//                //{
-//                //    // Cannot prompt the user or user chose not to retry; return timed-out answer
-//                //    answer = Answers.Answer.Prepare("Time out timer");
-//                //    return answer.Error($"{timeout.Value.TotalSeconds} seconds elapsed");
-//                //}
-
-//                var currentActivity =System.Diagnostics.Activity.Current;
-//                var message = currentActivity?.OperationName ?? "Unknown task";
-//                if (!_answerService.HasTimeOutDialog || !await _answerService.AskYesNoToWaitAsync(
-//                        $"The operation {message} timed out. Do you want to retry?", ct))
-//                {
-//                    answer =Answers.Answer.Prepare(message);
-//                    return answer.Error($"{timeout.Value.TotalSeconds} seconds elapsed");
-//                }
-
-
-//                // User chose to retry; loop again
-//                continue;
-//            }
-
-//            // No timeout specified; await the method normally
-//            answer = await methodTask; // Let exceptions propagate if any
-
-//            if (answer.IsSuccess || answer.DialogConcluded || !_answerService.HasDialog)
-//            {
-//                return answer;
-//            }
-
-//            // Method failed; prompt the user to retry
-//            if (await _answerService.AskYesNoAsync(answer.Message, ct))
-//            {
-//                continue;
-//            }
-
-//            answer.ConcludeDialog();
-//            return answer;
-//        }
-//    }
-
-//}
-//public partial class DatabaseTierClass:IAnswerable
-//{
-//    private RandomService _randomService;
-
-//    public DatabaseTierClass(RandomService randomService)
-//    {
-//        _randomService = randomService;
-//    }
-
-//    public async Task<Answer> GetOrderData(int orderId, CancellationToken ct)
-//    {
-//        using (var response = Answer.Prepare($"GetOrderData({orderId})"))
-//        {
-//            await Task.Delay(5000, ct); // Simulate work
-//            if (_randomService.NextBool())
-//            {
-//                return response.WithValue($"Order {orderId}");
-//            }
-//            else
-//            {
-//                return response.Error($"Error fetching order {orderId}");
-//            }
-//        }
-//    }
-
-//    public async Task<Answer> GetProductData(int productId, CancellationToken ct)
-//    {
-//        using (var response = Answer.Prepare($"GetProductData({productId})"))
-//        {
-//            await Task.Delay(5000, ct); // Simulate work
-//            if (_randomService.NextBool())
-//            {
-//                return response.WithValue($"Product {productId}");
-//            }
-//            else
-//            {
-//                return response.Error($"Error fetching product {productId}");
-//            }
-//        }
-//    }
-//}
-
-//public partial class BusinessLogicClass:IAnswerable
-//{
-//    private DatabaseTierClass _serviceTier;
-
-//    public BusinessLogicClass(DatabaseTierClass serviceTier)
-//    {
-//        this._serviceTier = serviceTier;
-//    }
-
-//    public async Task<Answer> MethodLevel1(int id, CancellationToken ct)
-//    {
-//        using (var answer = Answer.Prepare($"MethodLevel1({id})"))
-//        {
-//            Answer result = await TryAsync(() => MethodLevel2(id, ct), ct);
-//            if (!result.IsSuccess)
-//            {
-//                return answer.Error($"Error in MethodLevel1: {result.Message}");
-//            }
-//            return answer.WithValue(result.GetValue<string>());
-//        }
-//    }
-
-//    private async Task<Answer> MethodLevel2(int id, CancellationToken ct)
-//    {
-//        using (var answer = Answer.Prepare($"MethodLevel2({id})"))
-//        {
-//            Answer result = await TryAsync(() => MethodLevel3(id, ct), ct);
-//            if (!result.IsSuccess)
-//            {
-//                return answer.Error($"Error in MethodLevel2: {result.Message}");
-//            }
-//            return answer.WithValue(result.GetValue<string>());
-//        }
-//    }
-
-//    private async Task<Answer> MethodLevel3(int id, CancellationToken ct)
-//    {
-//        using (var answer = Answer.Prepare($"MethodLevel3({id})"))
-//        {
-//            // Simulate work
-//            await Task.Delay(1000, ct);
-//            if (/* some condition */ false)
-//            {
-//                return answer.Error("An error occurred in MethodLevel3");
-//            }
-//            return answer.WithValue($"Result from MethodLevel3({id})");
-//        }
-//    }
-//}
 
 public partial class PresentationLayer//:IAnswerable
 {
@@ -510,200 +242,23 @@ public partial class PresentationLayer//:IAnswerable
     }
 
 
-    
-
-    //private async System.Threading.Tasks.Task<Answers.Answer> TryAsync(
-    //    System.Func<System.Threading.Tasks.Task<Answers.Answer>> method,
-    //    System.Threading.CancellationToken ct,
-    //    [System.Runtime.CompilerServices.CallerMemberName] System.String callerName = "",
-    //    [System.Runtime.CompilerServices.CallerFilePath] System.String callerFilePath = "",
-    //    [System.Runtime.CompilerServices.CallerLineNumber] System.Int32 callerLineNumber = 0)
-    //{
-    //    System.TimeSpan timeoutValue = _answerService.HasTimeout ? _answerService.GetTimeout() : System.TimeSpan.Zero;
-    //    System.Threading.Tasks.Task<Answers.Answer> methodTask = method();
-    //    System.Diagnostics.Stopwatch stopwatch = System.Diagnostics.Stopwatch.StartNew();
-
-    //    while (true)
-    //    {
-    //        try
-    //        {
-    //            Answers.Answer methodResult;
-
-    //            if (timeoutValue != System.TimeSpan.Zero)
-    //            {
-    //                methodResult = await WaitWithTimeoutAsync(methodTask, timeoutValue, ct);
-    //            }
-    //            else
-    //            {
-    //                methodResult = await methodTask;
-    //            }
-
-    //            Answers.Answer processedAnswer = await ProcessAnswerAsync(methodResult, ct);
-
-    //            if (!processedAnswer.IsSuccess)
-    //            {
-    //                if (processedAnswer.DialogConcluded)
-    //                {
-    //                    stopwatch.Stop();
-    //                    return processedAnswer;
-    //                }
-
-    //                // If methodTask is completed (unsuccessfully), we need to restart it.
-    //                if (methodTask.IsCompleted)
-    //                {
-    //                    methodTask = method();
-    //                }
-
-    //                // Continue waiting for the methodTask to complete.
-    //                continue;
-    //            }
-
-    //            stopwatch.Stop();
-    //            return processedAnswer.GetValue<Answers.Answer>();
-    //        }
-    //        catch (System.TimeoutException)
-    //        {
-    //            (System.Boolean ShouldRetry, Answers.Answer Answer) timeoutResponse = await HandleTimeoutAsync(
-    //                methodTask, ct, callerName, callerFilePath, callerLineNumber, stopwatch);
-
-    //            if (timeoutResponse.ShouldRetry)
-    //            {
-    //                // Continue waiting for the existing methodTask.
-    //                continue;
-    //            }
-
-    //            stopwatch.Stop();
-    //            return timeoutResponse.Answer;
-    //        }
-    //        catch (System.OperationCanceledException)
-    //        {
-    //            stopwatch.Stop();
-    //            return Answers.Answer.Prepare("Cancelled").Error("Operation canceled by user");
-    //        }
-    //    }
-
-
-    //}
-
-    //private async System.Threading.Tasks.Task<Answers.Answer> WaitWithTimeoutAsync(
-    //    System.Threading.Tasks.Task<Answers.Answer> task,
-    //    System.TimeSpan timeout,
-    //    System.Threading.CancellationToken ct)
-    //{
-    //    using System.Threading.CancellationTokenSource cts = System.Threading.CancellationTokenSource.CreateLinkedTokenSource(ct);
-    //    cts.CancelAfter(timeout);
-
-    //    try
-    //    {
-    //        return await task.WaitAsync(cts.Token);
-    //    }
-    //    catch (System.OperationCanceledException) when (!ct.IsCancellationRequested)
-    //    {
-    //        throw new System.TimeoutException();
-    //    }
-    //}
-
-
-    //private async System.Threading.Tasks.Task<Answers.Answer> ProcessAnswerAsync(
-    //    Answers.Answer methodResult,
-    //    System.Threading.CancellationToken ct)
-    //{
-    //    if (methodResult.IsSuccess || methodResult.DialogConcluded || !(_answerService.HasYesNoDialog || _answerService.HasYesNoAsyncDialog))
-    //    {
-    //        return Answers.Answer.Prepare("Success").WithValue(methodResult);
-    //    }
-
-    //    System.Boolean userWantsToRetry;
-
-    //    if (_answerService.HasYesNoAsyncDialog)
-    //    {
-    //        userWantsToRetry = await _answerService.AskYesNoAsync(methodResult.Message, ct);
-    //    }
-    //    else
-    //    {
-    //        userWantsToRetry = _answerService.AskYesNo(methodResult.Message);
-    //    }
-
-    //    if (userWantsToRetry)
-    //    {
-    //        // User chose to retry; we'll continue waiting for methodTask or restart it if it's completed.
-    //        return Answers.Answer.Prepare("Retry").Error("User chose to retry");
-    //    }
-
-    //    methodResult.ConcludeDialog();
-    //    return Answers.Answer.Prepare("DialogConcluded").WithValue(methodResult);
-    //}
-
-    //private async System.Threading.Tasks.Task<(System.Boolean ShouldRetry, Answers.Answer Answer)> HandleTimeoutAsync(
-    //System.Threading.Tasks.Task<Answers.Answer> methodTask,
-    //System.Threading.CancellationToken ct,
-    //System.String callerName,
-    //System.String callerFilePath,
-    //System.Int32 callerLineNumber,
-    //System.Diagnostics.Stopwatch stopwatch)
-    //{
-    //    System.String action = $"{callerName} at {System.IO.Path.GetFileName(callerFilePath)}:{callerLineNumber}";
-    //    System.String timeoutMessage = $"The operation '{action}' timed out. Do you want to wait?";
-
-    //    using var dialogCts = new System.Threading.CancellationTokenSource();
-
-    //    System.Threading.Tasks.Task<bool> dialogTask;
-
-    //    if (_answerService.HasTimeOutAsyncDialog)
-    //    {
-    //        dialogTask = _answerService.AskYesNoToWaitAsync(timeoutMessage, dialogCts.Token, ct);
-    //    }
-    //    else if (_answerService.HasTimeOutDialog)
-    //    {
-    //        dialogTask = System.Threading.Tasks.Task.Run(() =>
-    //            _answerService.AskYesNoToWait(timeoutMessage, dialogCts.Token, ct), ct);
-    //    }
-    //    else
-    //    {
-    //        // No dialog available; return a timeout answer.
-    //        return (false, Answers.Answer.Prepare("Timeout")
-    //            .Error($"{stopwatch.Elapsed.TotalSeconds} seconds elapsed")
-    //            .ConcludeDialog());
-    //    }
-
-    //    // Wait for either the methodTask to complete or the dialog response
-    //    if (await System.Threading.Tasks.Task.WhenAny(methodTask, dialogTask) == methodTask)
-    //    {
-    //        // Method completed before user responded; cancel the dialog
-    //        dialogCts.Cancel();
-
-    //        // Get the method result
-    //        Answers.Answer methodResult = await methodTask;
-
-    //        return (false, methodResult);
-    //    }
-
-    //    // Get the user's response
-    //    System.Boolean userWantsToWait = await dialogTask;
-
-    //    if (userWantsToWait)
-    //    {
-    //        // User wants to wait; continue waiting for methodTask
-    //        return (true, null);
-    //    }
-    //    else
-    //    {
-    //        // User does not want to wait; return a timeout answer
-    //        return (false, Answers.Answer.Prepare("Timeout")
-    //            .Error("User chose not to wait")
-    //            .ConcludeDialog());
-    //    }
-    //}
-
-
     private IAnswerService _answerService;
     private BusinessLogicClass _utilityLayer;
-    public PresentationLayer(BusinessLogicClass utilityLayer, IAnswerService answerService)
+    private QuickBooksPseudoClass _qbpc;
+    public PresentationLayer(BusinessLogicClass utilityLayer,QuickBooksPseudoClass qbpc, IAnswerService answerService)
     {
+        _qbpc = qbpc;
         _answerService = answerService;
-       _answerService.AddDialog(new UserDialogStub([true,false],null));
+    //   _answerService.AddDialog(new UserDialogStub([true,false],null));
         _utilityLayer = utilityLayer;
      //   LogDetailedInfo();
+    }
+
+    public async Task<Answer> SimulateSomething()
+    {
+        var resp = Answer.Prepare("symulacja dzialania");
+        var response =await TryAsync(() => _qbpc.GetDataFromQuickBooks(5, new CancellationToken()), new CancellationToken());
+        return resp.Attach(response);
     }
 
 
@@ -847,6 +402,15 @@ public partial class HttpTierClass(RandomService randomService) : IAnswerable
     }
 }
 
+public partial class QuickBooksPseudoClass() : IAnswerable
+{
+    public async Task<Answer> GetDataFromQuickBooks(int id, CancellationToken ct)
+    {
+        var answer = Answer.Prepare($"[QuickBooksPseudoClass] GetDataFromQuickBooks({id})");
+        
+        return answer.Error($"Error processing QB data");
+    }
+}
 
 
 //public partial class DatabaseTierClass : IAnswerable
